@@ -21,6 +21,7 @@ public struct DebugSphere
     public Color color;
     public float duration;
     public float timestamp;
+    public bool isSolid;
 }
 public struct DebugBox
 {
@@ -78,6 +79,7 @@ public struct DebugDisc
     public Color color;
     public float duration;
     public float timestamp;
+    public bool isSolid;
 }
 
 public class DebugDrawInstance : MonoBehaviour
@@ -128,7 +130,14 @@ public class DebugDrawInstance : MonoBehaviour
         for (int i = last; i >= 0; i--)
         {
             Gizmos.color = spheres[i].color;
-            Gizmos.DrawWireSphere(spheres[i].center, spheres[i].radius);
+            if (spheres[i].isSolid)
+            {
+                Gizmos.DrawSphere(spheres[i].center, spheres[i].radius);
+            }
+            else
+            {
+                Gizmos.DrawWireSphere(spheres[i].center, spheres[i].radius);
+            }
             if ((Time.realtimeSinceStartup - spheres[i].timestamp) >= spheres[i].duration)
             {
                 spheres.RemoveAt(i);
@@ -255,12 +264,19 @@ public class DebugDrawInstance : MonoBehaviour
     {
 #if UNITY_EDITOR
         var thickness = 3;
-        UnityEditor.Handles.color = disc.color;
-        UnityEditor.Handles.DrawWireDisc(disc.center, disc.normal, disc.radius, thickness);
+		UnityEditor.Handles.color = disc.color;
+		if (disc.isSolid)
+		{
+			UnityEditor.Handles.DrawSolidDisc(disc.center, disc.normal, disc.radius);
+		}
+        else
+        {
+			UnityEditor.Handles.DrawWireDisc(disc.center, disc.normal, disc.radius, thickness);
+		}
 #endif
     }
 
-    public void DrawArrow(Vector3 a, Vector3 b, Color color, float duration)
+	public void DrawArrow(Vector3 a, Vector3 b, Color color, float duration)
     {
 #if UNITY_EDITOR
         DebugLine line = new DebugLine();
@@ -284,6 +300,19 @@ public class DebugDrawInstance : MonoBehaviour
         lines.Add(line);
 #endif
     }
+    public void DrawSolidSphere(Vector3 center, float radius, Color color, float duration)
+    {
+#if UNITY_EDITOR
+        DebugSphere sphere = new DebugSphere();
+        sphere.center = center;
+        sphere.radius = radius;
+        sphere.color = color;
+        sphere.duration = duration;
+        sphere.timestamp = Time.realtimeSinceStartup;
+        sphere.isSolid = true;
+        spheres.Add(sphere);
+#endif
+    }
     public void DrawSphere(Vector3 center, float radius, Color color, float duration)
     {
 #if UNITY_EDITOR
@@ -293,6 +322,7 @@ public class DebugDrawInstance : MonoBehaviour
         sphere.color = color;
         sphere.duration = duration;
         sphere.timestamp = Time.realtimeSinceStartup;
+        sphere.isSolid = false;
         spheres.Add(sphere);
 #endif
     }
@@ -347,7 +377,6 @@ public class DebugDrawInstance : MonoBehaviour
         capsules.Add(capsule);
 #endif
     }
-
     public void DrawArc(Vector3 center, Vector3 direction, Vector3 normal, float angle, float radius, Color color, float duration)
     {
 #if UNITY_EDITOR
@@ -373,7 +402,22 @@ public class DebugDrawInstance : MonoBehaviour
         disc.color = color;
         disc.duration = duration;
         disc.timestamp = Time.realtimeSinceStartup;
-        discs.Add(disc);
+		disc.isSolid = false;
+		discs.Add(disc);
 #endif
     }
+    public void DrawSolidDisc(Vector3 center, Vector3 normal, float radius, Color color, float duration)
+    {
+#if UNITY_EDITOR
+		DebugDisc disc = new DebugDisc();
+		disc.center = center;
+		disc.normal = normal;
+		disc.radius = radius;
+		disc.color = color;
+		disc.duration = duration;
+		disc.timestamp = Time.realtimeSinceStartup;
+		disc.isSolid = true;
+		discs.Add(disc);
+#endif
+	}
 }

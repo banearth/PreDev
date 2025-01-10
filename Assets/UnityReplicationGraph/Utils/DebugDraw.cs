@@ -28,7 +28,22 @@ namespace CPL
             }
 #endif
         }
-        public static void DrawSphere(Vector3 center, float radius, Color color, float duration)
+		/// <summary>
+		/// Gizmos.DrawSphere
+		/// </summary>
+		public static void DrawSolidSphere(Vector3 center, float radius, Color color, float duration)
+		{
+#if UNITY_EDITOR
+			if (Instance)
+			{
+				Instance.DrawSolidSphere(center, radius, color, duration);
+			}
+#endif
+		}
+		/// <summary>
+		/// Gizmos.DrawWireSphere
+		/// </summary>
+		public static void DrawSphere(Vector3 center, float radius, Color color, float duration)
         {
 #if UNITY_EDITOR
             if (Instance)
@@ -65,8 +80,7 @@ namespace CPL
             }
 #endif
         }
-
-        public static void DrawCapsule(Vector3 location, float radius, float height, Color color, float duration)
+		public static void DrawCapsule(Vector3 location, float radius, float height, Color color, float duration)
         {
 #if UNITY_EDITOR
             if (Instance) 
@@ -75,7 +89,6 @@ namespace CPL
             }
 #endif
         }
-
         public static void DrawArc(Vector3 center, Vector3 direction, Vector3 normal, float angle, float radius, Color color, float duration)
         {
 #if UNITY_EDITOR
@@ -85,6 +98,9 @@ namespace CPL
             }
 #endif
         }
+        /// <summary>
+        /// Handles.DrawWireDisc
+        /// </summary>
         public static void DrawDisc(Vector3 center, Vector3 normal, float radius, Color color, float duration)
         {
 #if UNITY_EDITOR
@@ -94,8 +110,19 @@ namespace CPL
             }
 #endif
         }
-
-        public static void PauseEditor()
+		/// <summary>
+		/// Handles.DrawSolidDisc
+		/// </summary>
+		public static void DrawSolidDisc(Vector3 center, Vector3 normal, float radius, Color color, float duration)
+		{
+#if UNITY_EDITOR
+			if (Instance)
+			{
+				Instance.DrawSolidDisc(center, normal, radius, color, duration);
+			}
+#endif
+		}
+		public static void PauseEditor()
         {
 #if UNITY_EDITOR
             EditorApplication.isPaused = true;
