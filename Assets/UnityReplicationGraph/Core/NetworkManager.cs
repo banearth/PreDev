@@ -1,12 +1,43 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 
-// 网络管理器
 public class NetworkManager : MonoBehaviour
 {
+	private static NetworkManager _instance;
+	public static NetworkManager Instance => _instance;
+
 	private NetworkDriver _driver;
+	public NetworkDriver Driver => _driver;
+
 	private Dictionary<uint, ReplicatedActorInfo> _actorInfoMap = new Dictionary<uint, ReplicatedActorInfo>();
 	private uint _nextNetId = 1;
+
+	private void Awake()
+	{
+		if (_instance == null)
+		{
+			_instance = this;
+			DontDestroyOnLoad(gameObject);
+		}
+		else
+		{
+			Destroy(gameObject);
+		}
+	}
+
+	private void Start()
+	{
+		InitializeNetwork();
+	}
+
+	private void InitializeNetwork()
+	{
+		_driver = new NetworkDriver();
+		_driver.InitForNetManager(this);
+
+		var replicationGraph = new BasicReplicationGraph();
+		_driver.InitReplicationDriver(replicationGraph);
+	}
 
 	public void SpawnNetworkActor(ReplicatedActor actor)
 	{
@@ -27,12 +58,6 @@ public class NetworkManager : MonoBehaviour
 	{
 		_actorInfoMap.TryGetValue(netId, out var actorInfo);
 		return actorInfo;
-	}
-
-	private void Start()
-	{
-		_driver = new NetworkDriver();
-		_driver.InitForNetManager(this);
 	}
 
 	// 游戏框架层面的网络功能

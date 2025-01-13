@@ -1,11 +1,8 @@
 using UnityEngine;
 using System.Collections.Generic;
-using UnityEditor;
 
 public class ReplicationDemo : MonoBehaviour
 {
-    private NetworkDriver networkDriver;
-    private BasicReplicationGraph replicationGraph;
     private List<TestActor> spawnedActors = new List<TestActor>();
     private Dictionary<NetworkConnection, NetViewer> connectionViewers = new Dictionary<NetworkConnection, NetViewer>();
     private ReplicationGraphDebugger debugger;
@@ -27,26 +24,18 @@ public class ReplicationDemo : MonoBehaviour
     private void Start()
     {
         debugger = new ReplicationGraphDebugger();
-        InitializeNetwork();
-        SpawnTestActors();
-    }
-
-    private void InitializeNetwork()
-    {
-        networkDriver = new NetworkDriver();
-        replicationGraph = new BasicReplicationGraph();
-        replicationGraph.InitForNetDriver(networkDriver);
-
         CreateTestClients();
+        SpawnTestActors();
     }
 
     private void CreateTestClients()
     {
+        var driver = NetworkManager.Instance.Driver;
+        
         for (int i = 0; i < clientCount; i++)
         {
-            var connection = networkDriver.CreateClientConnection();
+            var connection = driver.CreateClientConnection();
             
-            // 创建并设置Viewer
             float angle = (360f / clientCount) * i;
             float radius = spawnRange * 0.5f;
             Vector3 position = new Vector3(
@@ -58,8 +47,6 @@ public class ReplicationDemo : MonoBehaviour
             var viewer = new NetViewer(connection);
             viewer.ViewLocation = position;
             connectionViewers[connection] = viewer;
-
-            replicationGraph.AddClientConnection(connection);
         }
     }
 
@@ -67,7 +54,6 @@ public class ReplicationDemo : MonoBehaviour
     {
         for (int i = 0; i < actorCount; i++)
         {
-            // 随机位置生成Actor
             Vector3 randomPos = Random.insideUnitCircle * spawnRange;
             randomPos = new Vector3(randomPos.x, 0, randomPos.y);
 
@@ -78,16 +64,14 @@ public class ReplicationDemo : MonoBehaviour
             };
 
             spawnedActors.Add(actor);
-            replicationGraph.AddNetworkActor(actor);
+            NetworkManager.Instance.SpawnNetworkActor(actor);
         }
     }
 
     private void Update()
     {
-        // 更新Actor位置
         UpdateActors();
         
-        // 调试绘制
         if (showDebugGizmos)
         {
             debugger.DrawViewers(connectionViewers.Values, clientViewRadius);
@@ -99,19 +83,7 @@ public class ReplicationDemo : MonoBehaviour
     {
         foreach (var actor in spawnedActors)
         {
-            if (actor.IsMoving)
-            {
-                // 简单的圆周运动
-                float angle = Time.time * actor.MoveSpeed;
-                Vector3 center = actor.InitialPosition;
-                float radius = actor.MoveRadius;
-                
-                actor.Position = center + new Vector3(
-                    Mathf.Cos(angle) * radius,
-                    0,
-                    Mathf.Sin(angle) * radius
-                );
-            }
+            actor.UpdateMovement(Time.deltaTime);
         }
     }
 
