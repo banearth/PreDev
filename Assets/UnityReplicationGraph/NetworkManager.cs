@@ -1,25 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 
-// 简化的网络驱动
-public class NetworkDriver
-{
-	public List<NetworkConnection> ClientConnections { get; private set; } = new List<NetworkConnection>();
-	private int _nextConnectionId = 1;
-
-	public NetworkConnection CreateClientConnection()
-	{
-		var connection = new NetworkConnection(_nextConnectionId++);
-			ClientConnections.Add(connection);
-			return connection;
-	}
-
-	public void RemoveConnection(NetworkConnection connection)
-	{
-		ClientConnections.Remove(connection);
-	}
-}
-
 // 网络连接
 public class NetworkConnection
 {
@@ -46,48 +27,17 @@ public class NetworkConnection
 public class NetworkManager : MonoBehaviour
 {
 	private NetworkDriver _driver;
-	private BasicReplicationGraph _repGraph;
-	private Dictionary<NetworkConnection, NetViewer> _connectionViewers = new Dictionary<NetworkConnection, NetViewer>();
-
+	
 	private void Start()
 	{
 		_driver = new NetworkDriver();
-		_repGraph = new BasicReplicationGraph();
-		_repGraph.InitForNetDriver(_driver);
-		
-		CreateTestClients();
+		_driver.InitForNetManager(this);
 	}
 
-	private void CreateTestClients()
-	{
-		for (int i = 0; i < 3; i++)
-		{
-			var connection = _driver.CreateClientConnection();
-			
-			// 创建并设置Viewer
-			var viewer = new NetViewer(connection);
-			viewer.ViewLocation = new Vector3(Random.Range(-100, 100), 0, Random.Range(-100, 100));
-			_connectionViewers[connection] = viewer;
-
-			_repGraph.AddClientConnection(connection);
-		}
-	}
-
-	private void Update()
-	{
-		_repGraph.ServerReplicateActors(Time.deltaTime);
-	}
-
-	public void AddTestActor(Vector3 position, float cullDistance)
-	{
-		var actor = new TestReplicatedObject
-		{
-			Position = position,
-			CullDistance = cullDistance
-		};
-
-		_repGraph.AddNetworkActor(actor);
-	}
+	// 游戏框架层面的网络功能
+	public void StartServer() { }
+	public void StopServer() { }
+	public void CreateTestClients() { }
 }
 
 // 测试用的复制对象
