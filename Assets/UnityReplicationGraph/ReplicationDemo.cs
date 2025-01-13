@@ -87,9 +87,6 @@ public class ReplicationDemo : MonoBehaviour
         // 更新Actor位置
         UpdateActors();
         
-        // 更新复制系统
-        replicationGraph.ServerReplicateActors(Time.deltaTime);
-
         // 调试绘制
         if (showDebugGizmos)
         {
