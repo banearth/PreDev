@@ -128,27 +128,3 @@ public class ReplicationDemo : MonoBehaviour
         return false;
     }
 }
-
-// 测试Actor类
-public class TestActor : IReplicatedObject
-{
-    private static int NextId = 1;
-    
-    public int NetId { get; set; } = NextId++;
-    public Vector3 Position { get; set; }
-    public Vector3 InitialPosition { get; private set; }
-    public float CullDistance { get; set; }
-    public bool IsMoving { get; set; }
-    public float MoveSpeed { get; set; }
-    public float MoveRadius { get; set; } = 10f;
-
-    public TestActor(Vector3 position, float cullDistance)
-    {
-        Position = position;
-        InitialPosition = position;
-        CullDistance = cullDistance;
-    }
-
-    public Vector3 GetLocation() => Position;
-    public float GetCullDistance() => CullDistance;
-}

@@ -99,7 +99,7 @@ public class ActorListGraphNode : ReplicationGraphNode
 public class ReplicatedActorInfo
 {
     public int NetId { get; set; }
-    public IReplicatedObject Actor { get; set; }
+    public ReplicatedActor Actor { get; set; }
     public Vector3 Location { get; set; }
     public float CullDistance { get; set; }
 }

@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System;
 
 public abstract class ReplicationGraph
 {
@@ -10,7 +11,7 @@ public abstract class ReplicationGraph
     protected Dictionary<NetworkConnection, ConnectionData> ConnectionMap = new Dictionary<NetworkConnection, ConnectionData>();
     
     // 全局Actor信息映射
-    protected Dictionary<IReplicatedObject, GlobalActorReplicationInfo> GlobalActorReplicationMap = new Dictionary<IReplicatedObject, GlobalActorReplicationInfo>();
+    protected Dictionary<ReplicatedActor, GlobalActorReplicationInfo> GlobalActorReplicationMap = new Dictionary<ReplicatedActor, GlobalActorReplicationInfo>();
 
     // 帧计数器 - 用于追踪更新
     protected int ReplicationFrameNum;
@@ -27,9 +28,15 @@ public abstract class ReplicationGraph
         public NetViewerArray ViewerInfos = new NetViewerArray();
     }
 
+    // 全局Actor类信息映射
+    protected Dictionary<Type, ClassReplicationInfo> GlobalClassInfoMap = new Dictionary<Type, ClassReplicationInfo>();
+
+    protected NetworkDriver _driver;
+
     // 初始化
     public virtual void InitForNetDriver(NetworkDriver driver)
     {
+        _driver = driver;
         if (bInitialized)
             return;
 
@@ -45,7 +52,32 @@ public abstract class ReplicationGraph
     }
 
     // 核心虚方法，参考 ReplicationGraph.h
-    protected virtual void InitGlobalActorClassSettings() { }
+    protected virtual void InitGlobalActorClassSettings()
+    {
+        // 注册需要复制的Actor类型
+        RegisterActorClass<TestActor>(new ClassReplicationInfo 
+        {
+            ReplicationPeriodFrame = GetReplicationPeriodFrameForFrequency(30), // 30Hz更新
+            CullDistanceSquared = 100 * 100,  // 100米裁剪距离
+            AlwaysRelevant = false,
+            OnlyRelevantToOwner = false
+        });
+        
+        // 可以继续注册其他Actor类型...
+    }
+
+    protected void RegisterActorClass<T>(ClassReplicationInfo classInfo) where T : ReplicatedActor
+    {
+        GlobalClassInfoMap[typeof(T)] = classInfo;
+    }
+
+    protected int GetReplicationPeriodFrameForFrequency(float frequency)
+    {
+        // 假设服务器60帧
+        const float ServerMaxTickRate = 60.0f;
+        return Mathf.Max(1, Mathf.RoundToInt(ServerMaxTickRate / frequency));
+    }
+
     protected virtual void InitGlobalGraphNodes() { }
     protected virtual void InitConnectionGraphNodes(NetworkConnection connection, ConnectionData connectionData) { }
 
@@ -75,7 +107,7 @@ public abstract class ReplicationGraph
     }
 
     // Actor管理
-    public virtual void AddNetworkActor(IReplicatedObject actor)
+    public virtual void AddNetworkActor(ReplicatedActor actor)
     {
         var actorInfo = CreateReplicatedActorInfo(actor);
         
@@ -88,7 +120,7 @@ public abstract class ReplicationGraph
         RouteAddNetworkActorToNodes(actorInfo, globalInfo);
     }
 
-    public virtual void RemoveNetworkActor(IReplicatedObject actor)
+    public virtual void RemoveNetworkActor(ReplicatedActor actor)
     {
         var actorInfo = CreateReplicatedActorInfo(actor);
         RouteRemoveNetworkActorToNodes(actorInfo);
@@ -122,14 +154,38 @@ public abstract class ReplicationGraph
         }
     }
 
-    protected virtual ReplicatedActorInfo CreateReplicatedActorInfo(IReplicatedObject actor)
+    protected virtual ReplicatedActorInfo CreateReplicatedActorInfo(ReplicatedActor actor)
     {
         return new ReplicatedActorInfo
         {
             Actor = actor,
-            Location = actor.GetLocation(),
-            CullDistance = actor.GetCullDistance()
+            Location = actor.Position,
+            CullDistance = actor.NetCullDistanceSquared
         };
+    }
+
+    protected bool IsActorRelevantForConnection(ReplicatedActor actor, NetworkConnection connection)
+    {
+        if (actor == null || connection == null)
+            return false;
+
+        // 1. 检查是否总是相关
+        if (actor.bAlwaysRelevant)
+            return true;
+
+        // 2. 检查是否只对所有者相关
+        if (actor.bOnlyRelevantToOwner)
+            return actor.Owner == connection;
+
+        // 3. 检查距离 - 使用NetCullDistanceSquared而不是GetCullDistance
+        var viewer = _driver.GetViewer(connection);
+        if (viewer != null)
+        {
+            float distanceSquared = (actor.Position - viewer.ViewLocation).sqrMagnitude;
+            return distanceSquared <= actor.NetCullDistanceSquared;
+        }
+
+        return false;
     }
 }
 
@@ -139,12 +195,4 @@ public class GlobalActorReplicationInfo
     public Vector3 WorldLocation { get; set; }
     public float LastUpdateTime { get; set; }
     public HashSet<NetworkConnection> RelevantConnections = new HashSet<NetworkConnection>();
-}
-
-// 需要实现的接口
-public interface IReplicatedObject
-{
-    Vector3 GetLocation();
-    float GetCullDistance();
-    // 其他需要的方法...
 }
