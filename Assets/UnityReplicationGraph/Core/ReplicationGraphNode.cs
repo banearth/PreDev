@@ -2,10 +2,12 @@ using UnityEngine;
 using System.Collections.Generic;
 
 // 基础节点类
-public abstract class ReplicationGraphNode
+public class ReplicationGraphNode
 {
     protected List<ReplicationGraphNode> AllChildNodes = new List<ReplicationGraphNode>();
     protected bool bRequiresPrepareForReplicationCall = false;
+    protected ReplicationGraph Graph;
+    private List<ReplicatedActorInfo> _actorList = new List<ReplicatedActorInfo>();
 
     // 暂时不实现GraphGlobals，因为我们还不清楚FReplicationGraphGlobalData的具体用途
     
@@ -26,6 +28,7 @@ public abstract class ReplicationGraphNode
     // Actor通知方法
     public virtual void NotifyAddNetworkActor(ReplicatedActorInfo actorInfo)
     {
+        _actorList.Add(actorInfo);
         foreach (var childNode in AllChildNodes)
         {
             childNode.NotifyAddNetworkActor(actorInfo);
@@ -34,6 +37,7 @@ public abstract class ReplicationGraphNode
 
     public virtual void NotifyRemoveNetworkActor(ReplicatedActorInfo actorInfo)
     {
+        _actorList.Remove(actorInfo);
         foreach (var childNode in AllChildNodes)
         {
             childNode.NotifyRemoveNetworkActor(actorInfo);
@@ -94,14 +98,6 @@ public class ActorListGraphNode : ReplicationGraphNode
     {
         return true;
     }
-}
-
-public class ReplicatedActorInfo
-{
-    public int NetId { get; set; }
-    public ReplicatedActor Actor { get; set; }
-    public Vector3 Location { get; set; }
-    public float CullDistance { get; set; }
 }
 
 public class ViewerInfo

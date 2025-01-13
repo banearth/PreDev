@@ -1,41 +1,64 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 public class BasicReplicationGraph : ReplicationGraph
 {
-    // 参考 BasicReplicationGraph.h 第59-63行
-    public GridSpatialization2D GridNode { get; private set; }
-    public ActorListGraphNode AlwaysRelevantNode { get; private set; }
+    private List<ReplicatedActor> _networkActors = new List<ReplicatedActor>();
 
-    protected override void InitGlobalGraphNodes()
+    public override void InitForNetDriver(NetworkDriver driver)
     {
-        // 参考 BasicReplicationGraph.cpp 第62-79行
-        GridNode = new GridSpatialization2D();
-        GridNode.CellSize = 10000f;
-        GridNode.SpatialBias = new Vector2(-100000f, -100000f);
-
-        AddGlobalGraphNode(GridNode);
-
-        AlwaysRelevantNode = new ActorListGraphNode();
-        AddGlobalGraphNode(AlwaysRelevantNode);
+        base.InitForNetDriver(driver);
     }
 
     protected override void InitGlobalActorClassSettings()
     {
-        // 参考 BasicReplicationGraph.cpp 第19-60行
-        base.InitGlobalActorClassSettings();
-
-        // 这里可以添加特定的Actor类设置
+        RegisterActorClass<TestActor>(new ClassReplicationInfo 
+        {
+            ReplicationPeriodFrame = GetReplicationPeriodFrameForFrequency(30),
+            CullDistanceSquared = 10000f
+        });
     }
 
-    public override void RouteAddNetworkActorToNodes(ReplicatedActorInfo actorInfo, GlobalActorReplicationInfo globalInfo)
+    protected override void InitGlobalGraphNodes()
     {
-        // 参考 BasicReplicationGraph.cpp 第91-100行
-        GridNode.NotifyAddNetworkActor(actorInfo);
+        // 使用基础的ReplicationGraphNode
+        var baseNode = new ReplicationGraphNode();
+        AddGlobalGraphNode(baseNode);
+    }
+
+    public void AddNetworkActor(ReplicatedActor actor)
+    {
+        if (actor == null) return;
+        
+        _networkActors.Add(actor);
+        var actorInfo = base.CreateReplicatedActorInfo(actor);
+        RouteAddNetworkActorToNodes(actorInfo);
+    }
+
+    public override void RouteAddNetworkActorToNodes(ReplicatedActorInfo actorInfo)
+    {
+        foreach (var node in GlobalGraphNodes)
+        {
+            node.NotifyAddNetworkActor(actorInfo);
+        }
     }
 
     public override void RouteRemoveNetworkActorToNodes(ReplicatedActorInfo actorInfo)
     {
-        GridNode.NotifyRemoveNetworkActor(actorInfo);
-        AlwaysRelevantNode?.NotifyRemoveNetworkActor(actorInfo);
+        foreach (var node in GlobalGraphNodes)
+        {
+            node.NotifyRemoveNetworkActor(actorInfo);
+        }
+    }
+
+    public void AddClientConnection(NetworkConnection connection)
+    {
+        if (connection == null) return;
+        // TODO: 处理新客户端连接
+    }
+
+    public override void ServerReplicateActors(float deltaTime)
+    {
+        // TODO: 实现复制逻辑
     }
 }

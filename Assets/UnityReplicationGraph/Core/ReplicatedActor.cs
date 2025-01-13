@@ -10,6 +10,7 @@ public abstract class ReplicatedActor
     public bool bAlwaysRelevant { get; set; } = false;
     public bool bOnlyRelevantToOwner { get; set; } = false;
     public float NetCullDistanceSquared { get; set; } = 10000f;  // 默认100米
+    public uint NetId { get; set; }  // 添加NetId属性
     
     public ReplicatedActor()
     {
