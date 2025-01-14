@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-public class GridSpatialization2D : ReplicationGraphNode
+public class UReplicationGraphNode_GridSpatialization2D : ReplicationGraphNode
 {
     public float CellSize { get; set; }
     public Vector2 SpatialBias { get; set; }

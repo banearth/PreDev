@@ -442,15 +442,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   clientCount: 3
   clientViewRadius: 30
-  actorCount: 10
+  actorCount: 15
   spawnRange: 100
   cullDistance: 39
   moveSpeed: 1
   moveProbability: 0.5
   showDebugGizmos: 1
-  clientViewColor: {r: 0, g: 0, b: 1, a: 0.2}
-  visibleActorColor: {r: 0, g: 1, b: 0, a: 1}
-  culledActorColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
