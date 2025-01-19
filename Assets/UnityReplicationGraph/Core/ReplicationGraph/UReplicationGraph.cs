@@ -7,7 +7,7 @@ public abstract class UReplicationGraph : UReplicationDriver
     protected List<UReplicationGraphNode> GlobalGraphNodes = new List<UReplicationGraphNode>();
     protected Dictionary<Type, FClassReplicationInfo> GlobalClassInfoMap = new Dictionary<Type, FClassReplicationInfo>();
     protected FGlobalActorReplicationInfoMap GlobalActorReplicationInfoMap = new FGlobalActorReplicationInfoMap();
-	protected HashSet<FActorRepListType> ActiveNetworkActors;
+	protected HashSet<FActorRepListType> ActiveNetworkActors = new HashSet<FActorRepListType>();
 
 	protected List<UReplicationGraphNode> PrepareForReplicationNodes = new List<UReplicationGraphNode>();
 	protected List<UNetReplicationGraphConnection> Connections = new List<UNetReplicationGraphConnection>();
@@ -44,7 +44,6 @@ public abstract class UReplicationGraph : UReplicationDriver
         return GraphGlobals?.World;
     }
 
-    // todo
     public void SetRepDriverWorld(UWorld InWorld)
     {
         if (GraphGlobals != null)
@@ -53,9 +52,9 @@ public abstract class UReplicationGraph : UReplicationDriver
         }
     }
 
-    public virtual void InitForNetDriver(UNetworkDriver driver)
+    public override void InitForNetDriver(UNetworkDriver driver)
     {
-		this.NetDriver = driver;
+		base.InitForNetDriver(driver);
 		InitGlobalActorClassSettings();
         InitGlobalGraphNodes();
 		foreach (var ClientConnection in NetDriver.ClientConnections)
@@ -303,9 +302,9 @@ public abstract class UReplicationGraph : UReplicationDriver
         FGatheredReplicationActorLists GatheredReplicationListsForConnection, 
         List<FNetViewer> Viewers)
 	{
-        bool bEnableFullActorPrioritizationDetails = false;  // 是否启用详细的Actor优先级信息
+        //bool bEnableFullActorPrioritizationDetails = false;  // 是否启用详细的Actor优先级信息
         bool bDoDistanceCull = true;                         // 是否启用距离裁剪
-        bool bDoCulledOnConnectionCount = false;             // 是否统计连接裁剪数量
+        //bool bDoCulledOnConnectionCount = false;             // 是否统计连接裁剪数量
 
         // 连接统计
         int NumGatheredActorsOnConnection = 0;    // 此连接收集到的Actor总数

@@ -9,7 +9,7 @@ public static class ReplicationGraphUtils
     {
         // 后面漏了 && IsValidChecked(Actor) && !Actor->IsUnreachable(); 
         // 我评估暂时应该不用管
-        return (actor != null) && actor.IsActorBeingDestroyed();
+        return (actor != null) && !actor.IsActorBeingDestroyed();
     }
 
 	/// <summary>

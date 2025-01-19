@@ -23,8 +23,13 @@ public class UBasicReplicationGraph : UReplicationGraph
     public override void InitGlobalActorClassSettings()
     {
         base.InitGlobalActorClassSettings();
-        // 注册各种类型的复制设置
-        RegisterReplicationType("Character", new FClassReplicationInfo
+		// 注册各种类型的复制设置
+		RegisterReplicationType("Default", new FClassReplicationInfo
+		{
+			ReplicationPeriodFrame = 60,
+			CullDistanceSquared = 0f
+		});
+		RegisterReplicationType("Character", new FClassReplicationInfo
         {
             ReplicationPeriodFrame = 60,
             CullDistanceSquared = 0f
