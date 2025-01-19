@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class TestActor : ReplicatedActor
+public class TestActor : FActorRepListType
 {
     public bool IsMoving { get; set; }
     public Vector3 InitialPosition { get; set; }

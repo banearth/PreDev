@@ -3,31 +3,19 @@ using UnityEngine;
 
 public class NetworkDriver
 {
-    private ReplicationDriver _replicationDriver;
+    private UReplicationDriver _replicationDriver;
     private uint _nextConnectionId = 1;
-    public List<NetworkConnection> ClientConnections { get; private set; }
-    private Dictionary<NetworkConnection, NetViewer> _connectionViewers;
+    public List<UNetConnection> ClientConnections { get; private set; }
+    private Dictionary<UNetConnection, FNetViewer> _connectionViewers;
+    public uint ReplicationFrame;
 
     public NetworkDriver()
     {
-        ClientConnections = new List<NetworkConnection>();
-        _connectionViewers = new Dictionary<NetworkConnection, NetViewer>();
+        ClientConnections = new List<UNetConnection>();
+        _connectionViewers = new Dictionary<UNetConnection, FNetViewer>();
     }
 
-    public void InitForNetManager(NetworkManager manager)
-    {
-        // 初始化网络管理器相关的设置
-    }
-
-    public void AddClientConnection(NetworkConnection connection)
-    {
-        if (_replicationDriver is BasicReplicationGraph repGraph)
-        {
-            repGraph.AddClientConnection(connection);
-        }
-    }
-
-    public void InitReplicationDriver(ReplicationDriver driver)
+    public void InitReplicationDriver(UReplicationDriver driver)
     {
         _replicationDriver = driver;
         _replicationDriver.InitForNetDriver(this);
@@ -41,18 +29,18 @@ public class NetworkDriver
         }
     }
 
-    public NetworkConnection CreateClientConnection()
+    public UNetConnection CreateClientConnection()
     {
-        var connection = new NetworkConnection(_nextConnectionId++);
+        var connection = new UNetConnection(_nextConnectionId++);
         ClientConnections.Add(connection);
         
-        var viewer = new NetViewer(connection);
-        viewer.ViewLocation = new Vector3(UnityEngine.Random.Range(-100, 100), 0, UnityEngine.Random.Range(-100, 100));
+        var viewer = new FNetViewer(connection);
+        viewer.ViewLocation = new Vector3(Random.Range(-100, 100), 0, Random.Range(-100, 100));
         _connectionViewers[connection] = viewer;
 
-        if (_replicationDriver is BasicReplicationGraph repGraph)
+        if (_replicationDriver != null)
         {
-            repGraph.AddClientConnection(connection);
+            _replicationDriver.AddClientConnection(connection);
         }
         
         return connection;

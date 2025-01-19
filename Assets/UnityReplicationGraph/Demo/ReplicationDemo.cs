@@ -4,8 +4,7 @@ using System.Collections.Generic;
 public class ReplicationDemo : MonoBehaviour
 {
     private List<TestActor> spawnedActors = new List<TestActor>();
-    private Dictionary<NetworkConnection, NetViewer> connectionViewers = new Dictionary<NetworkConnection, NetViewer>();
-    private ReplicationGraphDebugger debugger;
+    private Dictionary<UNetConnection, FNetViewer> connectionViewers = new Dictionary<UNetConnection, FNetViewer>();
 
     [Header("Network Setup")]
     [SerializeField] private int clientCount = 3;
@@ -23,7 +22,6 @@ public class ReplicationDemo : MonoBehaviour
 
     private void Start()
     {
-        debugger = new ReplicationGraphDebugger();
         CreateTestClients();
         SpawnTestActors();
     }
@@ -44,7 +42,7 @@ public class ReplicationDemo : MonoBehaviour
                 Mathf.Sin(angle * Mathf.Deg2Rad) * radius
             );
             
-            var viewer = new NetViewer(connection);
+            var viewer = new FNetViewer(connection);
             viewer.ViewLocation = position;
             connectionViewers[connection] = viewer;
         }
