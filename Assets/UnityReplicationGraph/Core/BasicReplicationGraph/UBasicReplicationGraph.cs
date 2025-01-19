@@ -85,11 +85,15 @@ public class UBasicReplicationGraph : UReplicationGraph
         }
         else if (actorInfo.Actor.bOnlyRelevantToOwner)
         {
-			ActorsWithoutNetConnection.Add(actorInfo.Actor);
-		}
+            ActorsWithoutNetConnection.Add(actorInfo.Actor);
+        }
         else
         {
-            GridNode.NotifyAddNetworkActor(actorInfo);
+			// 注意 UReplicationGraphNode_GridSpatialization2D 有3种添加Actor的方法，这取决于Actor的移动性(mobility)。
+			// 由于 AActor 缺少这些移动性信息，我们将所有需要空间化的Actor都作为dormant(休眠)Actor添加：
+			// 这意味着当它们不处于休眠状态时会被视为可能是动态的(可移动的)，
+			// 而当它们处于休眠状态时会被视为静态的(不可移动的)。
+			GridNode.AddActor_Dormancy(actorInfo, globalInfo);
         }
     }
 

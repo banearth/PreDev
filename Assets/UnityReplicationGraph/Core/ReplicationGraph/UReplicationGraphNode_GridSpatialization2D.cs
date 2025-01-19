@@ -9,7 +9,7 @@ public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
     public Vector2 SpatialBias { get; set; }
     public float ConnectionMaxZ { get; set; } = 100000f; // 类似UE的UE::Net::Private::RepGraphWorldMax
 
-	private Bounds GridBounds;
+	private Bounds? GridBounds;
 
 	// 使用二维数组替代Dictionary
 	private List<List<UReplicationGraphNode_GridCell>> Grid = new List<List<UReplicationGraphNode_GridCell>>();
@@ -31,6 +31,13 @@ public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
 
 	// This is a reused TArray for gathering actor nodes. Just to prevent using a stack based TArray everywhere or static/reset patten.
 	private List<UReplicationGraphNode_GridCell> GatheredNodes;
+
+	// 某些Actor类（如投射物）不允许触发空间化树的重建，而是会被限制在现有边界内
+	// 例如：子弹、火箭等投射物
+	// 这是一个性能优化的设计决策，防止临时性的、快速移动的对象导致昂贵的空间重建操作。
+	private HashSet<string> ClassRebuildDenyList = new HashSet<string>();
+
+	private bool bNeedsRebuild = false;
 
 	public UReplicationGraphNode_GridSpatialization2D()
     {
@@ -73,7 +80,63 @@ public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
 		return false;
     }
 
-    private FActorCellInfo GetCellInfoForActor(FActorRepListType actor, Vector3 location, float cullDistance)
+	public void AddActor_Dormancy(FNewReplicatedActorInfo actorInfo, FGlobalActorReplicationInfo actorRepInfo)
+	{
+		ReplicationGraphDebugger.LogInfo($"UReplicationGraphNode_GridSpatialization2D::AddActor_Dormancy {actorInfo.Actor.Name}");
+		if (actorRepInfo.bWantsToBeDormant)
+		{
+			// 如果Actor想要休眠，作为静态Actor添加
+			AddActorInternal_Static(actorInfo, actorRepInfo, true);
+		}
+		else
+		{
+			// 否则作为动态Actor添加
+			AddActorInternal_Dynamic(actorInfo);
+		}
+		// 监听休眠状态变化事件，因为我们需要在状态改变时移动Actor
+		// 注意我们不关心Flush操作
+		actorRepInfo.Events.DormancyChange += OnNetDormancyChange;
+	}
+
+	protected virtual void AddActorInternal_Dynamic(FNewReplicatedActorInfo actorInfo)
+	{
+		
+		// 将Actor添加到动态Actor集合中
+		DynamicSpatializedActors[actorInfo.Actor] = new FCachedDynamicActorInfo(actorInfo);
+	}
+
+	protected virtual void AddActorInternal_Static(FNewReplicatedActorInfo actorInfo, FGlobalActorReplicationInfo actorRepInfo, bool bDormancyDriven)
+	{
+		var actor = actorInfo.Actor;
+		// 验证检查
+		// 源码中这里存在校验的需求，防止重复添加
+		// bool containsActor = PendingStaticSpatializedActors.Exists(entry => entry.Actor == actorInfo.Actor);
+		AddActorInternal_Static_Implementation(actorInfo, actorRepInfo, bDormancyDriven);
+	}
+
+	protected virtual void AddActorInternal_Static_Implementation(
+		FNewReplicatedActorInfo actorInfo,
+		FGlobalActorReplicationInfo actorRepInfo,
+		bool bDormancyDriven)
+	{
+		var actor = actorInfo.Actor;
+		Vector3 location3D = actor.Position;
+		actorRepInfo.WorldLocation = location3D;
+		// 检查Actor位置是否会导致空间边界扩大
+		if (WillActorLocationGrowSpatialBounds(location3D))
+		{
+			HandleActorOutOfSpatialBounds(actor, location3D, true);
+		}
+		// 添加到静态Actor集合
+		StaticSpatializedActors[actor] = new FCachedStaticActorInfo(actorInfo, bDormancyDriven);
+		// 只有在不需要重建整个网格时才将Actor放入单元格
+		if (!bNeedsRebuild)
+		{
+			PutStaticActorIntoCell(actorInfo, actorRepInfo, bDormancyDriven);
+		}
+	}
+
+	private FActorCellInfo GetCellInfoForActor(FActorRepListType actor, Vector3 location, float cullDistance)
     {
         var minCell = GetCellCoord(new Vector3(location.x - cullDistance, 0, location.z - cullDistance));
         var maxCell = GetCellCoord(new Vector3(location.x + cullDistance, 0, location.z + cullDistance));
@@ -108,7 +171,7 @@ public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
             }
 
             // 限制视图位置在有效范围内
-            Vector3 clampedViewLoc = GridBounds.ClosestPoint(viewer.ViewLocation);
+            Vector3 clampedViewLoc = GridBounds.Value.ClosestPoint(viewer.ViewLocation);
 
             // 计算观察者所在的网格单元
             int cellX = Mathf.Max(0, Mathf.FloorToInt((clampedViewLoc.x - SpatialBias.x) / CellSize));
@@ -309,6 +372,114 @@ public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
 		return passesValidation;
 	}
 
+	protected virtual void OnNetDormancyChange(
+		FActorRepListType actor,FGlobalActorReplicationInfo globalInfo,
+		ENetDormancy newValue,ENetDormancy oldValue)
+	{
+		// 判断当前和之前的状态是否应该是静态的
+		bool bCurrentShouldBeStatic = newValue > ENetDormancy.DORM_Awake;
+		bool bPreviousShouldBeStatic = oldValue > ENetDormancy.DORM_Awake;
+		if (bCurrentShouldBeStatic && !bPreviousShouldBeStatic)
+		{
+			// Actor从动态变为静态
+			// 从动态列表移除并添加到静态列表
+			var actorInfo = new FNewReplicatedActorInfo(actor);
+			RemoveActorInternal_Dynamic(actorInfo);
+			AddActorInternal_Static(actorInfo, globalInfo, true);
+		}
+		else if (!bCurrentShouldBeStatic && bPreviousShouldBeStatic)
+		{
+			// Actor从静态变为动态
+			var actorInfo = new FNewReplicatedActorInfo(actor);
+			// 第三个参数true表明这个actor之前是作为休眠actor放置的
+			// （在这个回调时刻它已经不再休眠了）
+			RemoveActorInternal_Static(actorInfo, globalInfo, true);
+			AddActorInternal_Dynamic(actorInfo);
+		}
+	}
+
+	protected virtual void RemoveActorInternal_Dynamic(FNewReplicatedActorInfo actorInfo)
+	{
+		// 尝试获取动态Actor信息
+		if (DynamicSpatializedActors.TryGetValue(actorInfo.Actor, out var dynamicActorInfo))
+		{
+			// 如果Actor有有效的单元格信息
+			if (dynamicActorInfo.CellInfo.IsValid())
+			{
+				var gatheredNodes = new List<UReplicationGraphNode_GridCell>();
+				GetGridNodesForActor(actorInfo.Actor, dynamicActorInfo.CellInfo, gatheredNodes);
+				// 从所有相关的网格单元中移除Actor
+				foreach (var node in gatheredNodes)
+				{
+					node.RemoveDynamicActor(actorInfo);
+				}
+			}
+			// 从动态Actor集合中移除
+			DynamicSpatializedActors.Remove(actorInfo.Actor);
+		}
+		else
+		{
+			// 输出警告日志
+			ReplicationGraphDebugger.LogWarning(
+				$"UReplicationGraphNode_Simple2DSpatialization::RemoveActorInternal_Dynamic attempted remove " +
+				$"{actorInfo.Actor.Name} from streaming dynamic list but it was not there.");
+			// 检查是否错误地存在于静态Actor集合中
+			if (StaticSpatializedActors.Remove(actorInfo.Actor))
+			{
+				ReplicationGraphDebugger.LogWarning("   It was in StaticSpatializedActors!");
+			}
+		}
+	}
+
+	protected virtual void RemoveActorInternal_Static(
+		FNewReplicatedActorInfo actorInfo,
+		FGlobalActorReplicationInfo actorRepInfo,
+		bool bWasAddedAsDormantActor)
+	{
+		// 尝试从静态Actor集合中移除
+		if (!StaticSpatializedActors.Remove(actorInfo.Actor))
+		{
+			// 可能是待处理的Actor，从待处理列表中查找
+			// 如果实现了PendingStaticSpatializedActors，需要在PendingStaticSpatializedActors里面删除这个
+			// 我暂时没实现，所以不用管
+			
+			// 如果既不在静态列表也不在待处理列表中，输出警告
+			ReplicationGraphDebugger.LogWarning(
+				$"UReplicationGraphNode_Simple2DSpatialization::RemoveActorInternal_Static attempted remove " +
+				$"{actorInfo.Actor.Name} from static list but it was not there.");
+			// 检查是否错误地存在于动态Actor集合中
+			if (DynamicSpatializedActors.Remove(actorInfo.Actor))
+			{
+				ReplicationGraphDebugger.LogWarning("   It was in DynamicStreamingSpatializedActors!");
+			}
+		}
+		// 从Actor所在的网格单元中移除它
+		// 注意：即使Actor在最后一次复制帧之后移动，FGlobalActorReplicationInfo也不会被更新
+		var gatheredNodes = new List<UReplicationGraphNode_GridCell>();
+		GetGridNodesForActor(actorInfo.Actor, actorRepInfo, gatheredNodes);
+		foreach (var node in gatheredNodes)
+		{
+			node.RemoveStaticActor(actorInfo, actorRepInfo, bWasAddedAsDormantActor);
+		}
+	}
+
+	protected virtual void PutStaticActorIntoCell(FNewReplicatedActorInfo actorInfo, FGlobalActorReplicationInfo actorRepInfo, bool bDormancyDriven)
+	{
+		// 获取Actor所在的所有网格节点
+		var gatheredNodes = new List<UReplicationGraphNode_GridCell>();
+		GetGridNodesForActor(actorInfo.Actor, actorRepInfo, gatheredNodes);
+		// 将Actor添加到每个相关的网格单元中
+		foreach (var node in gatheredNodes)
+		{
+			node.AddStaticActor(actorInfo, actorRepInfo, bDormancyDriven);
+		}
+	}
+
+	private void GetGridNodesForActor(FActorRepListType Actor, FGlobalActorReplicationInfo ActorRepInfo, List<UReplicationGraphNode_GridCell> OutNodes)
+	{
+		GetGridNodesForActor(Actor, GetCellInfoForActor(Actor, ActorRepInfo.WorldLocation, ActorRepInfo.Settings.GetCullDistance()), OutNodes);
+	}
+
 	// 这个函数是用来获取一个Actor所在的所有网格单元格节点
 	private void GetGridNodesForActor(FActorRepListType actor, FActorCellInfo cellInfo, List<UReplicationGraphNode_GridCell> outNodes)
 	{
@@ -350,6 +521,45 @@ public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
 				var node = GetCell(gridY, y);
 				outNodes.Add(node);
 			}
+		}
+	}
+
+    private bool WillActorLocationGrowSpatialBounds(Vector3 Location)
+    {
+		// 当设置了边界时，我们不会扩展单元格，而是将Actor限制在边界内
+		// 如果GridBounds有效，返回false（不需要增长）
+		// 否则，检查Location是否在SpatialBias点的左下方，如果是则需要增长
+		return GridBounds.HasValue ? false : (SpatialBias.x > Location.x || SpatialBias.y > Location.y);
+    }
+
+	protected virtual void HandleActorOutOfSpatialBounds(FActorRepListType actor, Vector3 location3D, bool bStaticActor)
+	{
+		// 对于在拒绝列表中的Actor类型，不重建空间化。它们将被限制在网格内。
+		if (ClassRebuildDenyList.Contains(actor.ReplicationType))
+		{
+			return;
+		}
+		bool bOldNeedRebuild = bNeedsRebuild;
+		// 检查并更新X轴空间偏移
+		if (SpatialBias.x > location3D.x)
+		{
+			bNeedsRebuild = true;
+			SpatialBias = SpatialBias.WithX(location3D.x - (CellSize / 2.0f));
+		}
+
+		// 检查并更新Y轴空间偏移
+		if (SpatialBias.y > location3D.y)
+		{
+			bNeedsRebuild = true;
+			SpatialBias = SpatialBias.WithY(location3D.y - (CellSize / 2.0f));
+		}
+
+		// 如果需要重建且之前不需要重建，输出警告日志
+		if (bNeedsRebuild && !bOldNeedRebuild)
+		{
+			ReplicationGraphDebugger.LogWarning(
+				$"Spatialization Rebuild caused by: {actor.Name} at {location3D}. " +
+				$"New Bias: {SpatialBias}. IsStatic: {(bStaticActor ? 1 : 0)}");
 		}
 	}
 
