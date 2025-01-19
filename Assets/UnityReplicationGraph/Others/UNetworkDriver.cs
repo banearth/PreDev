@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class NetworkDriver
+public class UNetworkDriver
 {
     private UReplicationDriver _replicationDriver;
     private uint _nextConnectionId = 1;
@@ -9,7 +9,7 @@ public class NetworkDriver
     private Dictionary<UNetConnection, FNetViewer> _connectionViewers;
     public uint ReplicationFrame;
 
-    public NetworkDriver()
+    public UNetworkDriver()
     {
         ClientConnections = new List<UNetConnection>();
         _connectionViewers = new Dictionary<UNetConnection, FNetViewer>();

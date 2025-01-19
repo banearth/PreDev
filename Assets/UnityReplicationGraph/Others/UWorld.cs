@@ -12,7 +12,7 @@ public class UWorld : UObject
     private List<ULevel> Levels = new List<ULevel>();
 
     // 网络相关 - 只保留NetDriver
-    private NetworkDriver _netDriver;
+    private UNetworkDriver _netDriver;
 
     public UWorld(string name)
     {
@@ -27,7 +27,7 @@ public class UWorld : UObject
     /// <summary>
     /// 设置NetDriver
     /// </summary>
-    public void SetNetDriver(NetworkDriver driver)
+    public void SetNetDriver(UNetworkDriver driver)
     {
         _netDriver = driver;
     }
@@ -35,7 +35,7 @@ public class UWorld : UObject
     /// <summary>
     /// 获取NetDriver
     /// </summary>
-    public NetworkDriver GetNetDriver()
+    public UNetworkDriver GetNetDriver()
     {
         return _netDriver;
     }

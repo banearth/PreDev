@@ -7,9 +7,9 @@ public abstract class UReplicationGraph : UReplicationDriver
     protected List<UReplicationGraphNode> GlobalGraphNodes = new List<UReplicationGraphNode>();
     protected Dictionary<Type, FClassReplicationInfo> GlobalClassInfoMap = new Dictionary<Type, FClassReplicationInfo>();
     protected FGlobalActorReplicationInfoMap GlobalActorReplicationInfoMap = new FGlobalActorReplicationInfoMap();
+	protected HashSet<FActorRepListType> ActiveNetworkActors;
 
-    protected List<UReplicationGraphNode> PrepareForReplicationNodes = new List<UReplicationGraphNode>();
-	protected NetworkDriver NetDriver;
+	protected List<UReplicationGraphNode> PrepareForReplicationNodes = new List<UReplicationGraphNode>();
 	protected List<UNetReplicationGraphConnection> Connections = new List<UNetReplicationGraphConnection>();
 	protected List<UNetReplicationGraphConnection> PendingConnections = new List<UNetReplicationGraphConnection>();
 	protected int HeavyComputationConnectionSelector;
@@ -53,7 +53,7 @@ public abstract class UReplicationGraph : UReplicationDriver
         }
     }
 
-    public virtual void InitForNetDriver(NetworkDriver driver)
+    public virtual void InitForNetDriver(UNetworkDriver driver)
     {
 		this.NetDriver = driver;
 		InitGlobalActorClassSettings();
@@ -94,7 +94,7 @@ public abstract class UReplicationGraph : UReplicationDriver
 		ConnectionManager.AddConnectionGraphNode(GraphNode);
 	}
 
-	public virtual void AddClientConnection(UNetConnection netConnection)
+	public override void AddClientConnection(UNetConnection netConnection)
     {
         // 检查是否已经在待处理列表中创建了该连接的管理器
         for (int i = PendingConnections.Count - 1; i >= 0; --i)
@@ -226,6 +226,7 @@ public abstract class UReplicationGraph : UReplicationDriver
 
     public virtual void RouteAddNetworkActorToNodes(FNewReplicatedActorInfo actorInfo, FGlobalActorReplicationInfo globalInfo)
     {
+        // 通知所有全局节点
         foreach (var node in GlobalGraphNodes)
         {
             node.NotifyAddNetworkActor(actorInfo);
@@ -786,6 +787,22 @@ public abstract class UReplicationGraph : UReplicationDriver
 		return BitsWritten;
 	}
 
+    public virtual void AddNetworkActor(FActorRepListType actor)
+    {
+        if (actor == null)
+            return;
 
+        // 创建或获取Actor的全局复制信息
+        var globalInfo = GlobalActorReplicationInfoMap.Get(actor);
+        
+        // 创建新的复制Actor信息
+        var actorInfo = new FNewReplicatedActorInfo(actor);
+        
+        // 将Actor添加到活动网络Actor列表
+        ActiveNetworkActors.Add(actor);
+        
+        // 通知所有节点有新的网络Actor加入
+        RouteAddNetworkActorToNodes(actorInfo, globalInfo);
+    }
 
 }

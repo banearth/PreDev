@@ -15,7 +15,7 @@ public class UNetConnection
     // 基础属性
     public EConnectionState State { get; protected set; }
     public string Address { get; protected set; }
-    public NetworkDriver Driver { get; protected set; }
+    public UNetworkDriver Driver { get; protected set; }
     public uint ConnectionId { get; private set; }
 	// 可见关卡名称集合
 	public HashSet<string> ClientVisibleLevelNames = new HashSet<string>();
@@ -31,7 +31,7 @@ public class UNetConnection
     }
 
     // 初始化连接
-    public virtual void InitBase(NetworkDriver driver, string address)
+    public virtual void InitBase(UNetworkDriver driver, string address)
     {
         Driver = driver;
         Address = address;

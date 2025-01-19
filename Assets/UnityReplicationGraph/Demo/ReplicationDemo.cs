@@ -20,19 +20,28 @@ public class ReplicationDemo : MonoBehaviour
     [Header("Debug Visualization")]
     [SerializeField] private bool showDebugGizmos = true;
 
+    private UNetworkDriver networkDriver;
+    private UReplicationGraph replicationGraph;
+
     private void Start()
     {
+        InitializeNetwork();
         CreateTestClients();
         SpawnTestActors();
     }
 
+    private void InitializeNetwork()
+    {
+        networkDriver = new UNetworkDriver();
+        replicationGraph = new UBasicReplicationGraph();
+        networkDriver.InitReplicationDriver(replicationGraph);
+    }
+
     private void CreateTestClients()
     {
-        var driver = NetworkManager.Instance.Driver;
-        
         for (int i = 0; i < clientCount; i++)
         {
-            var connection = driver.CreateClientConnection();
+            var connection = networkDriver.CreateClientConnection();
             
             float angle = (360f / clientCount) * i;
             float radius = spawnRange * 0.5f;
@@ -62,18 +71,19 @@ public class ReplicationDemo : MonoBehaviour
             };
 
             spawnedActors.Add(actor);
-            NetworkManager.Instance.SpawnNetworkActor(actor);
+            replicationGraph.AddNetworkActor(actor);
         }
     }
 
     private void Update()
     {
         UpdateActors();
+        networkDriver.TickFlush(Time.deltaTime);
         
         if (showDebugGizmos)
         {
-            debugger.DrawViewers(connectionViewers.Values, clientViewRadius);
-            debugger.DrawActors(spawnedActors, IsActorVisibleToAnyViewer);
+            ReplicationGraphDebugger.DrawViewers(connectionViewers.Values, clientViewRadius);
+            ReplicationGraphDebugger.DrawActors(spawnedActors, IsActorVisibleToAnyViewer);
         }
     }
 
@@ -96,5 +106,24 @@ public class ReplicationDemo : MonoBehaviour
             }
         }
         return false;
+    }
+
+    private void OnDrawGizmos()
+    {
+        if (!Application.isPlaying || !showDebugGizmos)
+            return;
+
+        // 绘制调试可视化
+        Gizmos.color = Color.yellow;
+        foreach (var viewer in connectionViewers.Values)
+        {
+            Gizmos.DrawWireSphere(viewer.ViewLocation, clientViewRadius);
+        }
+
+        foreach (var actor in spawnedActors)
+        {
+            Gizmos.color = IsActorVisibleToAnyViewer(actor) ? Color.green : Color.red;
+            Gizmos.DrawSphere(actor.Position, 1f);
+        }
     }
 }

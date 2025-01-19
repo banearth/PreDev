@@ -63,7 +63,7 @@ public class FActorRepListType : UObject
 	/// <summary>
 	/// 这里面不重要模拟
 	/// </summary>
-	public void CallPreReplication(NetworkDriver netDriver)
+	public void CallPreReplication(UNetworkDriver netDriver)
 	{
 		if (netDriver == null)
 		{
