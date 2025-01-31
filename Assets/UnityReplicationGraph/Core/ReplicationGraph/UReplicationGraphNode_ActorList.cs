@@ -24,11 +24,10 @@ public class UReplicationGraphNode_ActorList : UReplicationGraphNode
     {
         if (actorInfo.StreamingLevelName == string.Empty)
         {
-            return ReplicationActorList.RemoveFast(actorInfo.Actor);
+            return ReplicationActorList.RemoveSlow(actorInfo.Actor);
         }
-        
-        return StreamingLevelCollection.RemoveActorFast(actorInfo);
-    }
+		return StreamingLevelCollection.RemoveActor(actorInfo, bWarnIfNotFound);
+	}
 
     public override void NotifyResetAllNetworkActors()
     {

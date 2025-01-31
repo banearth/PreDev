@@ -44,7 +44,7 @@ public class FStreamingLevelActorListCollection
     /// <summary>
     /// 从列表中移除Actor(保持列表顺序)
     /// </summary>
-    public bool RemoveActor(FNewReplicatedActorInfo ActorInfo, bool bWarnIfNotFound, UObject Outer)
+    public bool RemoveActor(FNewReplicatedActorInfo ActorInfo, bool bWarnIfNotFound)
     {
         bool bRemovedSomething = false;
         foreach (var streamingList in StreamingLevelLists)
@@ -56,14 +56,14 @@ public class FStreamingLevelActorListCollection
                 if (!bRemovedSomething && bWarnIfNotFound)
                 {
                     ReplicationGraphDebugger.LogWarning(
-                        $"Attempted to remove {ActorInfo.Actor} from list {Outer?.Name ?? "None"} but it was not found. " +
+                        $"Attempted to remove {ActorInfo.Actor} but it was not found. " +
                         $"(StreamingLevelName == {ActorInfo.StreamingLevelName})");
                 }
 
                 if (ReplicationGraphDebugger.CVar_RepGraph_Verify)
                 {
                     ReplicationGraphDebugger.EnsureMsg(!streamingList.ReplicationActorList.Contains(ActorInfo.Actor), 
-                        $"Actor {ActorInfo.Actor} is still in list after removal. Streaming Level: {Outer?.Name ?? "None"}");
+                        $"Actor {ActorInfo.Actor} is still in list after removal");
                 }
                 break;
             }
