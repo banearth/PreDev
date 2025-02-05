@@ -29,8 +29,8 @@ public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
 	// 这是一个用于收集用于休眠清理的 Actor 的重用 FActorRepListRefView
 	private FActorRepListRefView GatheredActors = new FActorRepListRefView();
 
-	// This is a reused TArray for gathering actor nodes. Just to prevent using a stack based TArray everywhere or static/reset patten.
-	private List<UReplicationGraphNode_GridCell> GatheredNodes;
+	//这是一份被复用的 List，用于收集 actor 节点
+	private List<UReplicationGraphNode_GridCell> GatheredNodes = new List<UReplicationGraphNode_GridCell>();
 
 	// 某些Actor类（如投射物）不允许触发空间化树的重建，而是会被限制在现有边界内
 	// 例如：子弹、火箭等投射物
@@ -810,7 +810,7 @@ public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
 public class FCachedDynamicActorInfo
 {
     public FNewReplicatedActorInfo ActorInfo;
-    public FActorCellInfo CellInfo;
+    public FActorCellInfo CellInfo = FActorCellInfo.CreateInvalid();
 
     public FCachedDynamicActorInfo(FNewReplicatedActorInfo actorInfo)
     {
@@ -836,7 +836,10 @@ public struct FActorCellInfo
     public int StartY;
     public int EndX;
     public int EndY;
-
-    public bool IsValid() => StartX != -1;
+	public static FActorCellInfo CreateInvalid()
+	{
+		return new FActorCellInfo{ StartX = -1};
+	}
+	public bool IsValid() => StartX != -1;
     public void Reset() => StartX = -1;
 } 
