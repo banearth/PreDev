@@ -19,10 +19,41 @@ public class FClassReplicationInfo
 
 	public Func<FActorRepListType, bool> FastSharedReplicationFunc { get; private set; }
 
-	public void SetCullDistanceSquared(float inCullDistanceSquared)
+	public FClassReplicationInfo SetCullDistance(float cullDistanceSquared)
 	{
-		CullDistanceSquared = inCullDistanceSquared;
-		CullDistance = Mathf.Sqrt(CullDistanceSquared);
+		CullDistanceSquared = cullDistanceSquared * cullDistanceSquared;
+		CullDistance = CullDistanceSquared;
+		return this;
+	}
+
+	public FClassReplicationInfo SetDistancePriorityScale(float scale)
+	{
+		DistancePriorityScale = scale;
+		return this;
+	}
+
+	public FClassReplicationInfo SetStarvationPriorityScale(float scale)
+	{
+		StarvationPriorityScale = scale;
+		return this;
+	}
+
+	public FClassReplicationInfo SetReplicationPeriodFrame(ushort frame)
+	{
+		ReplicationPeriodFrame = frame;
+		return this;
+	}
+
+	public FClassReplicationInfo SetFastPathReplicationPeriodFrame(ushort frame)
+	{
+		FastPath_ReplicationPeriodFrame = frame;
+		return this;
+	}
+
+	public FClassReplicationInfo SetActorChannelFrameTimeout(ushort timeout)
+	{
+		ActorChannelFrameTimeout = timeout;
+		return this;
 	}
 
 	public float GetCullDistance() => CullDistance;

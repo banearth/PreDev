@@ -23,27 +23,27 @@ public class UBasicReplicationGraph : UReplicationGraph
     public override void InitGlobalActorClassSettings()
     {
         base.InitGlobalActorClassSettings();
-		// 注册各种类型的复制设置
-		RegisterReplicationType("Default", new FClassReplicationInfo
-		{
-			ReplicationPeriodFrame = 60,
-			CullDistanceSquared = 0f
-		});
-		RegisterReplicationType("Character", new FClassReplicationInfo
-        {
-            ReplicationPeriodFrame = 60,
-            CullDistanceSquared = 0f
-        });
-        RegisterReplicationType("Item", new FClassReplicationInfo
-        {
-            ReplicationPeriodFrame = 20,
-            CullDistanceSquared = 5000f * 5000f
-        });
-        RegisterReplicationType("Projectile", new FClassReplicationInfo
-        {
-            ReplicationPeriodFrame = 30,
-            CullDistanceSquared = 2000f * 2000f
-        });
+
+        // 默认类型 - 中等距离
+        RegisterReplicationType("Default", new FClassReplicationInfo()
+            .SetReplicationPeriodFrame(60)    // 1秒更新一次
+            .SetCullDistance(40));          // 适中的裁剪距离
+
+        // 角色 - 需要较大的可见距离，因为是主要交互对象
+        RegisterReplicationType("Character", new FClassReplicationInfo()
+            .SetReplicationPeriodFrame(30)    // 0.5秒更新一次，更频繁
+            .SetCullDistance(60)           // 较大的可见距离
+            .SetDistancePriorityScale(2.0f)); // 更高的距离优先级
+
+        // 物品 - 中等距离，因为需要让玩家看到可以拾取的物品
+        RegisterReplicationType("Item", new FClassReplicationInfo()
+            .SetReplicationPeriodFrame(45)    // 0.75秒更新一次
+            .SetCullDistance(30));          // 中等可见距离
+
+        // 投射物 - 较小的距离，因为移动快且生命周期短
+        RegisterReplicationType("Projectile", new FClassReplicationInfo()
+            .SetReplicationPeriodFrame(20)    // 0.33秒更新一次，需要较高频率
+            .SetCullDistance(20));          // 较小的可见距离
     }
 
     private void RegisterReplicationType(string replicationType, FClassReplicationInfo classInfo)
@@ -55,8 +55,8 @@ public class UBasicReplicationGraph : UReplicationGraph
     {
         // 创建空间网格节点
         GridNode = CreateNewNode<UReplicationGraphNode_GridSpatialization2D>();
-        GridNode.CellSize = 10000f;
-        GridNode.SpatialBias = new Vector2(-100000f, -100000f);
+        GridNode.CellSize = 10f;
+        GridNode.SpatialBias = new Vector2(-100f, -100f);
         AddGlobalGraphNode(GridNode);
 
         // 创建始终相关节点
