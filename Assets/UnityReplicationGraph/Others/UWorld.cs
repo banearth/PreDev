@@ -79,6 +79,22 @@ public class UWorld : UObject
     }
 
     /// <summary>
+    /// 获取所有关卡中指定类型的Actor
+    /// </summary>
+    public IEnumerable<FActorRepListType> GetAllActorsOfType(System.Type type)
+    {
+        var result = new List<FActorRepListType>();
+        
+        // 从所有关卡中收集指定类型的Actor
+        foreach (var level in Levels)
+        {
+            result.AddRange(level.GetActorsOfType(type));
+        }
+        
+        return result;
+    }
+
+    /// <summary>
     /// World对象重写GetWorld方法，直接返回自身
     /// </summary>
     public override UWorld GetWorld()
