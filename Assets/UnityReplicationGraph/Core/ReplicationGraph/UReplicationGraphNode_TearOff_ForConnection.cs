@@ -22,11 +22,6 @@ public class UReplicationGraphNode_TearOff_ForConnection : UReplicationGraphNode
         return false; 
     }
 
-    public override bool NotifyActorRenamed(FRenamedReplicatedActorInfo actor, bool bWarnIfNotFound = true) 
-    { 
-        return false; 
-    }
-
     public override void NotifyResetAllNetworkActors()
     {
         TearOffActors.Clear();

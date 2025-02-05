@@ -79,11 +79,6 @@ public class UReplicationGraphNode_ConnectionDormancyNode : UReplicationGraphNod
         return false;
     }
 
-    public override bool NotifyActorRenamed(FRenamedReplicatedActorInfo actorInfo, bool warnIfNotFound = true)
-    {
-        return false;
-    }
-
     public override void NotifyResetAllNetworkActors()
     {
         ReplicationActorList.Reset();

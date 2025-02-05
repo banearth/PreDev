@@ -218,4 +218,17 @@ public class FStreamingLevelActorListCollection
     {
         return StreamingLevelLists.Count;
     }
+
+    /// <summary>
+    /// 获取所有流关卡中Actor的总数
+    /// </summary>
+    public int GetActorCount()
+    {
+        int totalCount = 0;
+        foreach (var streamingList in StreamingLevelLists)
+        {
+            totalCount += streamingList.ReplicationActorList.Num();
+        }
+        return totalCount;
+    }
 }

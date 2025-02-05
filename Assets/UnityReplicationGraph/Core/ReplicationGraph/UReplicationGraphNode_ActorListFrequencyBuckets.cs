@@ -157,4 +157,17 @@ public class UReplicationGraphNode_ActorListFrequencyBuckets : UReplicationGraph
             NonStreamingCollection[idx % newSize].Add(fullList[idx]);
         }
     }
+
+    public int GetActorCount()
+    {
+        // 计算非流关卡Actor数量
+        int totalCount = 0;
+        foreach (var list in NonStreamingCollection)
+        {
+            totalCount += list.Num();
+        }
+		// 加上流关卡中的Actor数量
+		totalCount += StreamingLevelCollection.GetActorCount();
+        return totalCount;
+    }
 }

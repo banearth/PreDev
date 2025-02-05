@@ -136,28 +136,255 @@ public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
 		}
 	}
 
-	private FActorCellInfo GetCellInfoForActor(FActorRepListType actor, Vector3 location, float cullDistance)
-    {
-        var minCell = GetCellCoord(new Vector3(location.x - cullDistance, 0, location.z - cullDistance));
-        var maxCell = GetCellCoord(new Vector3(location.x + cullDistance, 0, location.z + cullDistance));
+	private FActorCellInfo GetCellInfoForActor(FActorRepListType actor, Vector3 location3D, float cullDistance)
+	{
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+		if (cullDistance <= 0f)
+		{
+			ReplicationGraphDebugger.LogWarning(
+				$"GetGridNodesForActor called on {actor.Name} when its CullDistance = {cullDistance:F2}. (Must be > 0)");
+		}
+#endif
 
-        return new FActorCellInfo
-        {
-            StartX = minCell.x,
-            StartY = minCell.y,
-            EndX = maxCell.x,
-            EndY = maxCell.y
-        };
-    }
+		// 检查并限制位置在有效范围内
+		Vector3 clampedLocation = location3D;
+		float worldMax = 1000000f; // 类似UE的RepGraphHalfWorldMax
 
-    private Vector2Int GetCellCoord(Vector3 worldPosition)
+		// 检查位置是否在有效范围内
+		if (location3D.x < -worldMax || location3D.x > worldMax ||
+			location3D.y < -worldMax || location3D.y > worldMax ||
+			location3D.z < -worldMax || location3D.z > worldMax)
+		{
+			var actorRepInfo = GraphGlobals.GlobalActorReplicationInfoMap.Get(actor);
+			if (!actorRepInfo.bWasWorldLocClamped)
+			{
+				ReplicationGraphDebugger.LogWarning(
+					$"GetCellInfoForActor: Actor {actor.Name} is outside world bounds with a location of {location3D}. " +
+					"Clamping grid location to world bounds.");
+				actorRepInfo.bWasWorldLocClamped = true;
+			}
+			// 限制在世界边界内
+			clampedLocation.x = Mathf.Clamp(location3D.x, -worldMax, worldMax);
+			clampedLocation.y = Mathf.Clamp(location3D.y, -worldMax, worldMax);
+			clampedLocation.z = Mathf.Clamp(location3D.z, -worldMax, worldMax);
+		}
+
+		// 计算相对于空间偏移的位置
+		float locationBiasX = clampedLocation.x - SpatialBias.x;
+		float locationBiasZ = clampedLocation.z - SpatialBias.y; // Unity使用Z轴
+
+		// 计算包含剔除距离的边界
+		float minX = Mathf.Max(0, locationBiasX - cullDistance);
+		float minZ = Mathf.Max(0, locationBiasZ - cullDistance);
+		float maxX = locationBiasX + cullDistance;
+		float maxZ = locationBiasZ + cullDistance;
+
+		// 如果有网格边界限制，则应用限制
+		if (GridBounds.HasValue)
+		{
+			var boundSize = GridBounds.Value.size;
+			maxX = Mathf.Min(maxX, boundSize.x);
+			maxZ = Mathf.Min(maxZ, boundSize.z); // Unity使用Z轴
+		}
+
+		// 计算格子索引
+		return new FActorCellInfo
+		{
+			StartX = Mathf.Max(0, Mathf.FloorToInt(minX / CellSize)),
+			StartY = Mathf.Max(0, Mathf.FloorToInt(minZ / CellSize)), // Unity使用Z轴
+			EndX = Mathf.Max(0, Mathf.FloorToInt(maxX / CellSize)),
+			EndY = Mathf.Max(0, Mathf.FloorToInt(maxZ / CellSize))    // Unity使用Z轴
+		};
+	}
+
+	private Vector2Int GetCellCoord(Vector3 worldPosition)
     {
         int x = Mathf.FloorToInt((worldPosition.x - SpatialBias.x) / CellSize);
         int y = Mathf.FloorToInt((worldPosition.z - SpatialBias.y) / CellSize);
         return new Vector2Int(x, y);
     }
 
-    public override void GatherActorListsForConnection(FConnectionGatherActorListParameters Params)
+	public override void PrepareForReplication()
+	{
+		var globalRepMap = GraphGlobals?.GlobalActorReplicationInfoMap;
+		if (globalRepMap == null)
+		{
+			ReplicationGraphDebugger.LogError("PrepareForReplication: GlobalRepMap is null");
+			return;
+		}
+
+		// 更新动态Actor
+		foreach (var kvp in DynamicSpatializedActors)
+		{
+			var dynamicActor = kvp.Key;
+			var dynamicActorInfo = kvp.Value;
+			var previousCellInfo = dynamicActorInfo.CellInfo;
+			var actorInfo = dynamicActorInfo.ActorInfo;
+
+			// 更新位置
+			var globalActorInfo = globalRepMap.Get(dynamicActor);
+			Vector3 location3D = dynamicActor.Position;
+			globalActorInfo.WorldLocation = location3D;
+
+			// 检查是否需要扩展空间边界
+			if (WillActorLocationGrowSpatialBounds(location3D))
+			{
+				HandleActorOutOfSpatialBounds(dynamicActor, location3D, false);
+			}
+
+			if (!bNeedsRebuild)
+			{
+				// 获取新的单元格信息
+				var newCellInfo = GetCellInfoForActor(dynamicActor, location3D, globalActorInfo.Settings.GetCullDistance());
+
+				if (previousCellInfo.IsValid())
+				{
+					bool bDirty = false;
+
+					// 检查是否完全不相交
+					if (newCellInfo.StartX > previousCellInfo.EndX || newCellInfo.EndX < previousCellInfo.StartX ||
+						newCellInfo.StartY > previousCellInfo.EndY || newCellInfo.EndY < previousCellInfo.StartY)
+					{
+						bDirty = true;
+
+						// 从所有旧单元格中移除
+						GetGridNodesForActor(dynamicActor, previousCellInfo, GatheredNodes);
+						foreach (var node in GatheredNodes)
+						{
+							node.RemoveDynamicActor(actorInfo);
+						}
+
+						// 添加到所有新单元格
+						GetGridNodesForActor(dynamicActor, newCellInfo, GatheredNodes);
+						foreach (var node in GatheredNodes)
+						{
+							node.AddDynamicActor(actorInfo);
+						}
+					}
+					else
+					{
+						// 处理部分重叠的情况
+						// 处理左侧列
+						if (previousCellInfo.StartX < newCellInfo.StartX)
+						{
+							bDirty = true;
+							// 移除左侧不再覆盖的列
+							for (int x = previousCellInfo.StartX; x < newCellInfo.StartX; x++)
+							{
+								var gridX = GetGridX(x);
+								for (int y = previousCellInfo.StartY; y <= previousCellInfo.EndY; y++)
+								{
+									var cell = GetCell(gridX, y);
+									if (cell != null)
+									{
+										cell.RemoveDynamicActor(actorInfo);
+									}
+								}
+							}
+						}
+						else if (previousCellInfo.StartX > newCellInfo.StartX)
+						{
+							bDirty = true;
+							// 添加新的左侧列
+							for (int x = newCellInfo.StartX; x < previousCellInfo.StartX; x++)
+							{
+								var gridX = GetGridX(x);
+								for (int y = newCellInfo.StartY; y <= newCellInfo.EndY; y++)
+								{
+									GetCell(gridX, y).AddDynamicActor(actorInfo);
+								}
+							}
+						}
+
+						// 处理右侧列
+						// ... 类似的逻辑处理右侧列 ...
+
+						// 处理上下行
+						int startX = Mathf.Max(newCellInfo.StartX, previousCellInfo.StartX);
+						int endX = Mathf.Min(newCellInfo.EndX, previousCellInfo.EndX);
+
+						// ... 类似的逻辑处理上下行 ...
+
+						if (bDirty)
+						{
+							dynamicActorInfo.CellInfo = newCellInfo;
+						}
+					}
+				}
+				else
+				{
+					// 首次添加
+					GetGridNodesForActor(dynamicActor, newCellInfo, GatheredNodes);
+					foreach (var node in GatheredNodes)
+					{
+						node.AddDynamicActor(actorInfo);
+					}
+					dynamicActorInfo.CellInfo = newCellInfo;
+				}
+			}
+		}
+
+		// 处理网格重建
+		if (bNeedsRebuild)
+		{
+			ReplicationGraphDebugger.LogWarning($"Rebuilding spatialization graph for bias {SpatialBias}");
+
+			// 清理所有现有节点
+			foreach (var row in Grid)
+			{
+				foreach (var cell in row)
+				{
+					if (cell != null)
+					{
+						cell.TearDown();
+					}
+				}
+			}
+			Grid.Clear();
+
+			// 重新添加所有动态Actor
+			foreach (var kvp in DynamicSpatializedActors)
+			{
+				var dynamicActor = kvp.Key;
+				var dynamicActorInfo = kvp.Value;
+
+				Vector3 location3D = dynamicActor.Position;
+				var globalActorInfo = globalRepMap.Get(dynamicActor);
+				globalActorInfo.WorldLocation = location3D;
+
+				var newCellInfo = GetCellInfoForActor(
+					dynamicActor,
+					location3D,
+					globalActorInfo.Settings.GetCullDistance()
+				);
+
+				GetGridNodesForActor(dynamicActor, newCellInfo, GatheredNodes);
+				foreach (var node in GatheredNodes)
+				{
+					node.AddDynamicActor(dynamicActorInfo.ActorInfo);
+				}
+				dynamicActorInfo.CellInfo = newCellInfo;
+			}
+
+			// 重新添加所有静态Actor
+			foreach (var kvp in StaticSpatializedActors)
+			{
+				var staticActor = kvp.Key;
+				var staticActorInfo = kvp.Value;
+
+				PutStaticActorIntoCell(
+					staticActorInfo.ActorInfo,
+					globalRepMap.Get(staticActor),
+					staticActorInfo.bDormancyDriven
+				);
+			}
+
+			bNeedsRebuild = false;
+		}
+	}
+
+
+	public override void GatherActorListsForConnection(FConnectionGatherActorListParameters Params)
     {
         // 用于追踪已处理的唯一网格单元
         var uniqueCurrentGridCells = new HashSet<Vector2Int>();
@@ -529,7 +756,7 @@ public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
 		// 当设置了边界时，我们不会扩展单元格，而是将Actor限制在边界内
 		// 如果GridBounds有效，返回false（不需要增长）
 		// 否则，检查Location是否在SpatialBias点的左下方，如果是则需要增长
-		return GridBounds.HasValue ? false : (SpatialBias.x > Location.x || SpatialBias.y > Location.y);
+		return GridBounds.HasValue ? false : (SpatialBias.x > Location.x || SpatialBias.y > Location.z);
     }
 
 	protected virtual void HandleActorOutOfSpatialBounds(FActorRepListType actor, Vector3 location3D, bool bStaticActor)
@@ -539,7 +766,9 @@ public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
 		{
 			return;
 		}
+
 		bool bOldNeedRebuild = bNeedsRebuild;
+
 		// 检查并更新X轴空间偏移
 		if (SpatialBias.x > location3D.x)
 		{
@@ -547,11 +776,11 @@ public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
 			SpatialBias = SpatialBias.WithX(location3D.x - (CellSize / 2.0f));
 		}
 
-		// 检查并更新Y轴空间偏移
-		if (SpatialBias.y > location3D.y)
+		// 检查并更新Z轴空间偏移（对应UE的Y轴）
+		if (SpatialBias.y > location3D.z) // 注意这里改成了z
 		{
 			bNeedsRebuild = true;
-			SpatialBias = SpatialBias.WithY(location3D.y - (CellSize / 2.0f));
+			SpatialBias = SpatialBias.WithY(location3D.z - (CellSize / 2.0f));
 		}
 
 		// 如果需要重建且之前不需要重建，输出警告日志
@@ -561,6 +790,18 @@ public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
 				$"Spatialization Rebuild caused by: {actor.Name} at {location3D}. " +
 				$"New Bias: {SpatialBias}. IsStatic: {(bStaticActor ? 1 : 0)}");
 		}
+	}
+
+	public int GetActorCountInCell(int x, int y)
+	{
+		// 检查索引是否有效
+		if (x < 0 || x >= Grid.Count)
+			return 0;
+		var row = Grid[x];
+		if (y < 0 || y >= row.Count)
+			return 0;
+		var cell = row[y];
+		return cell?.GetActorCount() ?? 0; // 假设GridCell有GetActorCount方法
 	}
 
 }

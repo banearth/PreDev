@@ -30,6 +30,7 @@ public struct DebugBox
     public Color color;
     public float duration;
     public float timestamp;
+    public bool isSolid;
 }
 public struct DebugLabel
 {
@@ -147,7 +148,14 @@ public class DebugDrawInstance : MonoBehaviour
         for (int i = last; i >= 0; i--)
         {
             Gizmos.color = boxes[i].color;
-            Gizmos.DrawWireCube(boxes[i].center, boxes[i].size);
+			if (boxes[i].isSolid)
+			{
+				Gizmos.DrawCube(boxes[i].center, boxes[i].size);
+			}
+			else
+			{
+				Gizmos.DrawWireCube(boxes[i].center, boxes[i].size);
+			}
             if ((Time.realtimeSinceStartup - boxes[i].timestamp) >= boxes[i].duration)
             {
                 boxes.RemoveAt(i);
@@ -335,10 +343,24 @@ public class DebugDrawInstance : MonoBehaviour
         box.color = color;
         box.duration = duration;
         box.timestamp = Time.realtimeSinceStartup;
+        box.isSolid = false;
         boxes.Add(box);
 #endif
     }
-    public void DrawLabel(Vector3 center, string label, Color color, float duration)
+	public void DrawSolidBox(Vector3 center, Vector3 size, Color color, float duration)
+	{
+#if UNITY_EDITOR
+		DebugBox box = new DebugBox();
+		box.center = center;
+		box.size = size;
+		box.color = color;
+		box.duration = duration;
+		box.timestamp = Time.realtimeSinceStartup;
+		box.isSolid = true;
+		boxes.Add(box);
+#endif
+	}
+	public void DrawLabel(Vector3 center, string label, Color color, float duration)
     {
 #if UNITY_EDITOR
         DebugLabel box = new DebugLabel();

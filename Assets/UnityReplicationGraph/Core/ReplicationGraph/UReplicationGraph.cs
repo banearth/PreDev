@@ -29,12 +29,18 @@ public abstract class UReplicationGraph : UReplicationDriver
 	 * 在没有进行复制的情况下，连接上的Actor通道关闭前的帧数。 
 	 * 这是一个全局值，会加到每个单独Actor的ActorChannelFrameTimeout上。
 	 */
-	protected uint GlobalActorChannelFrameNumTimeout = 2;
+	protected uint GlobalActorChannelFrameNumTimeout;
 
 	// 全局数据
 	protected FReplicationGraphGlobalData GraphGlobals;
 
-    public FReplicationGraphGlobalData GetGraphGlobals()
+	public UReplicationGraph()
+	{
+		GlobalActorChannelFrameNumTimeout = 2;
+		GraphGlobals = new FReplicationGraphGlobalData();
+	}
+
+	public FReplicationGraphGlobalData GetGraphGlobals()
     { 
         return GraphGlobals; 
     }
@@ -681,7 +687,7 @@ public abstract class UReplicationGraph : UReplicationDriver
 		return outBunch;
 	}
 
-	protected virtual long ReplicateSingleActor(
+	public virtual long ReplicateSingleActor(
 		FActorRepListType Actor,
 		FConnectionReplicationActorInfo ActorInfo,
 		FGlobalActorReplicationInfo GlobalActorInfo,

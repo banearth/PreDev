@@ -7,5 +7,15 @@
 			"path": "."
 		}
 	],
-	"settings": {}
+	"settings": {
+		"files.associations": {
+			"cstddef": "cpp",
+			"cstdint": "cpp",
+			"cstdio": "cpp",
+			"cwchar": "cpp",
+			"limits": "cpp",
+			"type_traits": "cpp",
+			"xtr1common": "cpp"
+		}
+	}
 }

@@ -39,15 +39,6 @@ public abstract class UReplicationGraphNode
         return false;
     }
 
-    public virtual bool NotifyActorRenamed(FRenamedReplicatedActorInfo actorInfo, bool bWarnIfNotFound = true)
-    {
-        foreach (var childNode in AllChildNodes)
-        {
-            childNode.NotifyActorRenamed(actorInfo, bWarnIfNotFound);
-        }
-        return false;
-    }
-
     public virtual void NotifyResetAllNetworkActors()
     {
         foreach (var childNode in AllChildNodes)

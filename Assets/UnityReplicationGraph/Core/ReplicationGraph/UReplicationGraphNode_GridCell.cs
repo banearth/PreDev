@@ -3,13 +3,10 @@ using System.Collections.Generic;
 public class UReplicationGraphNode_GridCell : UReplicationGraphNode_ActorList
 {
     // 动态Actor节点
-    private UReplicationGraphNode DynamicNode;
+    private UReplicationGraphNode_ActorListFrequencyBuckets DynamicNode;
 
     // 休眠Actor节点
     private UReplicationGraphNode_DormancyNode DormancyNode;
-
-    // 允许图表重写创建动态节点的函数
-    public System.Func<UReplicationGraphNode_GridCell, UReplicationGraphNode> CreateDynamicNodeOverride;
 
     public override void NotifyAddNetworkActor(FNewReplicatedActorInfo actorInfo)
     {
@@ -129,36 +126,11 @@ public class UReplicationGraphNode_GridCell : UReplicationGraphNode_ActorList
         GetDynamicNode().NotifyRemoveNetworkActor(actorInfo);
     }
 
-    public void RenameStaticActor(FRenamedReplicatedActorInfo actorInfo, bool bWasAddedAsDormantActor)
-    {
-        if (bWasAddedAsDormantActor)
-        {
-            GetDormancyNode().RenameDormantActor(actorInfo);
-        }
-        else
-        {
-            base.NotifyRemoveNetworkActor(actorInfo.OldActorInfo);
-            base.NotifyAddNetworkActor(actorInfo.NewActorInfo);
-        }
-    }
-
-    public void RenameDynamicActor(FRenamedReplicatedActorInfo actorInfo)
-    {
-        GetDynamicNode().NotifyActorRenamed(actorInfo);
-    }
-
-    private UReplicationGraphNode GetDynamicNode()
+    private UReplicationGraphNode_ActorListFrequencyBuckets GetDynamicNode()
     {
         if (DynamicNode == null)
         {
-            if (CreateDynamicNodeOverride != null)
-            {
-                DynamicNode = CreateDynamicNodeOverride(this);
-            }
-            else
-            {
-                DynamicNode = CreateChildNode<UReplicationGraphNode_ActorListFrequencyBuckets>();
-            }
+            DynamicNode = CreateChildNode<UReplicationGraphNode_ActorListFrequencyBuckets>();   
         }
         return DynamicNode;
     }
@@ -192,4 +164,27 @@ public class UReplicationGraphNode_GridCell : UReplicationGraphNode_ActorList
             GetDormancyNode().AddDormantActor(actorInfo, globalInfo);
         }
     }
+
+    public bool HasActor()
+    {
+		bool hasDynamicActor = DynamicNode != null && DynamicNode.GetActorCount() > 0;
+        bool hasDormantActor = DormancyNode != null && DormancyNode.GetActorCount() > 0;
+        return hasDynamicActor || hasDormantActor;
+    }
+
+    //public int GetActorCount()
+    //{
+    //	int dynamicCount = DynamicNode != null ? ((UReplicationGraphNode_ActorList)DynamicNode).GetActorCount() : 0;
+    //	int dormantCount = DormancyNode != null ? DormancyNode.GetActorCount() : 0;
+    //	return dynamicCount + dormantCount;
+    //}
+
+    //// 可选：提供分开的计数方法
+    //public (int dynamicCount, int dormantCount) GetDetailedActorCount()
+    //{
+    //	int dynamicCount = DynamicNode != null ? ((UReplicationGraphNode_ActorList)DynamicNode).GetActorCount() : 0;
+    //	int dormantCount = DormancyNode != null ? DormancyNode.GetActorCount() : 0;
+    //	return (dynamicCount, dormantCount);
+    //}
+
 }

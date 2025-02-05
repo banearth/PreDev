@@ -61,6 +61,15 @@ namespace CPL
             }
 #endif
         }
+		public static void DrawSolidBox(Vector3 center, Vector3 size, Color color, float duration)
+		{
+#if UNITY_EDITOR
+            if(Instance)
+            {
+                Instance.DrawSolidBox(center, size, color, duration);
+            }
+#endif
+        }
         public static void DrawLabel(Vector3 center, string label, Color color, float duration)
         {
 #if UNITY_EDITOR

@@ -3,31 +3,31 @@ using System.Collections.Generic;
 public class UReplicationGraphNode_ActorList : UReplicationGraphNode
 {
     // 基础的Actor复制列表
-    protected FActorRepListRefView ReplicationActorList = new();
+    protected FActorRepListRefView ReplicationActorList = new FActorRepListRefView();
 
     // 用于流关卡Actor的列表集合
-    protected FStreamingLevelActorListCollection StreamingLevelCollection = new();
+    protected FStreamingLevelActorListCollection StreamingLevelCollection = new FStreamingLevelActorListCollection();
 
-    public override void NotifyAddNetworkActor(FNewReplicatedActorInfo actorInfo)
+    public override void NotifyAddNetworkActor(FNewReplicatedActorInfo ActorInfo)
     {
-        if (actorInfo.StreamingLevelName == string.Empty)
+        if (ActorInfo.StreamingLevelName == string.Empty)
         {
-            ReplicationActorList.Add(actorInfo.Actor);
+            ReplicationActorList.Add(ActorInfo.Actor);
         }
         else
         {
-            StreamingLevelCollection.AddActor(actorInfo);
+            StreamingLevelCollection.AddActor(ActorInfo);
         }
     }
 
-    public override bool NotifyRemoveNetworkActor(FNewReplicatedActorInfo actorInfo, bool bWarnIfNotFound = true)
+    public override bool NotifyRemoveNetworkActor(FNewReplicatedActorInfo ActorInfo, bool bWarnIfNotFound = true)
     {
-        if (actorInfo.StreamingLevelName == string.Empty)
+        if (ActorInfo.StreamingLevelName == string.Empty)
         {
-            return ReplicationActorList.RemoveSlow(actorInfo.Actor);
+            return ReplicationActorList.RemoveSlow(ActorInfo.Actor);
         }
-		return StreamingLevelCollection.RemoveActor(actorInfo, bWarnIfNotFound);
-	}
+        return StreamingLevelCollection.RemoveActor(ActorInfo, bWarnIfNotFound);
+    }
 
     public override void NotifyResetAllNetworkActors()
     {
@@ -126,4 +126,12 @@ public class UReplicationGraphNode_ActorList : UReplicationGraphNode
 	    StatsCollector.VisitStreamingLevelCollection(this, StreamingLevelCollection);
 	    base.OnCollectActorRepListStats(StatsCollector);
     }
+
+	// 用于调试和统计的Actor计数
+	public int GetActorCount()
+	{
+		// 返回基类ReplicationActorList中的Actor数量
+		return ReplicationActorList.Num() + StreamingLevelCollection.GetActorCount();
+	}
+
 }

@@ -160,11 +160,78 @@ public static class ReplicationGraphDebugger
         //}
     }
 
+    public static void Draw_UReplicationGraphNode_GridSpatialization2D(UReplicationGraphNode_GridSpatialization2D graphNode)
+    {
+        if (graphNode == null) return;
+
+        // 获取网格参数
+        float cellSize = graphNode.CellSize;
+        Vector2 spatialBias = graphNode.SpatialBias;
+        
+        // 计算网格范围（这里可能需要根据实际情况调整）
+        float worldSize = 200000f;
+        int gridCellsX = Mathf.CeilToInt(worldSize / cellSize);
+        int gridCellsY = Mathf.CeilToInt(worldSize / cellSize);
+
+        // 定义网格颜色
+        Color gridColor = new Color(0, 1, 0, 0.2f);        // 基础网格颜色
+        Color occupiedColor = new Color(1, 0, 0, 0.2f);    // 有Actor的格子颜色
+        Color borderColor = new Color(1, 1, 0, 1f);        // 边界颜色
+
+        // 绘制每个格子
+        for (int x = 0; x < gridCellsX; x++)
+        {
+            for (int y = 0; y < gridCellsY; y++)
+            {
+                Vector3 cellCenter = new Vector3(
+                    spatialBias.x + (x + 0.5f) * cellSize,
+                    0,  // Y轴在Unity中是上下方向
+                    spatialBias.y + (y + 0.5f) * cellSize
+                );
+
+                // 绘制网格线框
+                DebugDraw.DrawBox(
+                    cellCenter,
+                    new Vector3(cellSize, 100f, cellSize),  // 给一定高度以便观察
+                    gridColor,
+                    0  // duration = 0 表示只绘制一帧
+                );
+
+                // 如果格子中有Actor，绘制填充
+                var actorCountInCell = graphNode.GetActorCountInCell(x, y);
+				if (actorCountInCell > 0)
+                {
+					DebugDraw.DrawSolidBox(cellCenter,
+						new Vector3(cellSize * 0.9f, 90f, cellSize * 0.9f),  // 稍微小一点避免完全重叠
+						occupiedColor,
+						0);
+					// 可选：显示Actor数量
+					DebugDraw.DrawLabel(cellCenter, $"Actors: {actorCountInCell}", Color.white, 0);
+				}
+            }
+        }
+
+        // 绘制整体边界
+        Vector3 gridCenter = new Vector3(
+            spatialBias.x + (gridCellsX * cellSize) * 0.5f,
+            50f,  // 高度居中
+            spatialBias.y + (gridCellsY * cellSize) * 0.5f
+        );
+        
+        Vector3 gridSize = new Vector3(
+            gridCellsX * cellSize,
+            100f,
+            gridCellsY * cellSize
+        );
+
+		DebugDraw.DrawBox(gridCenter, gridSize, borderColor, 0);
+	}
+
 	#endregion
 
 	#region 其他
 
-    public static string GetActorRepListTypeDebugString(FActorRepListType In)
+	public static string GetActorRepListTypeDebugString(FActorRepListType In)
     {
         if(In == null)
         {

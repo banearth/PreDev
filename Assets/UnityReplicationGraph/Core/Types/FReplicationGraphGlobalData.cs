@@ -6,13 +6,14 @@ public class FReplicationGraphGlobalData
     // 当前世界引用
     public UWorld World { get; set; }
 
-    // 帧计数器
-    public uint ReplicationFrameNum { get; set; }
+    public UReplicationGraph ReplicationGraph = null;
+
+	// 帧计数器
+	public uint ReplicationFrameNum { get; set; }
 
     // 构造函数
-    public FReplicationGraphGlobalData(UWorld inWorld)
+    public FReplicationGraphGlobalData()
     {
-        World = inWorld;
         GlobalActorReplicationInfoMap = new FGlobalActorReplicationInfoMap();
         ReplicationFrameNum = 0;
     }
