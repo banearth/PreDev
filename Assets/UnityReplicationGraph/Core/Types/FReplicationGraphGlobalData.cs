@@ -12,9 +12,9 @@ public class FReplicationGraphGlobalData
 	public uint ReplicationFrameNum { get; set; }
 
     // 构造函数
-    public FReplicationGraphGlobalData()
+    public FReplicationGraphGlobalData(FGlobalActorReplicationInfoMap globalActorReplicationInfoMap)
     {
-        GlobalActorReplicationInfoMap = new FGlobalActorReplicationInfoMap();
+        GlobalActorReplicationInfoMap = globalActorReplicationInfoMap;
         ReplicationFrameNum = 0;
     }
 

@@ -5,7 +5,6 @@ using System;
 public abstract class UReplicationGraph : UReplicationDriver
 {
     protected List<UReplicationGraphNode> GlobalGraphNodes = new List<UReplicationGraphNode>();
-    protected Dictionary<Type, FClassReplicationInfo> GlobalClassInfoMap = new Dictionary<Type, FClassReplicationInfo>();
     protected FGlobalActorReplicationInfoMap GlobalActorReplicationInfoMap = new FGlobalActorReplicationInfoMap();
 	protected HashSet<FActorRepListType> ActiveNetworkActors = new HashSet<FActorRepListType>();
 
@@ -37,7 +36,7 @@ public abstract class UReplicationGraph : UReplicationDriver
 	public UReplicationGraph()
 	{
 		GlobalActorChannelFrameNumTimeout = 2;
-		GraphGlobals = new FReplicationGraphGlobalData();
+		GraphGlobals = new FReplicationGraphGlobalData(GlobalActorReplicationInfoMap);
 	}
 
 	public FReplicationGraphGlobalData GetGraphGlobals()
