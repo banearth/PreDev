@@ -2,6 +2,9 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 using System;
+using UnityEditor.PackageManager;
+using UnityEditor;
+using UnityEditor.Experimental.GraphView;
 
 public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
 {
@@ -241,10 +244,10 @@ public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
 				{
 					bool bDirty = false;
 
-					// 检查是否完全不相交
 					if (newCellInfo.StartX > previousCellInfo.EndX || newCellInfo.EndX < previousCellInfo.StartX ||
 						newCellInfo.StartY > previousCellInfo.EndY || newCellInfo.EndY < previousCellInfo.StartY)
 					{
+						#region 完全不相交的情况(可能性比较小)
 						bDirty = true;
 
 						// 从所有旧单元格中移除
@@ -260,9 +263,11 @@ public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
 						{
 							node.AddDynamicActor(actorInfo);
 						}
+						#endregion
 					}
 					else
 					{
+						#region 处理部分相交的情况
 						// 处理部分重叠的情况
 						// 处理左侧列
 						if (previousCellInfo.StartX < newCellInfo.StartX)
@@ -274,11 +279,7 @@ public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
 								var gridX = GetGridX(x);
 								for (int y = previousCellInfo.StartY; y <= previousCellInfo.EndY; y++)
 								{
-									var cell = GetCell(gridX, y);
-									if (cell != null)
-									{
-										cell.RemoveDynamicActor(actorInfo);
-									}
+									GetCell(gridX, y)?.RemoveDynamicActor(actorInfo);
 								}
 							}
 						}
@@ -286,7 +287,7 @@ public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
 						{
 							bDirty = true;
 							// 添加新的左侧列
-							for (int x = newCellInfo.StartX; x < previousCellInfo.StartX; x++)
+							for (int x = newCellInfo.StartX; x <= previousCellInfo.StartX; x++)
 							{
 								var gridX = GetGridX(x);
 								for (int y = newCellInfo.StartY; y <= newCellInfo.EndY; y++)
@@ -297,18 +298,100 @@ public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
 						}
 
 						// 处理右侧列
-						// ... 类似的逻辑处理右侧列 ...
+						if (previousCellInfo.EndX < newCellInfo.EndX)
+						{
+							// 添加新的右侧列
+							bDirty = true;
+							for (int x = previousCellInfo.EndX + 1; x <= newCellInfo.EndX; ++x)
+							{
+								var gridX = GetGridX(x);
+								for (int y = newCellInfo.StartY; y <= newCellInfo.EndY; ++y)
+								{
+									GetCell(gridX, y).AddDynamicActor(actorInfo);
+								}
+							}
+						}
+						else if (previousCellInfo.EndX > newCellInfo.EndX)
+						{
+							// 移除右侧不再覆盖的列
+							bDirty = true;
+							for (int x = newCellInfo.EndX + 1; x <= previousCellInfo.EndX; ++x)
+							{
+								var GridX = GetGridX(x);
+								for (int y = previousCellInfo.StartY; y <= previousCellInfo.EndY; ++y)
+								{
+									GetCell(GridX, y)?.RemoveDynamicActor(actorInfo);
+								}
+							}
+						}
 
-						// 处理上下行
+						// --------------------------------------------------
+						// 处理上下行的重叠区域
+						// 只处理重叠区域的X范围
 						int startX = Mathf.Max(newCellInfo.StartX, previousCellInfo.StartX);
 						int endX = Mathf.Min(newCellInfo.EndX, previousCellInfo.EndX);
 
-						// ... 类似的逻辑处理上下行 ...
-
-						if (bDirty)
+						// 处理上方行
+						if (previousCellInfo.StartY < newCellInfo.StartY)
 						{
-							dynamicActorInfo.CellInfo = newCellInfo;
+							// 失去了上方的行
+							bDirty = true;
+							for (int x = startX; x <= endX; x++)
+							{
+								var gridX = GetGridX(x);
+								for (int y = previousCellInfo.StartY; y < newCellInfo.StartY; y++)
+								{
+									GetCell(gridX, y)?.RemoveDynamicActor(actorInfo);
+								}
+							}
 						}
+						else if (previousCellInfo.StartY > newCellInfo.StartY)
+						{
+							// 在上方添加了新行
+							bDirty = true;
+							for (int x = startX; x <= endX; x++)
+							{
+								var gridX = GetGridX(x);
+								for (int y = newCellInfo.StartY; y < previousCellInfo.StartY; y++)
+								{
+									GetCell(gridX, y).AddDynamicActor(actorInfo);
+								}
+							}
+						}
+
+						// 处理下方行
+						if (previousCellInfo.EndY < newCellInfo.EndY)
+						{
+							// 在下方添加了新行
+							bDirty = true;
+							for (int x = startX; x <= endX; x++)
+							{
+								var gridX = GetGridX(x);
+								for (int y = previousCellInfo.EndY + 1; y <= newCellInfo.EndY; y++)
+								{
+									GetCell(gridX, y).AddDynamicActor(actorInfo);
+								}
+							}
+						}
+						else if (previousCellInfo.EndY > newCellInfo.EndY)
+						{
+							// 失去了下方的行
+							bDirty = true;
+
+							for (int x = startX; x <= endX; x++)
+							{
+								var gridX = GetGridX(x);
+								for (int y = newCellInfo.EndY + 1; y <= previousCellInfo.EndY; y++)
+								{
+									GetCell(gridX, y)?.RemoveDynamicActor(actorInfo);
+								}
+							}
+						}
+						#endregion
+					}
+					if (bDirty)
+					{
+						dynamicActorInfo.CellInfo = newCellInfo;
 					}
 				}
 				else
