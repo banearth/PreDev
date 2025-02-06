@@ -10,7 +10,7 @@ public class UReplicationGraphNode_ActorList : UReplicationGraphNode
 
     public override void NotifyAddNetworkActor(FNewReplicatedActorInfo ActorInfo)
     {
-        if (ActorInfo.StreamingLevelName == string.Empty)
+        if (ReplicationGraphUtils.IsLevelNameNone(ActorInfo.StreamingLevelName))
         {
             ReplicationActorList.Add(ActorInfo.Actor);
         }
@@ -22,7 +22,7 @@ public class UReplicationGraphNode_ActorList : UReplicationGraphNode
 
     public override bool NotifyRemoveNetworkActor(FNewReplicatedActorInfo ActorInfo, bool bWarnIfNotFound = true)
     {
-        if (ActorInfo.StreamingLevelName == string.Empty)
+		if (ReplicationGraphUtils.IsLevelNameNone(ActorInfo.StreamingLevelName))
         {
             return ReplicationActorList.RemoveSlow(ActorInfo.Actor);
         }

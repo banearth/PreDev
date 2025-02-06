@@ -41,5 +41,9 @@ public static class ReplicationGraphUtils
         return true;
     }
 
+    public static bool IsLevelNameNone(string levelName)
+    {
+        return string.IsNullOrEmpty(levelName) || levelName == "None";
+    }
 
 }

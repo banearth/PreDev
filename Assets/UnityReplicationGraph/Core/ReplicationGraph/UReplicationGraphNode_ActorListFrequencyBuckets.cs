@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEditor.PackageManager;
 using UnityEngine;
 
 public class UReplicationGraphNode_ActorListFrequencyBuckets : UReplicationGraphNode
@@ -51,7 +52,7 @@ public class UReplicationGraphNode_ActorListFrequencyBuckets : UReplicationGraph
 
     public override void NotifyAddNetworkActor(FNewReplicatedActorInfo actorInfo)
     {
-        if (actorInfo.StreamingLevelName == "None")
+		if (ReplicationGraphUtils.IsLevelNameNone(actorInfo.StreamingLevelName))
         {
             // 添加到最小的桶中
             FActorRepListRefView bestList = null;

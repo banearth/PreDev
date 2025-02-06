@@ -183,7 +183,7 @@ public class UReplicationGraphNode_ConnectionDormancyNode : UReplicationGraphNod
 	{
 		var actorInfo = new FNewReplicatedActorInfo(actor);
 		// 处理非流关卡Actor
-		if (string.IsNullOrEmpty(actorInfo.StreamingLevelName))
+		if (ReplicationGraphUtils.IsLevelNameNone(actorInfo.StreamingLevelName))
 		{
 			// 避免重复添加
 			if (!ReplicationActorList.Contains(actor))
