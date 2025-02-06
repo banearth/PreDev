@@ -1,10 +1,14 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
+
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
 using UnityEngine;
 
+[Serializable]
 public struct DebugLine
 {
     public Vector3 a;
@@ -14,6 +18,7 @@ public struct DebugLine
     public float timestamp;
 }
 
+[Serializable]
 public struct DebugSphere
 {
     public Vector3 center;
@@ -23,6 +28,8 @@ public struct DebugSphere
     public float timestamp;
     public bool isSolid;
 }
+
+[Serializable]
 public struct DebugBox
 {
     public Vector3 center;
@@ -32,6 +39,8 @@ public struct DebugBox
     public float timestamp;
     public bool isSolid;
 }
+
+[Serializable]
 public struct DebugLabel
 {
     public Vector3 center;
@@ -40,6 +49,8 @@ public struct DebugLabel
     public float duration;
     public float timestamp;
 }
+
+[Serializable]
 public struct DebugBezier
 {
     public Vector3 a;
@@ -50,6 +61,7 @@ public struct DebugBezier
     public float timestamp;
 }
 
+[Serializable]
 public struct DebugCapsule
 {
     public Vector3 center;
@@ -60,6 +72,7 @@ public struct DebugCapsule
     public float timestamp;
 }
 
+[Serializable]
 public struct DebugArc
 {
     public Vector3 center;
@@ -72,6 +85,7 @@ public struct DebugArc
     public float timestamp;
 }
 
+[Serializable]
 public struct DebugDisc
 {
     public Vector3 center;
@@ -85,153 +99,196 @@ public struct DebugDisc
 
 public class DebugDrawInstance : MonoBehaviour
 {
+    [SerializeField]
     private List<DebugLine> lines = new List<DebugLine>();
-    private List<DebugLine> arrows = new List<DebugLine>();
-    private List<DebugSphere> spheres = new List<DebugSphere>();
-    private List<DebugBox> boxes = new List<DebugBox>();
-    private List<DebugLabel> labels = new List<DebugLabel>();
-    private List<DebugBezier> beziers = new List<DebugBezier>();
-    private List<DebugCapsule> capsules = new List<DebugCapsule>();
-    private List<DebugArc> arcs = new List<DebugArc>();
-    private List<DebugDisc> discs = new List<DebugDisc>();
+	[SerializeField]
+	private List<DebugLine> arrows = new List<DebugLine>();
+	[SerializeField]
+	private List<DebugSphere> spheres = new List<DebugSphere>();
+	[SerializeField]
+	private List<DebugBox> boxes = new List<DebugBox>();
+	[SerializeField]
+	private List<DebugLabel> labels = new List<DebugLabel>();
+	[SerializeField]
+	private List<DebugBezier> beziers = new List<DebugBezier>();
+	[SerializeField]
+	private List<DebugCapsule> capsules = new List<DebugCapsule>();
+	[SerializeField]
+	private List<DebugArc> arcs = new List<DebugArc>();
+	[SerializeField]
+	private List<DebugDisc> discs = new List<DebugDisc>();
+    [SerializeField]
+    private bool useRealtimeClock = true;
+
     private void Awake()
     {
         CPL.DebugDraw.Instance = this;
     }
 
+    private float GetAdjustedTime()
+    {
+        if (useRealtimeClock)
+        {
+            return Time.realtimeSinceStartup;
+
+        }
+        else
+        {
+            return Time.time;
+        }
+    }
+
+
     private void OnDrawGizmos()
     {
 #if UNITY_EDITOR
-        int last = lines.Count - 1;
-        for (int i = last; i >= 0; i--)
+        float currentTime = GetAdjustedTime();
+        
+        for (int i = lines.Count - 1; i >= 0; i--)
         {
-            Gizmos.color = lines[i].color;
-            Gizmos.DrawLine(lines[i].a, lines[i].b);
-            if((Time.realtimeSinceStartup - lines[i].timestamp) >= lines[i].duration)
+            if ((currentTime - lines[i].timestamp) > lines[i].duration)
             {
                 lines.RemoveAt(i);
             }
         }
-        last = arrows.Count - 1;
-        for (int i = last; i >= 0; i--)
+        
+        for (int i = arrows.Count - 1; i >= 0; i--)
         {
-            Gizmos.color = arrows[i].color;
-            float arrowSize = 0.1f;
-            Vector3 direction = (arrows[i].b - arrows[i].a).normalized;
-            Vector3 cross = Vector3.Cross(direction, Vector3.up);
-            Gizmos.DrawLine(arrows[i].a, arrows[i].b);
-            Gizmos.DrawLine(arrows[i].b, arrows[i].b - direction * arrowSize + cross * arrowSize);
-            Gizmos.DrawLine(arrows[i].b, arrows[i].b - direction * arrowSize - cross * arrowSize);
-            if ((Time.realtimeSinceStartup - arrows[i].timestamp) >= arrows[i].duration)
+            if ((currentTime - arrows[i].timestamp) > arrows[i].duration)
             {
                 arrows.RemoveAt(i);
             }
         }
-        last = spheres.Count - 1;
-        for (int i = last; i >= 0; i--)
+        
+        for (int i = spheres.Count - 1; i >= 0; i--)
         {
-            Gizmos.color = spheres[i].color;
-            if (spheres[i].isSolid)
-            {
-                Gizmos.DrawSphere(spheres[i].center, spheres[i].radius);
-            }
-            else
-            {
-                Gizmos.DrawWireSphere(spheres[i].center, spheres[i].radius);
-            }
-            if ((Time.realtimeSinceStartup - spheres[i].timestamp) >= spheres[i].duration)
+            if ((currentTime - spheres[i].timestamp) > spheres[i].duration)
             {
                 spheres.RemoveAt(i);
             }
         }
-        last = boxes.Count - 1;
-        for (int i = last; i >= 0; i--)
+        
+        for (int i = boxes.Count - 1; i >= 0; i--)
         {
-            Gizmos.color = boxes[i].color;
-			if (boxes[i].isSolid)
-			{
-				Gizmos.DrawCube(boxes[i].center, boxes[i].size);
-			}
-			else
-			{
-				Gizmos.DrawWireCube(boxes[i].center, boxes[i].size);
-			}
-            if ((Time.realtimeSinceStartup - boxes[i].timestamp) >= boxes[i].duration)
+            if ((currentTime - boxes[i].timestamp) > boxes[i].duration)
             {
                 boxes.RemoveAt(i);
             }
         }
-        last = labels.Count - 1;
-        for (int i = last; i >= 0; i--)
+
+        for (int i = labels.Count - 1; i >= 0; i--)
         {
-            GUIStyle style = new GUIStyle();
-            style.normal.textColor = labels[i].color;
-            Handles.Label(labels[i].center, labels[i].label,style);
-            if ((Time.realtimeSinceStartup - labels[i].timestamp) >= labels[i].duration)
+            if ((currentTime - labels[i].timestamp) > labels[i].duration)
             {
                 labels.RemoveAt(i);
             }
         }
-
-        last = beziers.Count - 1;
-        for (int i = last; i >= 0; i--)
+        
+        for (int i = beziers.Count - 1; i >= 0; i--)
         {
-            var bezier = beziers[i];
-            _DrawBezier(ref bezier);
-            if ((Time.realtimeSinceStartup - beziers[i].timestamp) >= beziers[i].duration)
+            if ((currentTime - beziers[i].timestamp) > beziers[i].duration)
             {
                 beziers.RemoveAt(i);
             }
         }
-
-        last = capsules.Count - 1;
-        for (int i = last; i >= 0; i--)
+        
+        for (int i = capsules.Count - 1; i >= 0; i--)
         {
-            var _capsule = capsules[i];
-            Gizmos.color = _capsule.color;
-            Vector3 topSphereCenter = _capsule.center + Vector3.up * (_capsule.height / 2 - _capsule.radius);
-            Vector3 bottomSphereCenter = _capsule.center - Vector3.up * (_capsule.height / 2 - _capsule.radius);
-
-            Gizmos.DrawWireSphere(topSphereCenter, _capsule.radius);
-            Gizmos.DrawWireSphere(bottomSphereCenter, _capsule.radius);
-
-            Gizmos.DrawLine(topSphereCenter + Vector3.left * _capsule.radius, bottomSphereCenter + Vector3.left * _capsule.radius);
-            Gizmos.DrawLine(topSphereCenter + Vector3.right * _capsule.radius, bottomSphereCenter + Vector3.right * _capsule.radius);
-            Gizmos.DrawLine(topSphereCenter + Vector3.forward * _capsule.radius, bottomSphereCenter + Vector3.forward * _capsule.radius);
-            Gizmos.DrawLine(topSphereCenter + Vector3.back * _capsule.radius, bottomSphereCenter + Vector3.back * _capsule.radius);
-
-            if ((Time.realtimeSinceStartup - _capsule.timestamp) >= _capsule.duration)
+            if ((currentTime - capsules[i].timestamp) > capsules[i].duration)
             {
                 capsules.RemoveAt(i);
             }
         }
-
-        last = arcs.Count - 1;
-        for (int i = last; i >= 0; i--)
+        
+        for (int i = arcs.Count - 1; i >= 0; i--)
         {
-            var arc = arcs[i];
-            _DrawArc(ref arc);
-            if ((Time.realtimeSinceStartup - arcs[i].timestamp) >= arcs[i].duration)
+            if ((currentTime - arcs[i].timestamp) > arcs[i].duration)
             {
                 arcs.RemoveAt(i);
             }
         }
-
-        last = discs.Count - 1;
-        for (int i = last; i >= 0; i--)
+        
+        for (int i = discs.Count - 1; i >= 0; i--)
         {
-            var disc = discs[i];
-            _DrawDisc(ref disc);
-            if ((Time.realtimeSinceStartup - discs[i].timestamp) >= discs[i].duration)
+            if ((currentTime - discs[i].timestamp) > discs[i].duration)
             {
                 discs.RemoveAt(i);
             }
         }
 
+        foreach (var line in lines)
+        {
+            Gizmos.color = line.color;
+            Gizmos.DrawLine(line.a, line.b);
+        }
+        
+        foreach (var arrow in arrows)
+        {
+            Gizmos.color = arrow.color;
+            float arrowSize = 0.1f;
+            Vector3 direction = (arrow.b - arrow.a).normalized;
+            Vector3 cross = Vector3.Cross(direction, Vector3.up);
+            Gizmos.DrawLine(arrow.a, arrow.b);
+            Gizmos.DrawLine(arrow.b, arrow.b - direction * arrowSize + cross * arrowSize);
+            Gizmos.DrawLine(arrow.b, arrow.b - direction * arrowSize - cross * arrowSize);
+        }
+        
+        foreach (var sphere in spheres)
+        {
+            Gizmos.color = sphere.color;
+            if (sphere.isSolid)
+            {
+                Gizmos.DrawSphere(sphere.center, sphere.radius);
+            }
+            else
+            {
+                Gizmos.DrawWireSphere(sphere.center, sphere.radius);
+            }
+        }
+        
+        foreach (var box in boxes)
+        {
+            Gizmos.color = box.color;
+            if (box.isSolid)
+            {
+                Gizmos.DrawCube(box.center, box.size);
+            }
+            else
+            {
+                Gizmos.DrawWireCube(box.center, box.size);
+            }
+        }
+        
+        foreach (var label in labels)
+        {
+            GUIStyle style = new GUIStyle();
+            style.normal.textColor = label.color;
+            Handles.Label(label.center, label.label,style);
+        }
+        
+        foreach (var bezier in beziers)
+        {
+            _DrawBezier(in bezier);
+        }
+        
+        foreach (var capsule in capsules)
+        {
+            _DrawCapsure(in capsule);
+        }
+        
+        foreach (var arc in arcs)
+        {
+            _DrawArc(in arc);
+        }
+        
+        foreach (var disc in discs)
+        {
+            _DrawDisc(in disc);
+        }
 #endif
     }
 
-    private void _DrawBezier(ref DebugBezier bezier)
+    private void _DrawBezier(in DebugBezier bezier)
     {
 #if UNITY_EDITOR
         Vector3 ctrlPos = bezier.ctrl;
@@ -258,7 +315,24 @@ public class DebugDrawInstance : MonoBehaviour
 #endif
     }
 
-    public void _DrawArc(ref DebugArc arc)
+    private void _DrawCapsure(in DebugCapsule capsule)
+    {
+#if UNITY_EDITOR
+		Gizmos.color = capsule.color;
+		Vector3 topSphereCenter = capsule.center + Vector3.up * (capsule.height / 2 - capsule.radius);
+		Vector3 bottomSphereCenter = capsule.center - Vector3.up * (capsule.height / 2 - capsule.radius);
+
+		Gizmos.DrawWireSphere(topSphereCenter, capsule.radius);
+		Gizmos.DrawWireSphere(bottomSphereCenter, capsule.radius);
+
+		Gizmos.DrawLine(topSphereCenter + Vector3.left * capsule.radius, bottomSphereCenter + Vector3.left * capsule.radius);
+		Gizmos.DrawLine(topSphereCenter + Vector3.right * capsule.radius, bottomSphereCenter + Vector3.right * capsule.radius);
+		Gizmos.DrawLine(topSphereCenter + Vector3.forward * capsule.radius, bottomSphereCenter + Vector3.forward * capsule.radius);
+		Gizmos.DrawLine(topSphereCenter + Vector3.back * capsule.radius, bottomSphereCenter + Vector3.back * capsule.radius);
+#endif
+	}
+
+    private void _DrawArc(in DebugArc arc)
     {
 #if UNITY_EDITOR
         var thickness = 3;
@@ -268,7 +342,7 @@ public class DebugDrawInstance : MonoBehaviour
 #endif
     }
 
-    public void _DrawDisc(ref DebugDisc disc)
+    private void _DrawDisc(in DebugDisc disc)
     {
 #if UNITY_EDITOR
         var thickness = 3;
@@ -292,7 +366,7 @@ public class DebugDrawInstance : MonoBehaviour
         line.b = b;
         line.color = color;
         line.duration = duration;
-        line.timestamp = Time.realtimeSinceStartup;
+        line.timestamp = GetAdjustedTime();
         arrows.Add(line);
 #endif
     }
@@ -304,7 +378,7 @@ public class DebugDrawInstance : MonoBehaviour
         line.b = b;
         line.color = color;
         line.duration = duration;
-        line.timestamp = Time.realtimeSinceStartup;
+        line.timestamp = GetAdjustedTime();
         lines.Add(line);
 #endif
     }
@@ -316,7 +390,7 @@ public class DebugDrawInstance : MonoBehaviour
         sphere.radius = radius;
         sphere.color = color;
         sphere.duration = duration;
-        sphere.timestamp = Time.realtimeSinceStartup;
+        sphere.timestamp = GetAdjustedTime();
         sphere.isSolid = true;
         spheres.Add(sphere);
 #endif
@@ -329,7 +403,7 @@ public class DebugDrawInstance : MonoBehaviour
         sphere.radius = radius;
         sphere.color = color;
         sphere.duration = duration;
-        sphere.timestamp = Time.realtimeSinceStartup;
+        sphere.timestamp = GetAdjustedTime();
         sphere.isSolid = false;
         spheres.Add(sphere);
 #endif
@@ -342,7 +416,7 @@ public class DebugDrawInstance : MonoBehaviour
         box.size = size;
         box.color = color;
         box.duration = duration;
-        box.timestamp = Time.realtimeSinceStartup;
+        box.timestamp = GetAdjustedTime();
         box.isSolid = false;
         boxes.Add(box);
 #endif
@@ -355,7 +429,7 @@ public class DebugDrawInstance : MonoBehaviour
 		box.size = size;
 		box.color = color;
 		box.duration = duration;
-		box.timestamp = Time.realtimeSinceStartup;
+		box.timestamp = GetAdjustedTime();
 		box.isSolid = true;
 		boxes.Add(box);
 #endif
@@ -368,7 +442,7 @@ public class DebugDrawInstance : MonoBehaviour
         box.label = label;
         box.color = color;
         box.duration = duration;
-        box.timestamp = Time.realtimeSinceStartup;
+        box.timestamp = GetAdjustedTime();
         labels.Add(box);
 #endif
     }
@@ -381,7 +455,7 @@ public class DebugDrawInstance : MonoBehaviour
         bezier.ctrl = ctrl;
         bezier.color = color;
         bezier.duration = duration;
-        bezier.timestamp = Time.realtimeSinceStartup;
+        bezier.timestamp = GetAdjustedTime();
         beziers.Add(bezier);
 #endif
     }
@@ -395,7 +469,7 @@ public class DebugDrawInstance : MonoBehaviour
         capsule.height = height;
         capsule.color = color;
         capsule.duration = duration;
-        capsule.timestamp = Time.realtimeSinceStartup;
+        capsule.timestamp = GetAdjustedTime();
         capsules.Add(capsule);
 #endif
     }
@@ -410,7 +484,7 @@ public class DebugDrawInstance : MonoBehaviour
         arc.angle = angle;
         arc.color = color;
         arc.duration = duration;
-        arc.timestamp = Time.realtimeSinceStartup;
+        arc.timestamp = GetAdjustedTime();
         arcs.Add(arc);
 #endif
     }
@@ -423,7 +497,7 @@ public class DebugDrawInstance : MonoBehaviour
         disc.radius = radius;
         disc.color = color;
         disc.duration = duration;
-        disc.timestamp = Time.realtimeSinceStartup;
+        disc.timestamp = GetAdjustedTime();
 		disc.isSolid = false;
 		discs.Add(disc);
 #endif
@@ -437,7 +511,7 @@ public class DebugDrawInstance : MonoBehaviour
 		disc.radius = radius;
 		disc.color = color;
 		disc.duration = duration;
-		disc.timestamp = Time.realtimeSinceStartup;
+		disc.timestamp = GetAdjustedTime();
 		disc.isSolid = true;
 		discs.Add(disc);
 #endif
