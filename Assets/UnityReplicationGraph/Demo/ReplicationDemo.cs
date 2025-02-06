@@ -4,7 +4,6 @@ using System.Collections.Generic;
 public class ReplicationDemo : MonoBehaviour
 {
     private List<TestActor> spawnedActors = new List<TestActor>();
-    private Dictionary<UNetConnection, FNetViewer> connectionViewers = new Dictionary<UNetConnection, FNetViewer>();
 
     [Header("Network Setup")]
     [SerializeField] private int clientCount = 3;
@@ -45,15 +44,22 @@ public class ReplicationDemo : MonoBehaviour
             
             float angle = (360f / clientCount) * i;
             float radius = spawnRange * 0.5f;
-            Vector3 position = new Vector3(
+            var spawnPosition = new Vector3(
                 Mathf.Cos(angle * Mathf.Deg2Rad) * radius,
                 0,
                 Mathf.Sin(angle * Mathf.Deg2Rad) * radius
             );
+
+            var testActor = new TestActor(name: $"Client_{i}_Actor",position: spawnPosition,cullDistance)
+            {
+                IsMoving = Random.value < moveProbability,
+                MoveSpeed = moveSpeed
+            };
+
+            connection.OwningActor = testActor;
+            connection.ViewTarget = testActor;
             
-            var viewer = new FNetViewer(connection);
-            viewer.ViewLocation = position;
-            connectionViewers[connection] = viewer;
+            replicationGraph.AddNetworkActor(testActor);
         }
     }
 
@@ -80,7 +86,13 @@ public class ReplicationDemo : MonoBehaviour
         
         if (showDebugGizmos)
         {
-            ReplicationGraphDebugger.DrawViewers(connectionViewers.Values, clientViewRadius);
+            var viewers = new List<FNetViewer>();
+            foreach (var conn in networkDriver.ClientConnections)
+            {
+                viewers.Add(new FNetViewer(conn));
+            }
+            
+            ReplicationGraphDebugger.DrawViewers(viewers, clientViewRadius);
             ReplicationGraphDebugger.DrawActors(spawnedActors, IsActorVisibleToAnyViewer);
         }
     }
@@ -95,8 +107,9 @@ public class ReplicationDemo : MonoBehaviour
 
     private bool IsActorVisibleToAnyViewer(TestActor actor)
     {
-        foreach (var viewer in connectionViewers.Values)
+        foreach (var conn in networkDriver.ClientConnections)
         {
+            var viewer = new FNetViewer(conn);
             float distanceSq = (actor.Position - viewer.ViewLocation).sqrMagnitude;
             if (distanceSq <= (clientViewRadius * clientViewRadius))
             {
