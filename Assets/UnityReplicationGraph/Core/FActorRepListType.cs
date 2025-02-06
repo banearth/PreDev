@@ -80,4 +80,8 @@ public class FActorRepListType : UObject
         return GetTypedOuter<ULevel>();
     }
 
+	public virtual void GetPlayerViewPoint(ref Vector3 position, ref Vector3 viewDir)
+	{	
+	}
+
 }

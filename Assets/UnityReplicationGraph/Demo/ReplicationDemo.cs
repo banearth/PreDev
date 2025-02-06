@@ -106,22 +106,24 @@ public class ReplicationDemo : MonoBehaviour
         return false;
     }
 
-    private void OnDrawGizmos()
-    {
-        if (!Application.isPlaying || !showDebugGizmos)
-            return;
+    //private void OnDrawGizmos()
+    //{
+    //    if (!Application.isPlaying || !showDebugGizmos)
+    //        return;
 
-        // 绘制调试可视化
-        Gizmos.color = Color.yellow;
-        foreach (var viewer in connectionViewers.Values)
-        {
-            Gizmos.DrawWireSphere(viewer.ViewLocation, clientViewRadius);
-        }
+    //    // 绘制调试可视化
+    //    Gizmos.color = Color.yellow;
+    //    foreach (var viewer in connectionViewers.Values)
+    //    {
+    //        Gizmos.DrawWireSphere(viewer.ViewLocation, clientViewRadius);
+    //    }
 
-        foreach (var actor in spawnedActors)
-        {
-            Gizmos.color = IsActorVisibleToAnyViewer(actor) ? Color.green : Color.red;
-            Gizmos.DrawSphere(actor.Position, 1f);
-        }
-    }
+    //    foreach (var actor in spawnedActors)
+    //    {
+    //        Gizmos.color = IsActorVisibleToAnyViewer(actor) ? Color.green : Color.red;
+    //        Gizmos.DrawSphere(actor.Position, 1f);
+    //    }
+    //}
+
+
 }

@@ -150,12 +150,10 @@ public static class ReplicationGraphDebugger
 			viewerPositionColor, 0);
 
         // 绘制名字
-        //haha
-        if()
+        if(viewer.ViewTarget != null)
         {
-
+            DebugDraw.DrawLabel(viewer.ViewLocation, viewer.ViewTarget.Name, Color.white, 0);
         }
-        DebugDraw.DrawLabel(viewer.ViewLocation, viewer.ViewTarget.Name, Color.white, 0);
     }
 
     private static void DrawActor(TestActor actor, bool isVisible)

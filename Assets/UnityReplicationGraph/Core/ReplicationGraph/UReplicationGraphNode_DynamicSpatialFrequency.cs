@@ -263,7 +263,7 @@ public class UReplicationGraphNode_DynamicSpatialFrequency : UReplicationGraphNo
     {
         // 找到最近的观察者
         float shortestDistSq = float.MaxValue;
-        FNetViewer closestViewer = null;
+        FNetViewer? closestViewer = null;
         
         foreach (var viewer in Viewers)
         {
@@ -279,8 +279,8 @@ public class UReplicationGraphNode_DynamicSpatialFrequency : UReplicationGraphNo
             return;
 
         // 计算朝向
-        var dirToActor = (GlobalInfo.WorldLocation - closestViewer.ViewLocation).normalized;
-        float dotP = Vector3.Dot(dirToActor, closestViewer.ViewDir);
+        var dirToActor = (GlobalInfo.WorldLocation - closestViewer.Value.ViewLocation).normalized;
+        float dotP = Vector3.Dot(dirToActor, closestViewer.Value.ViewDir);
 
         // 遍历区域设置
         foreach (var zone in MySettings.ZoneSettings)

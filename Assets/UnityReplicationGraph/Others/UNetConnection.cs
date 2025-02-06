@@ -22,6 +22,10 @@ public class UNetConnection
 
     // 视角目标
     public FActorRepListType ViewTarget;
+
+    // 所属Actor
+    public FActorRepListType OwningActor;
+
 	public UNetReplicationGraphConnection ReplicationConnectionDriver { get; private set; }
 
 	public UNetConnection(uint connectionId)

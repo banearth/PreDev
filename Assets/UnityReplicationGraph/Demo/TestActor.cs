@@ -33,4 +33,27 @@ public class TestActor : FActorRepListType
             Mathf.Sin(angle) * MoveRadius
         );
     }
-} 
+
+    public override void GetPlayerViewPoint(ref Vector3 viewPosition, ref Vector3 viewDir)
+    {
+        // 当前角度
+        float angle = Time.time * MoveSpeed;
+
+		// 计算当前角度的切线方向
+		viewDir = new Vector3(
+            -Mathf.Sin(angle),
+            0,
+            Mathf.Cos(angle)
+        ).normalized;
+
+		// 当前的位置
+		var selfPosition = InitialPosition + new Vector3(
+		   Mathf.Cos(angle) * MoveRadius,
+		   0,
+		   Mathf.Sin(angle) * MoveRadius
+	   );
+
+       float time = 1;
+       viewPosition = viewDir * MoveSpeed * time + selfPosition;
+	}
+}
