@@ -245,6 +245,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a72e843b456efe0428194f32f1b73b41, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  lines: []
+  arrows: []
+  spheres: []
+  boxes: []
+  labels: []
+  beziers: []
+  capsules: []
+  arcs: []
+  discs: []
+  useRealtimeClock: 0
 --- !u!4 &1082174507
 Transform:
   m_ObjectHideFlags: 0

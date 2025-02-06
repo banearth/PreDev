@@ -63,13 +63,11 @@ public class ReplicationDemo : MonoBehaviour
         {
             Vector3 randomPos = Random.insideUnitCircle * spawnRange;
             randomPos = new Vector3(randomPos.x, 0, randomPos.y);
-
-            var actor = new TestActor(randomPos, cullDistance)
+            var actor = new TestActor($"Test:{i}",randomPos, cullDistance)
             {
                 IsMoving = Random.value < moveProbability,
-                MoveSpeed = moveSpeed
+                MoveSpeed = moveSpeed,
             };
-
             spawnedActors.Add(actor);
             replicationGraph.AddNetworkActor(actor);
         }

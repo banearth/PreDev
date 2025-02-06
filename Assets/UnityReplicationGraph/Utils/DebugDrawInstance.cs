@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 
 #if UNITY_EDITOR
 using UnityEditor;
+using UnityEditor.SceneManagement;
 #endif
 using UnityEngine;
 
@@ -99,28 +100,19 @@ public struct DebugDisc
 
 public class DebugDrawInstance : MonoBehaviour
 {
-    [SerializeField]
-    private List<DebugLine> lines = new List<DebugLine>();
-	[SerializeField]
-	private List<DebugLine> arrows = new List<DebugLine>();
-	[SerializeField]
-	private List<DebugSphere> spheres = new List<DebugSphere>();
-	[SerializeField]
-	private List<DebugBox> boxes = new List<DebugBox>();
-	[SerializeField]
-	private List<DebugLabel> labels = new List<DebugLabel>();
-	[SerializeField]
-	private List<DebugBezier> beziers = new List<DebugBezier>();
-	[SerializeField]
-	private List<DebugCapsule> capsules = new List<DebugCapsule>();
-	[SerializeField]
-	private List<DebugArc> arcs = new List<DebugArc>();
-	[SerializeField]
-	private List<DebugDisc> discs = new List<DebugDisc>();
-    [SerializeField]
-    private bool useRealtimeClock = true;
+    public List<DebugLine> lines = new List<DebugLine>();
+	public List<DebugLine> arrows = new List<DebugLine>();
+	public List<DebugSphere> spheres = new List<DebugSphere>();
+	public List<DebugBox> boxes = new List<DebugBox>();
+	public List<DebugLabel> labels = new List<DebugLabel>();
+	public List<DebugBezier> beziers = new List<DebugBezier>();
+	public List<DebugCapsule> capsules = new List<DebugCapsule>();
+	public List<DebugArc> arcs = new List<DebugArc>();
+	public List<DebugDisc> discs = new List<DebugDisc>();
+    public bool useRealtimeClock = true;
 
     private void Awake()
+
     {
         CPL.DebugDraw.Instance = this;
     }
@@ -517,3 +509,294 @@ public class DebugDrawInstance : MonoBehaviour
 #endif
 	}
 }
+
+#if UNITY_EDITOR
+[CustomEditor(typeof(DebugDrawInstance))]
+public class DebugDrawInstanceEditor : Editor
+{
+    private bool drawDefault = false;
+    private bool showLines = true;
+    private bool showArrows = true;
+    private bool showSpheres = true;
+    private bool showBoxes = true;
+    private bool showLabels = true;
+    private bool showBeziers = true;
+    private bool showCapsules = true;
+    private bool showArcs = true;
+    private bool showDiscs = true;
+
+    public override void OnInspectorGUI()
+    {
+        drawDefault = EditorGUILayout.Foldout(drawDefault, "Default Inspector", true);
+        if (drawDefault)
+        {
+            DrawDefaultInspector();
+        }
+        
+        DebugDrawInstance instance = (DebugDrawInstance)target;
+        
+        EditorGUILayout.Space();
+        
+        // 新增全局聚焦按钮
+        bool hasAnyElements = instance.lines.Count > 0 || instance.arrows.Count > 0 || 
+                            instance.spheres.Count > 0 || instance.boxes.Count > 0 ||
+                            instance.labels.Count > 0 || instance.beziers.Count > 0 ||
+                            instance.capsules.Count > 0 || instance.arcs.Count > 0 || 
+                            instance.discs.Count > 0;
+
+        using (new EditorGUI.DisabledGroupScope(!hasAnyElements))
+        {
+            if (GUILayout.Button("Focus View All"))
+            {
+                Bounds totalBounds = new Bounds();
+                bool initialized = false;
+
+                // 合并所有元素的包围盒
+                Action<Vector3, float> addPoint = (pos, size) => {
+                    if (!initialized) {
+                        totalBounds = new Bounds(pos, Vector3.one * size);
+                        initialized = true;
+                    } else {
+                        totalBounds.Encapsulate(new Bounds(pos, Vector3.one * size));
+                    }
+                };
+
+                // 处理所有类型元素
+                foreach (var line in instance.lines) 
+                    addPoint((line.a + line.b)/2f, Vector3.Distance(line.a, line.b));
+                
+                foreach (var arrow in instance.arrows)
+                    addPoint((arrow.a + arrow.b)/2f, Vector3.Distance(arrow.a, arrow.b));
+                
+                foreach (var sphere in instance.spheres)
+                    addPoint(sphere.center, sphere.radius * 2f);
+
+                foreach (var box in instance.boxes)
+                    addPoint(box.center, Mathf.Max(box.size.x, box.size.y, box.size.z));
+
+                foreach (var label in instance.labels)
+                    addPoint(label.center, 5f);
+
+                foreach (var bezier in instance.beziers)
+                    addPoint((bezier.a + bezier.b + bezier.ctrl)/3f, Mathf.Max(
+                        Vector3.Distance(bezier.a, bezier.b),
+                        Vector3.Distance(bezier.a, bezier.ctrl),
+                        Vector3.Distance(bezier.b, bezier.ctrl)));
+
+                foreach (var capsule in instance.capsules)
+                    addPoint(capsule.center, Mathf.Max(capsule.radius * 2, capsule.height));
+
+                foreach (var arc in instance.arcs)
+                    addPoint(arc.center, arc.radius * 2f);
+
+                foreach (var disc in instance.discs)
+                    addPoint(disc.center, disc.radius * 2f);
+
+                if (initialized) {
+                    SceneView.lastActiveSceneView.Frame(totalBounds, false);
+                    SceneView.lastActiveSceneView.Repaint();
+                }
+            }
+        }
+        
+        if (instance.lines.Count > 0)
+        {
+            showLines = EditorGUILayout.Foldout(showLines, $"Lines ({instance.lines.Count})", true);
+            if (showLines)
+            {
+                EditorGUI.indentLevel++;
+                for (int i = 0; i < instance.lines.Count; i++)
+                {
+                    EditorGUILayout.BeginHorizontal();
+                    EditorGUILayout.LabelField($"Line {i}");
+                    if (GUILayout.Button("Focus", GUILayout.Width(60)))
+                    {
+                        Vector3 center = (instance.lines[i].a + instance.lines[i].b) * 0.5f;
+                        float size = Vector3.Distance(instance.lines[i].a, instance.lines[i].b);
+                        SceneView.lastActiveSceneView.Frame(new Bounds(center, Vector3.one * size));
+                    }
+                    EditorGUILayout.EndHorizontal();
+                }
+                EditorGUI.indentLevel--;
+            }
+        }
+        
+        if (instance.arrows.Count > 0)
+        {
+            showArrows = EditorGUILayout.Foldout(showArrows, $"Arrows ({instance.arrows.Count})", true);
+            if (showArrows)
+            {
+                EditorGUI.indentLevel++;
+                for (int i = 0; i < instance.arrows.Count; i++)
+                {
+                    EditorGUILayout.BeginHorizontal();
+                    EditorGUILayout.LabelField($"Arrow {i}");
+                    if (GUILayout.Button("Focus", GUILayout.Width(60)))
+                    {
+                        Vector3 center = (instance.arrows[i].a + instance.arrows[i].b) * 0.5f;
+                        float size = Vector3.Distance(instance.arrows[i].a, instance.arrows[i].b);
+                        SceneView.lastActiveSceneView.Frame(new Bounds(center, Vector3.one * size));
+                    }
+                    EditorGUILayout.EndHorizontal();
+                }
+                EditorGUI.indentLevel--;
+            }
+        }
+        
+        if (instance.spheres.Count > 0)
+        {
+            showSpheres = EditorGUILayout.Foldout(showSpheres, $"Spheres ({instance.spheres.Count})", true);
+            if (showSpheres)
+            {
+                EditorGUI.indentLevel++;
+                for (int i = 0; i < instance.spheres.Count; i++)
+                {
+                    EditorGUILayout.BeginHorizontal();
+                    EditorGUILayout.LabelField($"Sphere {i}");
+                    if (GUILayout.Button("Focus", GUILayout.Width(60)))
+                    {
+                        SceneView.lastActiveSceneView.Frame(
+                            new Bounds(instance.spheres[i].center, 
+                            Vector3.one * instance.spheres[i].radius * 2));
+                    }
+                    EditorGUILayout.EndHorizontal();
+                }
+                EditorGUI.indentLevel--;
+            }
+        }
+        
+        if (instance.boxes.Count > 0)
+        {
+            showBoxes = EditorGUILayout.Foldout(showBoxes, $"Boxes ({instance.boxes.Count})", true);
+            if (showBoxes)
+            {
+                EditorGUI.indentLevel++;
+                for (int i = 0; i < instance.boxes.Count; i++)
+                {
+                    EditorGUILayout.BeginHorizontal();
+                    EditorGUILayout.LabelField($"Box {i}");
+                    if (GUILayout.Button("Focus", GUILayout.Width(60)))
+                    {
+                        SceneView.lastActiveSceneView.Frame(
+                            new Bounds(instance.boxes[i].center, instance.boxes[i].size));
+                    }
+                    EditorGUILayout.EndHorizontal();
+                }
+                EditorGUI.indentLevel--;
+            }
+        }
+        
+        if (instance.labels.Count > 0)
+        {
+            showLabels = EditorGUILayout.Foldout(showLabels, $"Labels ({instance.labels.Count})", true);
+            if (showLabels)
+            {
+                EditorGUI.indentLevel++;
+                for (int i = 0; i < instance.labels.Count; i++)
+                {
+                    EditorGUILayout.BeginHorizontal();
+                    EditorGUILayout.LabelField($"Label {i}: {instance.labels[i].label}");
+                    if (GUILayout.Button("Focus", GUILayout.Width(60)))
+                    {
+                        SceneView.lastActiveSceneView.Frame(
+                            new Bounds(instance.labels[i].center, Vector3.one * 5f));
+                    }
+                    EditorGUILayout.EndHorizontal();
+                }
+                EditorGUI.indentLevel--;
+            }
+        }
+        
+        if (instance.beziers.Count > 0)
+        {
+            showBeziers = EditorGUILayout.Foldout(showBeziers, $"Beziers ({instance.beziers.Count})", true);
+            if (showBeziers)
+            {
+                EditorGUI.indentLevel++;
+                for (int i = 0; i < instance.beziers.Count; i++)
+                {
+                    EditorGUILayout.BeginHorizontal();
+                    EditorGUILayout.LabelField($"Bezier {i}");
+                    if (GUILayout.Button("Focus", GUILayout.Width(60)))
+                    {
+                        Vector3 center = (instance.beziers[i].a + instance.beziers[i].b + instance.beziers[i].ctrl) / 3f;
+                        float size = Mathf.Max(
+                            Vector3.Distance(instance.beziers[i].a, instance.beziers[i].b),
+                            Vector3.Distance(instance.beziers[i].a, instance.beziers[i].ctrl),
+                            Vector3.Distance(instance.beziers[i].b, instance.beziers[i].ctrl));
+                        SceneView.lastActiveSceneView.Frame(new Bounds(center, Vector3.one * size));
+                    }
+                    EditorGUILayout.EndHorizontal();
+                }
+                EditorGUI.indentLevel--;
+            }
+        }
+        
+        if (instance.capsules.Count > 0)
+        {
+            showCapsules = EditorGUILayout.Foldout(showCapsules, $"Capsules ({instance.capsules.Count})", true);
+            if (showCapsules)
+            {
+                EditorGUI.indentLevel++;
+                for (int i = 0; i < instance.capsules.Count; i++)
+                {
+                    EditorGUILayout.BeginHorizontal();
+                    EditorGUILayout.LabelField($"Capsule {i}");
+                    if (GUILayout.Button("Focus", GUILayout.Width(60)))
+                    {
+                        SceneView.lastActiveSceneView.Frame(
+                            new Bounds(instance.capsules[i].center, 
+                            new Vector3(instance.capsules[i].radius * 2, instance.capsules[i].height, instance.capsules[i].radius * 2)));
+                    }
+                    EditorGUILayout.EndHorizontal();
+                }
+                EditorGUI.indentLevel--;
+            }
+        }
+        
+        if (instance.arcs.Count > 0)
+        {
+            showArcs = EditorGUILayout.Foldout(showArcs, $"Arcs ({instance.arcs.Count})", true);
+            if (showArcs)
+            {
+                EditorGUI.indentLevel++;
+                for (int i = 0; i < instance.arcs.Count; i++)
+                {
+                    EditorGUILayout.BeginHorizontal();
+                    EditorGUILayout.LabelField($"Arc {i}");
+                    if (GUILayout.Button("Focus", GUILayout.Width(60)))
+                    {
+                        SceneView.lastActiveSceneView.Frame(
+                            new Bounds(instance.arcs[i].center, 
+                            Vector3.one * instance.arcs[i].radius * 2));
+                    }
+                    EditorGUILayout.EndHorizontal();
+                }
+                EditorGUI.indentLevel--;
+            }
+        }
+        
+        if (instance.discs.Count > 0)
+        {
+            showDiscs = EditorGUILayout.Foldout(showDiscs, $"Discs ({instance.discs.Count})", true);
+            if (showDiscs)
+            {
+                EditorGUI.indentLevel++;
+                for (int i = 0; i < instance.discs.Count; i++)
+                {
+                    EditorGUILayout.BeginHorizontal();
+                    EditorGUILayout.LabelField($"Disc {i}");
+                    if (GUILayout.Button("Focus", GUILayout.Width(60)))
+                    {
+                        SceneView.lastActiveSceneView.Frame(
+                            new Bounds(instance.discs[i].center, 
+                            Vector3.one * instance.discs[i].radius * 2));
+                    }
+                    EditorGUILayout.EndHorizontal();
+                }
+                EditorGUI.indentLevel--;
+            }
+        }
+    }
+}
+#endif

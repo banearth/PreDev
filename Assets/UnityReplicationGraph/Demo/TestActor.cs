@@ -6,9 +6,9 @@ public class TestActor : FActorRepListType
     public Vector3 InitialPosition { get; set; }
     public float MoveRadius { get; set; }
     public float MoveSpeed { get; set; }
-    
-    public TestActor(Vector3 position, float moveRadius = 10f, float moveSpeed = 5f)
-    {
+
+	public TestActor(string name, Vector3 position, float moveRadius = 10f, float moveSpeed = 5f)
+	{
         Position = position;
         InitialPosition = position;
         MoveRadius = moveRadius;

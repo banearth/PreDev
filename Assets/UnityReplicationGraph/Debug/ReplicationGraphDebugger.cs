@@ -148,7 +148,15 @@ public static class ReplicationGraphDebugger
 			viewer.ViewLocation + Vector3.forward * viewerCrossSize,
 			viewer.ViewLocation + Vector3.back * viewerCrossSize,
 			viewerPositionColor, 0);
-	}
+
+        // 绘制名字
+        //haha
+        if()
+        {
+
+        }
+        DebugDraw.DrawLabel(viewer.ViewLocation, viewer.ViewTarget.Name, Color.white, 0);
+    }
 
     private static void DrawActor(TestActor actor, bool isVisible)
     {
