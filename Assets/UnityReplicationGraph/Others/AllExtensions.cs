@@ -5,6 +5,16 @@ using System;
 
 public static class AllExtensions
 {
+
+    public static Vector3 BoundToCube(this Vector3 vector, float size)
+    {
+        return new Vector3(
+            Mathf.Clamp(vector.x, -size, size),
+            Mathf.Clamp(vector.y, -size, size),
+            Mathf.Clamp(vector.z, -size, size)
+        );
+    }
+
     public static Vector2 WithX(this Vector2 vector, float x)
     {
         return new Vector2(x, vector.y);

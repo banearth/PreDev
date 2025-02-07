@@ -473,15 +473,24 @@ public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
         var uniqueCurrentGridCells = new HashSet<Vector2Int>();
 
         // 遍历所有观察者
-        foreach (var viewer in Params.Viewers)
+        foreach (var curViewer in Params.Viewers)
         {
-            if (viewer.Connection == null || viewer.ViewLocation.z > ConnectionMaxZ)
+            if (curViewer.Connection == null || curViewer.ViewLocation.z > ConnectionMaxZ)
             {
                 continue;
             }
 
-            // 限制视图位置在有效范围内
-            Vector3 clampedViewLoc = GridBounds.Value.ClosestPoint(viewer.ViewLocation);
+			// 限制视图位置在有效范围内
+			Vector3 clampedViewLoc = curViewer.ViewLocation;
+			if (GridBounds.HasValue)
+			{
+				clampedViewLoc = GridBounds.Value.ClosestPoint(curViewer.ViewLocation);
+			}
+			else
+			{
+				// 实现类似UE的BoundToCube逻辑
+				clampedViewLoc = clampedViewLoc.BoundToCube(AllConstants.UE_OLD_HALF_WORLD_MAX);
+			}
 
             // 计算观察者所在的网格单元
             int cellX = Mathf.Max(0, Mathf.FloorToInt((clampedViewLoc.x - SpatialBias.x) / CellSize));
