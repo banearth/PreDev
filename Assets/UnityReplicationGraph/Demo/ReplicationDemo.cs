@@ -17,7 +17,7 @@ public class ReplicationDemo : MonoBehaviour
     [SerializeField] private float moveProbability = 0.5f;
 
     [Header("Debug Visualization")]
-    [SerializeField] private bool showDebugGizmos = true;
+    public bool showDebugGizmos = true;
 
     private UNetworkDriver networkDriver;
     private UReplicationGraph replicationGraph;
@@ -81,6 +81,7 @@ public class ReplicationDemo : MonoBehaviour
 
     private void Update()
     {
+		ReplicationGraphDebugger.ReadReplicationDemo(this);
         UpdateActors();
         networkDriver.TickFlush(Time.deltaTime);
         
@@ -91,8 +92,7 @@ public class ReplicationDemo : MonoBehaviour
             {
                 viewers.Add(new FNetViewer(conn));
             }
-            
-            ReplicationGraphDebugger.DrawViewers(viewers, clientViewRadius);
+            //ReplicationGraphDebugger.DrawViewers(viewers, clientViewRadius);
             ReplicationGraphDebugger.DrawActors(spawnedActors, IsActorVisibleToAnyViewer);
         }
     }
@@ -118,25 +118,6 @@ public class ReplicationDemo : MonoBehaviour
         }
         return false;
     }
-
-    //private void OnDrawGizmos()
-    //{
-    //    if (!Application.isPlaying || !showDebugGizmos)
-    //        return;
-
-    //    // 绘制调试可视化
-    //    Gizmos.color = Color.yellow;
-    //    foreach (var viewer in connectionViewers.Values)
-    //    {
-    //        Gizmos.DrawWireSphere(viewer.ViewLocation, clientViewRadius);
-    //    }
-
-    //    foreach (var actor in spawnedActors)
-    //    {
-    //        Gizmos.color = IsActorVisibleToAnyViewer(actor) ? Color.green : Color.red;
-    //        Gizmos.DrawSphere(actor.Position, 1f);
-    //    }
-    //}
 
 
 }

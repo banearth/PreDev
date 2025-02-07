@@ -22,7 +22,15 @@ public static class ReplicationGraphDebugger
     public static int CVar_ForceConnectionViewerPriority = 1;
 	public static bool CVar_RepGraph_EnableFastSharedPath = true;
 	public static int CVar_RepGraph_DormantDynamicActorsDestruction = 0;//If true, irrelevant dormant actors will be destroyed on the client
+
+    // 从ReplicationDemo处得到的
+    public static bool Debug_ShowGizmos = false;
 	#endregion
+
+    public static void ReadReplicationDemo(ReplicationDemo replicationDemo)
+    {
+        Debug_ShowGizmos = replicationDemo.showDebugGizmos;
+    }
 
 	#region 验证和日志
 
