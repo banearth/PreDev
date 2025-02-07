@@ -51,7 +51,7 @@ public class FGlobalActorReplicationInfo
 	/// <summary>
 	/// 当这个Actor进行复制时，如果客户端已经加载了该Actor所在的关卡，并且网络更新频率不过快，我们会紧接着复制这些Actor。
 	/// </summary>
-	public FLevelBasedActorList DependentActorList { get; private set; }
+	public FLevelBasedActorList DependentActorList = new FLevelBasedActorList();
 
 	public FFastSharedReplicationInfo FastSharedReplicationInfo = null;
 
