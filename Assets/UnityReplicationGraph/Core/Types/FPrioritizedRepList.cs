@@ -19,8 +19,8 @@ public class FPrioritizedRepList
     /// <summary>
     /// 优先级列表中的单个条目
     /// </summary>
-    public class FItem
-    {
+    public class FItem : IComparable<FItem>
+	{
         public FItem(float priority, FActorRepListType actor, FGlobalActorReplicationInfo globalData, FConnectionReplicationActorInfo connectionData)
         {
             Priority = priority;
@@ -40,7 +40,12 @@ public class FPrioritizedRepList
 
         public static bool operator <(FItem a, FItem b) => a.Priority < b.Priority;
         public static bool operator >(FItem a, FItem b) => a.Priority > b.Priority;
-    }
+		public int CompareTo(FItem other)
+		{
+			if (other == null) return 1;
+			return Priority.CompareTo(other.Priority);
+		}
+	}
 
     // 优先级排序的Actor列表
     public List<FItem> Items = new();

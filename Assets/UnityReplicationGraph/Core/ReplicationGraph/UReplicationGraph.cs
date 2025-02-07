@@ -463,9 +463,7 @@ public abstract class UReplicationGraph : UReplicationDriver
 			NumPrioritizedActorsOnConnection += SortingArray.Count;
 			SortingArray.Sort();  // 按优先级排序
 		}
-		//haha
 		ReplicateActorsForConnection(NetConnection, ConnectionActorInfoMap, ConnectionManager, FrameNum);
-
 	}
 
 	public void ReplicateActorListsForConnections_FastShared(
