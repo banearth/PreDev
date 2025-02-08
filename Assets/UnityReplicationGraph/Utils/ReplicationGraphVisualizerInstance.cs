@@ -183,12 +183,13 @@ public class ReplicationGraphVisualizerInstance : MonoBehaviour
 		if (_observerRegistry.TryGetValue(observerId, out var data))
 		{
 			// 使用传入的颜色或默认的客户端颜色
-			Gizmos.color = overrideColor ?? _clientColor;
-			
-			// 绘制观察者
 			bool isServer = observerId == ReplicationGraphVisualizer.MODE_SERVER;
+			Color viewColor = overrideColor ?? (isServer ? _serverColor : _clientColor);
+			
+			// 只绘制当前观察者的十字标记和视野范围
 			DrawObserver(data.Position, isServer);
 			
+			// 绘制被观察者（不带十字标记）
 			DrawObservees(data);
 		}
 	}
@@ -232,15 +233,29 @@ public class ReplicationGraphVisualizerInstance : MonoBehaviour
 		foreach (var actor in data.Observees)
 		{
 			float timeSinceUpdate = currentTime - actor.Value.LastUpdateTime;
-			Color baseColor = GetTypeColor(actor.Value.Type);
 			Color timeBasedColor = GetTimeBasedColor(timeSinceUpdate);
+			Gizmos.color = timeBasedColor;
 			
-			// 混合类型颜色和时效性颜色
-			Gizmos.color = Color.Lerp(baseColor, timeBasedColor, 0.5f);
-			Gizmos.DrawCube(actor.Value.Position, GetTypeSize(actor.Value.Type));
+			switch (actor.Value.Type)
+			{
+				case ObserveeType.StaticActor:
+					// 静态物体用空心方块
+					Gizmos.DrawWireCube(actor.Value.Position, Vector3.one * 0.5f);
+					break;
+				case ObserveeType.DynamicActor:
+					// 动态物体用实心方块
+					Gizmos.DrawCube(actor.Value.Position, Vector3.one * 0.5f);
+					break;
+				case ObserveeType.PlayerCharacter:
+					// 玩家用实心圆形
+					#if UNITY_EDITOR
+					UnityEditor.Handles.color = timeBasedColor;
+					UnityEditor.Handles.DrawSolidDisc(actor.Value.Position, Vector3.up, 0.4f);
+					#endif
+					break;
+			}
 			
 			#if UNITY_EDITOR
-			// 只在开启时显示更新时间
 			if (_showUpdateTime)
 			{
 				string timeInfo = $"{timeSinceUpdate:F1}s";
@@ -248,26 +263,6 @@ public class ReplicationGraphVisualizerInstance : MonoBehaviour
 			}
 			#endif
 		}
-	}
-
-	private Color GetTypeColor(ObserveeType type)
-	{
-		return type switch
-		{
-			ObserveeType.PlayerCharacter => Color.green,
-			ObserveeType.DynamicActor => Color.yellow,
-			_ => Color.gray
-		};
-	}
-
-	private Vector3 GetTypeSize(ObserveeType type)
-	{
-		return type switch
-		{
-			ObserveeType.PlayerCharacter => new Vector3(1, 2, 1),     // 玩家角色较高
-			ObserveeType.DynamicActor => Vector3.one * 0.8f,          // 动态物体中等
-			_ => Vector3.one * 0.5f                                   // 静态物体较小
-		};
 	}
 
 	private Color GetTimeBasedColor(float timeSinceUpdate)
@@ -348,9 +343,9 @@ public class ReplicationGraphVisualizerInstance : MonoBehaviour
 		
 		// 显示不同类型的图标说明
 		GUILayout.Label("实体类型:");
-		GUILayout.Label($"<color=#A0A0A0FF>■</color> 静态物体 (0.5×0.5×0.5)");
-		GUILayout.Label($"<color=#FFFF00FF>■</color> 动态物体 (0.8×0.8×0.8)");
-		GUILayout.Label($"<color=#00FF00FF>■</color> 玩家角色 (1×2×1)");
+		GUILayout.Label("□ 静态物体 (空心方块)");
+		GUILayout.Label("■ 动态物体 (实心方块)");
+		GUILayout.Label("● 玩家角色 (实心圆)");
 		
 		GUILayout.Space(10);
 		
@@ -364,8 +359,8 @@ public class ReplicationGraphVisualizerInstance : MonoBehaviour
 		
 		// 显示观察者说明
 		GUILayout.Label("观察者标记:");
-		GUILayout.Label($"<color={ColorToHex(_serverColor)}>○</color> 服务器 (无范围限制)");
-		GUILayout.Label($"<color={ColorToHex(_clientColor)}>○</color> 客户端 (R={_observationRadius}m)");
+		GUILayout.Label($"<color={ColorToHex(_serverColor)}>+</color> 服务器 (无范围限制)");
+		GUILayout.Label($"<color={ColorToHex(_clientColor)}>+</color> 客户端 (R={_observationRadius}m)");
 		
 		GUILayout.EndArea();
 	}
@@ -440,10 +435,15 @@ public class ReplicationGraphVisualizerInstance : MonoBehaviour
 
 	private void DrawObserver(Vector3 position, bool isServer = false)
 	{
+		// 如果是服务器观察者，直接返回，不绘制任何标记
+		if (isServer)
+		{
+			return;
+		}
+
 		float crossSize = 0.5f;
-		Color viewColor = isServer ? new Color(_serverColor.r, _serverColor.g, _serverColor.b, 0.2f) 
-								  : new Color(_clientColor.r, _clientColor.g, _clientColor.b, 0.2f);
-		Color borderColor = isServer ? _serverColor : _clientColor;
+		Color viewColor = new Color(_clientColor.r, _clientColor.g, _clientColor.b, 0.2f);
+		Color borderColor = _clientColor;
 
 		// 绘制观察者位置标记（十字线）
 		Gizmos.color = borderColor;
@@ -456,26 +456,22 @@ public class ReplicationGraphVisualizerInstance : MonoBehaviour
 			position + Vector3.back * crossSize
 		);
 
-		// 只为非服务器观察者绘制观察范围
-		if (!isServer)
+		#if UNITY_EDITOR
+		// 绘制半透明圆形
+		UnityEditor.Handles.color = viewColor;
+		UnityEditor.Handles.DrawSolidDisc(position, Vector3.up, _observationRadius);
+
+		// 绘制边界线
+		UnityEditor.Handles.color = borderColor;
+		UnityEditor.Handles.DrawWireDisc(position, Vector3.up, _observationRadius);
+
+		// 只在开启时显示半径信息
+		if (_showRadius)
 		{
-			#if UNITY_EDITOR
-			// 绘制半透明圆形
-			UnityEditor.Handles.color = viewColor;
-			UnityEditor.Handles.DrawSolidDisc(position, Vector3.up, _observationRadius);
-
-			// 绘制边界线
-			UnityEditor.Handles.color = borderColor;
-			UnityEditor.Handles.DrawWireDisc(position, Vector3.up, _observationRadius);
-
-			// 只在开启时显示半径信息
-			if (_showRadius)
-			{
-				string radiusInfo = $"R:{_observationRadius}m";
-				UnityEditor.Handles.Label(position + Vector3.up, radiusInfo);
-			}
-			#endif
+			string radiusInfo = $"R:{_observationRadius}m";
+			UnityEditor.Handles.Label(position + Vector3.up, radiusInfo);
 		}
+		#endif
 	}
 	#endif
 }

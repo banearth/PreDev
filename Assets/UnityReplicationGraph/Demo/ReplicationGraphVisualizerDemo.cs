@@ -57,9 +57,9 @@ public class ReplicationGraphVisualizerDemo : MonoBehaviour
     private void Start()
     {
         // 创建服务器观察者（全图视野）
-        ReplicationGraphVisualizer.AddObserver(ReplicationGraphVisualizer.MODE_SERVER, 0, 10, 0);
+        ReplicationGraphVisualizer.AddObserver(ReplicationGraphVisualizer.MODE_SERVER, 0, 0, 0);
 
-        // 创建客户端
+        // 创建客户端，使用不同的初始位置
         CreateClient("client1", new Vector3(-5, 0, -5));
         CreateClient("client2", new Vector3(5, 0, 5));
 
@@ -72,7 +72,7 @@ public class ReplicationGraphVisualizerDemo : MonoBehaviour
         CreateActor("dynamic1", new Vector3(3, 0, 3), ReplicationGraphVisualizer.TYPE_DYNAMIC, true);
         CreateActor("dynamic2", new Vector3(-3, 0, -3), ReplicationGraphVisualizer.TYPE_DYNAMIC, true);
 
-        // 创建玩家角色
+        // 创建玩家角色，确保每个客户端对应一个玩家
         CreateActor("player1", new Vector3(-5, 0, -5), ReplicationGraphVisualizer.TYPE_PLAYER, true);
         CreateActor("player2", new Vector3(5, 0, 5), ReplicationGraphVisualizer.TYPE_PLAYER, true);
 
@@ -138,7 +138,7 @@ public class ReplicationGraphVisualizerDemo : MonoBehaviour
             Id = id, 
             Position = position,
             ViewRadius = _clientViewRadius,
-            PhaseOffset = Random.Range(0f, Mathf.PI * 2f)  // 随机相位 0-360度
+            PhaseOffset = Random.Range(0f, Mathf.PI * 2f)  // 随机相位
         });
         ReplicationGraphVisualizer.AddObserver(id, position.x, position.y, position.z);
     }
