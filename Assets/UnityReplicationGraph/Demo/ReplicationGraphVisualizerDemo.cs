@@ -32,21 +32,12 @@ public class ReplicationGraphVisualizerDemo : MonoBehaviour
         public string Id;
         public Vector3 Position;
         public float ViewRadius;
-        public float PhaseOffset;  // 添加相位偏移属性
+        public string PlayerActorId;  // 添加对应玩家Actor的ID引用
         public Dictionary<string, float> LastUpdateTimes = new Dictionary<string, float>();
 
         public bool CanSeeActor(Actor actor)
         {
             return Vector3.Distance(Position, actor.Position) <= ViewRadius;
-        }
-
-        public void UpdatePosition(float time, float speed, float range)
-        {
-            Position = new Vector3(
-                Mathf.Sin((time * speed) + PhaseOffset) * range,
-                0,
-                Mathf.Cos((time * speed) + PhaseOffset) * range
-            );
         }
     }
 
@@ -59,9 +50,13 @@ public class ReplicationGraphVisualizerDemo : MonoBehaviour
         // 创建服务器观察者（全图视野）
         ReplicationGraphVisualizer.AddObserver(ReplicationGraphVisualizer.MODE_SERVER, 0, 0, 0);
 
-        // 创建客户端，使用不同的初始位置
-        CreateClient("client1", new Vector3(-5, 0, -5));
-        CreateClient("client2", new Vector3(5, 0, 5));
+        // 先创建玩家角色
+        CreateActor("player1", new Vector3(-5, 0, -5), ReplicationGraphVisualizer.TYPE_PLAYER, true);
+        CreateActor("player2", new Vector3(5, 0, 5), ReplicationGraphVisualizer.TYPE_PLAYER, true);
+
+        // 创建客户端，并关联到对应的玩家
+        CreateClient("client1", new Vector3(-5, 0, -5), "player1");
+        CreateClient("client2", new Vector3(5, 0, 5), "player2");
 
         // 创建静态物体
         CreateActor("static1", Vector3.zero, ReplicationGraphVisualizer.TYPE_STATIC, false);
@@ -71,10 +66,6 @@ public class ReplicationGraphVisualizerDemo : MonoBehaviour
         // 创建动态物体
         CreateActor("dynamic1", new Vector3(3, 0, 3), ReplicationGraphVisualizer.TYPE_DYNAMIC, true);
         CreateActor("dynamic2", new Vector3(-3, 0, -3), ReplicationGraphVisualizer.TYPE_DYNAMIC, true);
-
-        // 创建玩家角色，确保每个客户端对应一个玩家
-        CreateActor("player1", new Vector3(-5, 0, -5), ReplicationGraphVisualizer.TYPE_PLAYER, true);
-        CreateActor("player2", new Vector3(5, 0, 5), ReplicationGraphVisualizer.TYPE_PLAYER, true);
 
         // 默认显示服务器视角
         ReplicationGraphVisualizer.SwitchObserver(ReplicationGraphVisualizer.MODE_SERVER);
@@ -89,13 +80,15 @@ public class ReplicationGraphVisualizerDemo : MonoBehaviour
         foreach (var actor in _actors)
         {
             actor.UpdatePosition(Time.time, _moveSpeed, _moveRange);
-        }
-
-        // 更新所有Client位置
-        foreach (var client in _clients)
-        {
-            client.UpdatePosition(Time.time, _moveSpeed, _moveRange);
-            ReplicationGraphVisualizer.UpdateObserver(client.Id, client.Position.x, client.Position.y, client.Position.z);
+            
+            // 如果是玩家角色，更新对应的客户端观察者位置
+            var client = _clients.Find(c => c.PlayerActorId == actor.Id);
+            if (client != null)
+            {
+                client.Position = actor.Position;
+                ReplicationGraphVisualizer.UpdateObserver(client.Id, 
+                    client.Position.x, client.Position.y, client.Position.z);
+            }
         }
 
         // 服务器始终知道所有Actor的位置
@@ -117,7 +110,6 @@ public class ReplicationGraphVisualizerDemo : MonoBehaviour
             {
                 if (client.CanSeeActor(actor))
                 {
-                    // 在视野范围内，更新位置
                     ReplicationGraphVisualizer.UpdateObservee(
                         client.Id,
                         actor.Id,
@@ -131,14 +123,14 @@ public class ReplicationGraphVisualizerDemo : MonoBehaviour
         }
     }
 
-    private void CreateClient(string id, Vector3 position)
+    private void CreateClient(string id, Vector3 position, string playerActorId)
     {
         _clients.Add(new Client 
         { 
             Id = id, 
             Position = position,
             ViewRadius = _clientViewRadius,
-            PhaseOffset = Random.Range(0f, Mathf.PI * 2f)  // 随机相位
+            PlayerActorId = playerActorId
         });
         ReplicationGraphVisualizer.AddObserver(id, position.x, position.y, position.z);
     }

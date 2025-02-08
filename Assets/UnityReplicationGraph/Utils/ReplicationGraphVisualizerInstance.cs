@@ -29,6 +29,7 @@ public class ReplicationGraphVisualizerInstance : MonoBehaviour
 
 	private class ObserveeData
 	{
+		public string Name;
 		public Vector3 Position;
 		public ObserveeType Type;
 		public float LastUpdateTime; // 只在被观察者这里保留时间戳
@@ -94,6 +95,7 @@ public class ReplicationGraphVisualizerInstance : MonoBehaviour
 
 		data.Observees[observeeId] = new ObserveeData
 		{
+			Name = observeeId,
 			Position = position,
 			Type = StringToType(type),
 			LastUpdateTime = Time.time
@@ -116,6 +118,7 @@ public class ReplicationGraphVisualizerInstance : MonoBehaviour
 			// 注意：由于是Update时发现的，我们默认其为动态对象类型
 			observee = new ObserveeData
 			{
+				Name = observeeId,
 				Type = ObserveeType.DynamicActor,
 				Position = position,
 				LastUpdateTime = Time.time
@@ -248,10 +251,13 @@ public class ReplicationGraphVisualizerInstance : MonoBehaviour
 					break;
 				case ObserveeType.PlayerCharacter:
 					// 玩家用实心圆形
-					#if UNITY_EDITOR
+#if UNITY_EDITOR
 					UnityEditor.Handles.color = timeBasedColor;
 					UnityEditor.Handles.DrawSolidDisc(actor.Value.Position, Vector3.up, 0.4f);
-					#endif
+					GUIStyle style = new GUIStyle();
+					style.normal.textColor = timeBasedColor;
+					Handles.Label(actor.Value.Position + Vector3.forward * 3.5f, actor.Value.Name, style);
+#endif
 					break;
 			}
 			
@@ -259,7 +265,9 @@ public class ReplicationGraphVisualizerInstance : MonoBehaviour
 			if (_showUpdateTime)
 			{
 				string timeInfo = $"{timeSinceUpdate:F1}s";
-				Handles.Label(actor.Value.Position + Vector3.up * 1.5f, timeInfo);
+				GUIStyle style = new GUIStyle();
+				style.normal.textColor = timeBasedColor;
+				Handles.Label(actor.Value.Position + Vector3.forward, timeInfo, style);
 			}
 			#endif
 		}
