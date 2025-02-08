@@ -32,6 +32,7 @@ public class ReplicationGraphVisualizerDemo : MonoBehaviour
         public string Id;
         public Vector3 Position;
         public float ViewRadius;
+        public float PhaseOffset;  // 添加相位偏移属性
         public Dictionary<string, float> LastUpdateTimes = new Dictionary<string, float>();
 
         public bool CanSeeActor(Actor actor)
@@ -42,9 +43,9 @@ public class ReplicationGraphVisualizerDemo : MonoBehaviour
         public void UpdatePosition(float time, float speed, float range)
         {
             Position = new Vector3(
-                Mathf.Sin(time * speed) * range,
+                Mathf.Sin((time * speed) + PhaseOffset) * range,
                 0,
-                Mathf.Cos(time * speed) * range
+                Mathf.Cos((time * speed) + PhaseOffset) * range
             );
         }
     }
@@ -93,7 +94,7 @@ public class ReplicationGraphVisualizerDemo : MonoBehaviour
         // 更新所有Client位置
         foreach (var client in _clients)
         {
-            client.UpdatePosition(Time.time * 0.5f, _moveSpeed, _moveRange);
+            client.UpdatePosition(Time.time, _moveSpeed, _moveRange);
             ReplicationGraphVisualizer.UpdateObserver(client.Id, client.Position.x, client.Position.y, client.Position.z);
         }
 
@@ -136,7 +137,8 @@ public class ReplicationGraphVisualizerDemo : MonoBehaviour
         { 
             Id = id, 
             Position = position,
-            ViewRadius = _clientViewRadius
+            ViewRadius = _clientViewRadius,
+            PhaseOffset = Random.Range(0f, Mathf.PI * 2f)  // 随机相位 0-360度
         });
         ReplicationGraphVisualizer.AddObserver(id, position.x, position.y, position.z);
     }
