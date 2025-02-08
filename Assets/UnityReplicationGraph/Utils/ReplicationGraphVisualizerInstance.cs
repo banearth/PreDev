@@ -50,6 +50,11 @@ public class ReplicationGraphVisualizerInstance : MonoBehaviour
 	[SerializeField] private Color _normalDataColor = Color.yellow; // 正常数据颜色
 	[SerializeField] private Color _staleDataColor = Color.gray;   // 旧数据颜色
 
+	[Header("调试显示")]
+	[SerializeField] private bool _showUpdateTime = true;    // 是否显示更新时间
+	[SerializeField] private bool _showRadius = true;        // 是否显示观察半径
+	[SerializeField] private bool _showLegend = true;        // 是否显示图例
+
 	// 观察者数据: <观察者ID, 观察者数据>
 	private Dictionary<string, ObserverData> _observerRegistry = new Dictionary<string, ObserverData>();
 
@@ -214,9 +219,11 @@ public class ReplicationGraphVisualizerInstance : MonoBehaviour
 		Gizmos.DrawWireSphere(center, _observationRadius);
 		
 		#if UNITY_EDITOR
-		// 显示半径信息
-		string radiusInfo = $"R:{_observationRadius}m";
-		Handles.Label(center + Vector3.up, radiusInfo);
+		if (_showRadius)
+		{
+			string radiusInfo = $"R:{_observationRadius}m";
+			Handles.Label(center + Vector3.up, radiusInfo);
+		}
 		#endif
 	}
 
@@ -235,9 +242,12 @@ public class ReplicationGraphVisualizerInstance : MonoBehaviour
 			Gizmos.DrawCube(actor.Value.Position, GetTypeSize(actor.Value.Type));
 			
 			#if UNITY_EDITOR
-			// 显示更新时间
-			string timeInfo = $"{timeSinceUpdate:F1}s";
-			Handles.Label(actor.Value.Position + Vector3.up * 1.5f, timeInfo);
+			// 只在开启时显示更新时间
+			if (_showUpdateTime)
+			{
+				string timeInfo = $"{timeSinceUpdate:F1}s";
+				Handles.Label(actor.Value.Position + Vector3.up * 1.5f, timeInfo);
+			}
 			#endif
 		}
 	}
@@ -256,9 +266,9 @@ public class ReplicationGraphVisualizerInstance : MonoBehaviour
 	{
 		return type switch
 		{
-			ObserveeType.PlayerCharacter => new Vector3(1, 2, 1),
-			ObserveeType.DynamicActor => Vector3.one * 0.8f,
-			_ => Vector3.one * 0.5f
+			ObserveeType.PlayerCharacter => new Vector3(1, 2, 1),     // 玩家角色较高
+			ObserveeType.DynamicActor => Vector3.one * 0.8f,          // 动态物体中等
+			_ => Vector3.one * 0.5f                                   // 静态物体较小
 		};
 	}
 
@@ -310,4 +320,136 @@ public class ReplicationGraphVisualizerInstance : MonoBehaviour
 			.OrderBy(id => id)
 			.ToList();
 	}
+
+	#if UNITY_EDITOR
+	private void OnGUI()
+	{
+		if (!Application.isPlaying) return;
+
+		// 右上角图例
+		if (_showLegend)
+		{
+			DrawLegend();
+		}
+
+		// 左上角视角切换面板
+		DrawViewControls();
+	}
+
+	private void DrawLegend()
+	{
+		int padding = 10;
+		int width = 200;
+		
+		// 创建一个背景框
+		GUI.Box(new Rect(Screen.width - width - padding, padding, width, 200), "图例");
+
+		GUILayout.BeginArea(new Rect(Screen.width - width - padding + 5, padding + 20, width - 10, 180));
+		
+		GUI.skin.label.richText = true;  // 启用富文本
+		
+		// 显示不同类型的图标说明
+		GUILayout.Label("实体类型:");
+		GUILayout.Label($"<color=#A0A0A0FF>■</color> 静态物体 (0.5×0.5×0.5)");
+		GUILayout.Label($"<color=#FFFF00FF>■</color> 动态物体 (0.8×0.8×0.8)");
+		GUILayout.Label($"<color=#00FF00FF>■</color> 玩家角色 (1×2×1)");
+		
+		GUILayout.Space(10);
+		
+		// 显示时效性说明
+		GUILayout.Label("时效性颜色:");
+		GUILayout.Label($"<color={ColorToHex(_recentDataColor)}>■</color> 最新数据 (<{_recentDataThreshold}s)");
+		GUILayout.Label($"<color={ColorToHex(_normalDataColor)}>■</color> 正常数据 (<{_staleDataThreshold}s)");
+		GUILayout.Label($"<color={ColorToHex(_staleDataColor)}>■</color> 过期数据");
+		
+		GUILayout.Space(10);
+		
+		// 显示观察者说明
+		GUILayout.Label("观察者标记:");
+		GUILayout.Label($"<color={ColorToHex(_serverColor)}>○</color> 服务器 (无范围限制)");
+		GUILayout.Label($"<color={ColorToHex(_clientColor)}>○</color> 客户端 (R={_observationRadius}m)");
+		
+		GUILayout.EndArea();
+	}
+
+	private string ColorToHex(Color color)
+	{
+		return $"#{ColorUtility.ToHtmlStringRGBA(color)}";
+	}
+
+	private void DrawViewControls()
+	{
+		int padding = 10;
+		int width = 200;
+		int buttonHeight = 30;
+		
+		// 创建一个背景框
+		GUI.Box(new Rect(padding, padding, width, 120), "视角切换");
+
+		GUILayout.BeginArea(new Rect(padding + 5, padding + 25, width - 10, 90));
+
+		// 创建按钮样式
+		GUIStyle buttonStyle = new GUIStyle(GUI.skin.button);
+		buttonStyle.normal.textColor = Color.white;
+		buttonStyle.fontSize = 12;
+
+		// 第一行按钮
+		GUILayout.BeginHorizontal();
+		
+		// 服务器视角按钮
+		GUI.backgroundColor = _currentMode == ObserverMode.Server ? 
+			new Color(0.7f, 0.3f, 0.3f) : new Color(0.3f, 0.3f, 0.3f);
+		if (GUILayout.Button("服务器视角", buttonStyle, GUILayout.Height(buttonHeight)))
+		{
+			ReplicationGraphVisualizer.SwitchObserver(ReplicationGraphVisualizer.MODE_SERVER);
+		}
+
+		// 所有客户端按钮
+		GUI.backgroundColor = _currentMode == ObserverMode.AllClients ? 
+			new Color(0.3f, 0.7f, 0.7f) : new Color(0.3f, 0.3f, 0.3f);
+		if (GUILayout.Button("所有客户端", buttonStyle, GUILayout.Height(buttonHeight)))
+		{
+			ReplicationGraphVisualizer.SwitchObserver(ReplicationGraphVisualizer.MODE_ALL_CLIENTS);
+		}
+		GUILayout.EndHorizontal();
+
+		// 第二行按钮
+		GUILayout.BeginHorizontal();
+		var observers = GetObservers();
+		foreach (var observer in observers)
+		{
+			GUI.backgroundColor = (_currentMode == ObserverMode.SingleClient && _targetObserverId == observer) ? 
+				new Color(0.3f, 0.7f, 0.3f) : new Color(0.3f, 0.3f, 0.3f);
+			if (GUILayout.Button(observer, buttonStyle, GUILayout.Height(buttonHeight)))
+			{
+				ReplicationGraphVisualizer.SwitchObserver(observer);
+			}
+		}
+		GUILayout.EndHorizontal();
+
+		// 重置背景色
+		GUI.backgroundColor = Color.white;
+		
+		GUILayout.EndArea();
+	}
+
+	// 在OnInspectorGUI中使用的按钮样式
+	public GUIStyle GetButtonStyle(bool isSelected)
+	{
+		GUIStyle style = new GUIStyle(GUI.skin.button);
+		style.normal.textColor = Color.white;
+		style.normal.background = EditorGUIUtility.WhiteTexture;
+		
+		if (isSelected)
+		{
+			style.normal.backgroundColor = new Color(0.3f, 0.6f, 0.9f, 1f);
+		}
+		else
+		{
+			style.normal.backgroundColor = new Color(0.3f, 0.3f, 0.3f, 1f);
+		}
+		
+		return style;
+	}
+	#endif
 }
