@@ -388,18 +388,15 @@ public class ReplicationGraphVisualizerInstance : MonoBehaviour
 
 		GUILayout.BeginArea(new Rect(padding + 5, padding + 25, width - 10, 90));
 
-		// 创建按钮样式
-		GUIStyle buttonStyle = new GUIStyle(GUI.skin.button);
-		buttonStyle.normal.textColor = Color.white;
-		buttonStyle.fontSize = 12;
-
 		// 第一行按钮
 		GUILayout.BeginHorizontal();
 		
 		// 服务器视角按钮
+		Color originalColor = GUI.backgroundColor;
 		GUI.backgroundColor = _currentMode == ObserverMode.Server ? 
 			new Color(0.7f, 0.3f, 0.3f) : new Color(0.3f, 0.3f, 0.3f);
-		if (GUILayout.Button("服务器视角", buttonStyle, GUILayout.Height(buttonHeight)))
+			
+		if (GUILayout.Button("服务器视角", GUILayout.Height(buttonHeight)))
 		{
 			ReplicationGraphVisualizer.SwitchObserver(ReplicationGraphVisualizer.MODE_SERVER);
 		}
@@ -407,7 +404,8 @@ public class ReplicationGraphVisualizerInstance : MonoBehaviour
 		// 所有客户端按钮
 		GUI.backgroundColor = _currentMode == ObserverMode.AllClients ? 
 			new Color(0.3f, 0.7f, 0.7f) : new Color(0.3f, 0.3f, 0.3f);
-		if (GUILayout.Button("所有客户端", buttonStyle, GUILayout.Height(buttonHeight)))
+			
+		if (GUILayout.Button("所有客户端", GUILayout.Height(buttonHeight)))
 		{
 			ReplicationGraphVisualizer.SwitchObserver(ReplicationGraphVisualizer.MODE_ALL_CLIENTS);
 		}
@@ -420,35 +418,25 @@ public class ReplicationGraphVisualizerInstance : MonoBehaviour
 		{
 			GUI.backgroundColor = (_currentMode == ObserverMode.SingleClient && _targetObserverId == observer) ? 
 				new Color(0.3f, 0.7f, 0.3f) : new Color(0.3f, 0.3f, 0.3f);
-			if (GUILayout.Button(observer, buttonStyle, GUILayout.Height(buttonHeight)))
+				
+			if (GUILayout.Button(observer, GUILayout.Height(buttonHeight)))
 			{
 				ReplicationGraphVisualizer.SwitchObserver(observer);
 			}
 		}
 		GUILayout.EndHorizontal();
 
-		// 重置背景色
-		GUI.backgroundColor = Color.white;
+		// 恢复原始背景色
+		GUI.backgroundColor = originalColor;
 		
 		GUILayout.EndArea();
 	}
 
 	// 在OnInspectorGUI中使用的按钮样式
-	public GUIStyle GetButtonStyle(bool isSelected)
+	public GUIStyle GetSelectedButtonStyle()
 	{
 		GUIStyle style = new GUIStyle(GUI.skin.button);
-		style.normal.textColor = Color.white;
-		style.normal.background = EditorGUIUtility.WhiteTexture;
-		
-		if (isSelected)
-		{
-			style.normal.backgroundColor = new Color(0.3f, 0.6f, 0.9f, 1f);
-		}
-		else
-		{
-			style.normal.backgroundColor = new Color(0.3f, 0.3f, 0.3f, 1f);
-		}
-		
+		style.fontStyle = FontStyle.Bold;
 		return style;
 	}
 	#endif
