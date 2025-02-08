@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
 
 public class ReplicationGraphVisualizerDemo : MonoBehaviour
 {
@@ -15,15 +16,33 @@ public class ReplicationGraphVisualizerDemo : MonoBehaviour
         public Vector3 Position;
         public string Type;
         public bool IsDynamic;
+        
+        private Vector3 _initialPosition;  // 保存初始位置作为圆心
+        private float _phaseOffset;        // 每个Actor的相位偏移
+
+        public Actor(string id, Vector3 position, string type, bool isDynamic)
+        {
+            Id = id;
+            Position = position;
+            _initialPosition = position;
+            Type = type;
+            IsDynamic = isDynamic;
+            _phaseOffset = Random.Range(0f, Mathf.PI * 2f); // 随机初始相位
+        }
 
         public void UpdatePosition(float time, float speed, float range)
         {
             if (!IsDynamic) return;
-            Position = new Vector3(
-                Mathf.Sin(time * speed) * range,
+            
+            // 以初始位置为圆心进行运动
+            float angle = time * speed + _phaseOffset;
+            Vector3 offset = new Vector3(
+                Mathf.Sin(angle) * range,
                 0,
-                Mathf.Cos(time * speed) * range
+                Mathf.Cos(angle) * range
             );
+            
+            Position = _initialPosition + offset;
         }
     }
 
@@ -54,10 +73,6 @@ public class ReplicationGraphVisualizerDemo : MonoBehaviour
         CreateActor("player1", new Vector3(-5, 0, -5), ReplicationGraphVisualizer.TYPE_PLAYER, true);
         CreateActor("player2", new Vector3(5, 0, 5), ReplicationGraphVisualizer.TYPE_PLAYER, true);
 
-        // 创建客户端，并关联到对应的玩家
-        CreateClient("client1", new Vector3(-5, 0, -5), "player1");
-        CreateClient("client2", new Vector3(5, 0, 5), "player2");
-
         // 创建静态物体
         CreateActor("static1", Vector3.zero, ReplicationGraphVisualizer.TYPE_STATIC, false);
         CreateActor("static2", new Vector3(10, 0, 10), ReplicationGraphVisualizer.TYPE_STATIC, false);
@@ -67,8 +82,15 @@ public class ReplicationGraphVisualizerDemo : MonoBehaviour
         CreateActor("dynamic1", new Vector3(3, 0, 3), ReplicationGraphVisualizer.TYPE_DYNAMIC, true);
         CreateActor("dynamic2", new Vector3(-3, 0, -3), ReplicationGraphVisualizer.TYPE_DYNAMIC, true);
 
-        // 默认显示服务器视角
-        ReplicationGraphVisualizer.SwitchObserver(ReplicationGraphVisualizer.MODE_SERVER);
+		// 创建客户端，使用对应玩家的位置
+		foreach (var actor in _actors.Where(a => a.Type == ReplicationGraphVisualizer.TYPE_PLAYER))
+		{
+			string clientId = "client" + actor.Id.Substring(6); // 从"player1"提取数字作为"client1"
+			CreateClient(clientId, actor.Id);
+		}
+
+		// 默认显示服务器视角
+		ReplicationGraphVisualizer.SwitchObserver(ReplicationGraphVisualizer.MODE_SERVER);
     }
 
     private void Update()
@@ -123,27 +145,30 @@ public class ReplicationGraphVisualizerDemo : MonoBehaviour
         }
     }
 
-    private void CreateClient(string id, Vector3 position, string playerActorId)
+    private void CreateClient(string id, string playerActorId)
     {
+        // 获取对应玩家的位置
+        var playerActor = _actors.Find(a => a.Id == playerActorId);
+        if (playerActor == null) return;
+
         _clients.Add(new Client 
         { 
             Id = id, 
-            Position = position,
+            Position = playerActor.Position, // 使用玩家的位置
             ViewRadius = _clientViewRadius,
             PlayerActorId = playerActorId
         });
-        ReplicationGraphVisualizer.AddObserver(id, position.x, position.y, position.z);
+        
+        // 使用玩家位置创建观察者
+        ReplicationGraphVisualizer.AddObserver(id, 
+            playerActor.Position.x, 
+            playerActor.Position.y, 
+            playerActor.Position.z);
     }
 
     private void CreateActor(string id, Vector3 position, string type, bool isDynamic)
     {
-        var actor = new Actor
-        {
-            Id = id,
-            Position = position,
-            Type = type,
-            IsDynamic = isDynamic
-        };
+        var actor = new Actor(id, position, type, isDynamic);
         _actors.Add(actor);
         
         // 服务器始终知道所有Actor
