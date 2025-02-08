@@ -185,11 +185,9 @@ public class ReplicationGraphVisualizerInstance : MonoBehaviour
 			// 使用传入的颜色或默认的客户端颜色
 			Gizmos.color = overrideColor ?? _clientColor;
 			
-			// 只为非服务器观察者绘制观察范围
-			if (observerId != ReplicationGraphVisualizer.MODE_SERVER)
-			{
-				DrawViewSphere(data.Position);
-			}
+			// 绘制观察者
+			bool isServer = observerId == ReplicationGraphVisualizer.MODE_SERVER;
+			DrawObserver(data.Position, isServer);
 			
 			DrawObservees(data);
 		}
@@ -438,6 +436,46 @@ public class ReplicationGraphVisualizerInstance : MonoBehaviour
 		GUIStyle style = new GUIStyle(GUI.skin.button);
 		style.fontStyle = FontStyle.Bold;
 		return style;
+	}
+
+	private void DrawObserver(Vector3 position, bool isServer = false)
+	{
+		float crossSize = 0.5f;
+		Color viewColor = isServer ? new Color(_serverColor.r, _serverColor.g, _serverColor.b, 0.2f) 
+								  : new Color(_clientColor.r, _clientColor.g, _clientColor.b, 0.2f);
+		Color borderColor = isServer ? _serverColor : _clientColor;
+
+		// 绘制观察者位置标记（十字线）
+		Gizmos.color = borderColor;
+		Gizmos.DrawLine(
+			position + Vector3.left * crossSize,
+			position + Vector3.right * crossSize
+		);
+		Gizmos.DrawLine(
+			position + Vector3.forward * crossSize,
+			position + Vector3.back * crossSize
+		);
+
+		// 只为非服务器观察者绘制观察范围
+		if (!isServer)
+		{
+			#if UNITY_EDITOR
+			// 绘制半透明圆形
+			UnityEditor.Handles.color = viewColor;
+			UnityEditor.Handles.DrawSolidDisc(position, Vector3.up, _observationRadius);
+
+			// 绘制边界线
+			UnityEditor.Handles.color = borderColor;
+			UnityEditor.Handles.DrawWireDisc(position, Vector3.up, _observationRadius);
+
+			// 只在开启时显示半径信息
+			if (_showRadius)
+			{
+				string radiusInfo = $"R:{_observationRadius}m";
+				UnityEditor.Handles.Label(position + Vector3.up, radiusInfo);
+			}
+			#endif
+		}
 	}
 	#endif
 }
