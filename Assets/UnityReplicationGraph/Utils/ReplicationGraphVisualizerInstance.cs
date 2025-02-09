@@ -404,7 +404,7 @@ namespace ReplicationGraph
 		// 根据当前模式选择绘制方式
 		private void OnDrawGizmos()
 		{
-			if (!Application.isPlaying) return;
+			//if (!Application.isPlaying) return;
 
 			switch (_currentMode)
 			{
