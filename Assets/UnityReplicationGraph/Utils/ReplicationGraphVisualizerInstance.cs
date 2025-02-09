@@ -43,6 +43,13 @@ namespace ReplicationGraph
 			public float lastUpdateTime;
 		}
 
+		private class LabelContent
+		{
+			public string text;
+			public Color color;
+			public float height = 15f; // 每行文本的默认高度
+		}
+
 		[Header("观察模式")]
 		[SerializeField] private ObserverMode _currentMode = ObserverMode.Server;
 		[SerializeField] private string _targetObserverId = "";
@@ -63,7 +70,7 @@ namespace ReplicationGraph
 		[SerializeField] private bool _showUpdateTime = true;    // 是否显示更新时间
 		[SerializeField] private bool _showRadius = true;        // 是否显示观察半径
 		[SerializeField] private bool _showLegend = true;        // 是否显示图例
-		
+
 		// 添加名字显示控制
 		[SerializeField] private int _nameDisplayMask = -1;      // 默认全部显示
 
@@ -288,6 +295,29 @@ namespace ReplicationGraph
 			return (_nameDisplayMask & (1 << (int)type)) != 0;
 		}
 
+		private void DrawSmartLabel(Vector3 position, List<LabelContent> contents)
+		{
+#if UNITY_EDITOR
+			if (contents == null || contents.Count == 0) return;
+
+			float currentHeight = 0f;
+			Vector3 basePosition = position + Vector3.forward * 0.5f;
+
+			foreach (var content in contents)
+			{
+				GUIStyle style = new GUIStyle();
+				style.normal.textColor = content.color;
+				// 根据累积的高度向上偏移
+				Vector3 labelPosition = basePosition + Vector3.up * currentHeight;
+				UnityEditor.Handles.Label(labelPosition, content.text, style);
+				currentHeight += content.height;
+			}
+#endif
+		}
+
+		// 准备标签内容
+		private List<LabelContent> labelContents = new List<LabelContent>();
+
 		private void DrawObservees(ObserverData data)
 		{
 			float currentTime = Time.time;
@@ -310,7 +340,6 @@ namespace ReplicationGraph
 						Gizmos.DrawCube(observeeData.position, Vector3.one * 0.5f);
 						break;
 					case ObserveeType.PlayerCharacter:
-						// 玩家用实心圆形
 #if UNITY_EDITOR
 						UnityEditor.Handles.color = timeBasedColor;
 						UnityEditor.Handles.DrawSolidDisc(observeeData.position, Vector3.up, 0.4f);
@@ -318,34 +347,39 @@ namespace ReplicationGraph
 						break;
 				}
 
-				// 显示名字（根据掩码控制）
 #if UNITY_EDITOR
+				// 准备标签内容
+				labelContents.Clear();
+
+				// 添加名字（如果启用）
 				if (ShouldShowName(observeeData.type))
 				{
-					GUIStyle style = new GUIStyle();
-					style.normal.textColor = timeBasedColor;
-					UnityEditor.Handles.Label(observeeData.position + Vector3.forward * 0.5f, 
-						observeeData.name, style);
+					labelContents.Add(new LabelContent
+					{
+						text = observeeData.name,
+						color = timeBasedColor
+					});
 				}
+
+				// 添加更新时间（如果启用）
+				if (_showUpdateTime)
+				{
+					labelContents.Add(new LabelContent
+					{
+						text = $"{timeSinceUpdate:F1}s",
+						color = timeBasedColor
+					});
+				}
+
+				// 绘制所有标签
+				DrawSmartLabel(observeeData.position, labelContents);
 #endif
 
 				// 如果有预测路径绘制回调，则调用它
-
 				if (_pathRegistry.TryGetValue(observeeData, out var pathData))
 				{
 					pathData.OnDraw(timeBasedColor);
 				}
-
-				// 显示时间和名称
-#if UNITY_EDITOR
-				if (_showUpdateTime)
-				{
-					string timeInfo = $"{timeSinceUpdate:F1}s";
-					GUIStyle style = new GUIStyle();
-					style.normal.textColor = timeBasedColor;
-					Handles.Label(observeeData.position + Vector3.forward * 0.5f, timeInfo, style);
-				}
-#endif
 			}
 		}
 
