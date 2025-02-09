@@ -56,6 +56,8 @@ namespace ReplicationGraph
 			public void OnDraw(Color color)
 			{
 #if UNITY_EDITOR
+				color.a *= 0.1f;
+				UnityEditor.Handles.color = color;
 				UnityEditor.Handles.DrawWireDisc(
 						actor._initialPosition,
 						Vector3.up,
@@ -205,7 +207,10 @@ namespace ReplicationGraph
 			);
 
 			// 获取实例并设置自定义数据和绘制回调
-			ReplicationGraphVisualizer.Instance.BindObservePath(ReplicationGraphVisualizer.MODE_SERVER, id, new ActorPath { actor = actor });
+			if (isDynamic)
+			{
+				ReplicationGraphVisualizer.Instance.BindObserveePath(ReplicationGraphVisualizer.MODE_SERVER, id, new ActorPath { actor = actor });
+			}
 
 			// 检查哪些客户端可以看到这个Actor
 			foreach (var client in _clients)

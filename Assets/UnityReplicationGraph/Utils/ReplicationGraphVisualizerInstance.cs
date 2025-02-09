@@ -66,7 +66,7 @@ namespace ReplicationGraph
 
 		// 观察者数据: <观察者ID, 观察者数据>
 		private Dictionary<string, ObserverData> _observerRegistry = new Dictionary<string, ObserverData>();
-		private Dictionary<string, Dictionary<string,IObserveePath>> _pathRegistry = new Dictionary<string, Dictionary<string, IObserveePath>>();
+		private Dictionary<ObserveeData, IObserveePath> _pathRegistry = new Dictionary<ObserveeData, IObserveePath>();
 
 		private void Awake()
 		{
@@ -152,29 +152,30 @@ namespace ReplicationGraph
 		internal void RemoveObservee_Internal(string observerId, string observeeId)
 		{
 			if (_observerRegistry.TryGetValue(observerId, out var data) &&
-				data.observees.TryGetValue(observeeId, out var actor))
+				data.observees.TryGetValue(observeeId,out var observeeData))
 			{
 				data.observees.Remove(observeeId);
-			}
-			// 如果存在路径，那么删除
-			if (_pathRegistry.TryGetValue(observerId, out var pathData))
-			{
-				if (pathData.ContainsKey(observerId))
+				// 如果存在路径，那么删除
+				if (_pathRegistry.ContainsKey(observeeData))
 				{
-					pathData.Remove(observerId);
+					_pathRegistry.Remove(observeeData);
 				}
 			}
 		}
 
-		// 绑定路径展示
-		internal void BindObservePath(string observerId, string observeeId,IObserveePath observeePath)
+		// 绑定被观察者路径展示
+		internal void BindObserveePath(string observerId, string observeeId, IObserveePath observeePath)
 		{
-			if (!_pathRegistry.TryGetValue(observerId, out var data))
+
+			if (_observerRegistry.TryGetValue(observerId, out var data) &&
+					data.observees.TryGetValue(observeeId, out var observeeData))
 			{
-				data = new Dictionary<string, IObserveePath>();
-				_pathRegistry.Add(observerId, data);
+				_pathRegistry[observeeData] = observeePath;
 			}
-			data[observerId] = observeePath;
+			else
+			{
+				Debug.LogWarning(string.Format("无法找到 observerId:{0} observeeId:{1}的被观察者", observerId, observeeId));
+			}
 		}
 
 		#endregion
@@ -232,7 +233,7 @@ namespace ReplicationGraph
 				DrawObserver(data.position, isServer);
 
 				// 绘制被观察者（不带十字标记）
-				DrawObservees(observerId, data);
+				DrawObservees(data);
 			}
 		}
 
@@ -268,46 +269,44 @@ namespace ReplicationGraph
 #endif
 		}
 
-		private void DrawObservees(string observerId, ObserverData data)
+		private void DrawObservees(ObserverData data)
 		{
 			float currentTime = Time.time;
 
-			foreach (var actor in data.observees)
+			foreach (var observeeData in data.observees.Values)
 			{
-				float timeSinceUpdate = currentTime - actor.Value.lastUpdateTime;
+				float timeSinceUpdate = currentTime - observeeData.lastUpdateTime;
 				Color timeBasedColor = GetTimeBasedColor(timeSinceUpdate);
 				Gizmos.color = timeBasedColor;
 
 				// 绘制实体
-				switch (actor.Value.type)
+				switch (observeeData.type)
 				{
 					case ObserveeType.StaticActor:
 						// 静态物体用空心方块
-						Gizmos.DrawWireCube(actor.Value.position, Vector3.one * 0.5f);
+						Gizmos.DrawWireCube(observeeData.position, Vector3.one * 0.5f);
 						break;
 					case ObserveeType.DynamicActor:
 						// 动态物体用实心方块
-						Gizmos.DrawCube(actor.Value.position, Vector3.one * 0.5f);
+						Gizmos.DrawCube(observeeData.position, Vector3.one * 0.5f);
 						break;
 					case ObserveeType.PlayerCharacter:
 						// 玩家用实心圆形
 #if UNITY_EDITOR
 						UnityEditor.Handles.color = timeBasedColor;
-						UnityEditor.Handles.DrawSolidDisc(actor.Value.position, Vector3.up, 0.4f);
+						UnityEditor.Handles.DrawSolidDisc(observeeData.position, Vector3.up, 0.4f);
 						GUIStyle style = new GUIStyle();
 						style.normal.textColor = timeBasedColor;
-						Handles.Label(actor.Value.position + Vector3.forward * 3f, actor.Value.name, style);
+						Handles.Label(observeeData.position + Vector3.forward * 3.7f, observeeData.name, style);
 #endif
 						break;
 				}
 
 				// 如果有预测路径绘制回调，则调用它
-				if (_pathRegistry.TryGetValue(observerId, out var pathData))
+
+				if (_pathRegistry.TryGetValue(observeeData, out var pathData))
 				{
-					if (pathData.TryGetValue(observerId, out var observeePath))
-					{
-						observeePath.OnDraw(timeBasedColor);
-					}
+					pathData.OnDraw(timeBasedColor);
 				}
 
 				// 显示时间和名称
@@ -317,7 +316,7 @@ namespace ReplicationGraph
 					string timeInfo = $"{timeSinceUpdate:F1}s";
 					GUIStyle style = new GUIStyle();
 					style.normal.textColor = timeBasedColor;
-					Handles.Label(actor.Value.position + Vector3.forward, timeInfo, style);
+					Handles.Label(observeeData.position + Vector3.forward * 1.5f, timeInfo, style);
 				}
 #endif
 			}
