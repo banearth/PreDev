@@ -17,29 +17,30 @@ public class ReplicationGraphVisualizerDemo : MonoBehaviour
         public string Type;
         public bool IsDynamic;
         
-        private Vector3 _initialPosition;  // 保存初始位置作为圆心
-        private float _phaseOffset;        // 每个Actor的相位偏移
+        public Vector3 _initialPosition;  // 保存初始位置作为圆心
+        public float _phaseOffset;        // 每个Actor的相位偏移
+		public float _moveRange;          // 每个Actor的运动半径
 
-        public Actor(string id, Vector3 position, string type, bool isDynamic)
+        public Actor(string id, Vector3 position, string type, bool isDynamic, float moveRange)
         {
             Id = id;
             Position = position;
             _initialPosition = position;
             Type = type;
             IsDynamic = isDynamic;
+            _moveRange = moveRange;
             _phaseOffset = Random.Range(0f, Mathf.PI * 2f); // 随机初始相位
         }
 
-        public void UpdatePosition(float time, float speed, float range)
+        public void UpdatePosition(float time, float speed)
         {
             if (!IsDynamic) return;
             
-            // 以初始位置为圆心进行运动
             float angle = time * speed + _phaseOffset;
             Vector3 offset = new Vector3(
-                Mathf.Sin(angle) * range,
+                Mathf.Sin(angle) * _moveRange,
                 0,
-                Mathf.Cos(angle) * range
+                Mathf.Cos(angle) * _moveRange
             );
             
             Position = _initialPosition + offset;
@@ -98,10 +99,10 @@ public class ReplicationGraphVisualizerDemo : MonoBehaviour
         if (Time.time - _lastUpdateTime < _updateInterval) return;
         _lastUpdateTime = Time.time;
 
-        // 更新所有Actor位置
+        // 更新所有Actor位置，不再传入moveRange参数
         foreach (var actor in _actors)
         {
-            actor.UpdatePosition(Time.time, _moveSpeed, _moveRange);
+            actor.UpdatePosition(Time.time, _moveSpeed);
             
             // 如果是玩家角色，更新对应的客户端观察者位置
             var client = _clients.Find(c => c.PlayerActorId == actor.Id);
@@ -168,10 +169,14 @@ public class ReplicationGraphVisualizerDemo : MonoBehaviour
 
     private void CreateActor(string id, Vector3 position, string type, bool isDynamic)
     {
-        var actor = new Actor(id, position, type, isDynamic);
+        float moveRange = isDynamic ? 
+            Random.Range(_moveRange * 0.5f, _moveRange * 1.5f) : 
+            0f;
+        
+        var actor = new Actor(id, position, type, isDynamic, moveRange);
         _actors.Add(actor);
         
-        // 服务器始终知道所有Actor
+        // 先添加被观察者（基础API调用）
         ReplicationGraphVisualizer.AddObservee(
             ReplicationGraphVisualizer.MODE_SERVER,
             id,
@@ -180,6 +185,18 @@ public class ReplicationGraphVisualizerDemo : MonoBehaviour
             position.z,
             type
         );
+        
+        // 获取实例并设置自定义数据和绘制回调
+        var instance = ReplicationGraphVisualizer.GetObserveeInstance(ReplicationGraphVisualizer.MODE_SERVER, id);
+        if (instance != null)
+        {
+            instance.SetCustomData(actor);
+            
+            if (isDynamic)
+            {
+                instance.SetPredictedPathDrawer(DrawActorPredictedPath);
+            }
+        }
         
         // 检查哪些客户端可以看到这个Actor
         foreach (var client in _clients)
@@ -199,4 +216,18 @@ public class ReplicationGraphVisualizerDemo : MonoBehaviour
         }
     }
 
+
+    private void DrawActorPredictedPath(Vector3 position, object customData)
+    {
+        #if UNITY_EDITOR
+        if (customData is Actor actorData)
+        {
+            UnityEditor.Handles.DrawWireDisc(
+                actorData._initialPosition, 
+                Vector3.up, 
+                actorData._moveRange
+            );
+        }
+        #endif
+    }
 }

@@ -32,7 +32,9 @@ public class ReplicationGraphVisualizerInstance : MonoBehaviour
 		public string Name;
 		public Vector3 Position;
 		public ObserveeType Type;
-		public float LastUpdateTime; // 只在被观察者这里保留时间戳
+		public float LastUpdateTime;
+		public object CustomData;
+		public ReplicationGraphVisualizer.DrawPredictedPathDelegate DrawPredictedPath;
 	}
 
 	[Header("观察模式")]
@@ -85,7 +87,13 @@ public class ReplicationGraphVisualizerInstance : MonoBehaviour
 		};
 	}
 
-	internal void AddObservee_Internal(string observerId, string observeeId, Vector3 position, string type)
+	internal void AddObservee_Internal(
+		string observerId, 
+		string observeeId, 
+		Vector3 position, 
+		string type,
+		object customData = null,
+		ReplicationGraphVisualizer.DrawPredictedPathDelegate drawPredictedPath = null)
 	{
 		if (!_observerRegistry.TryGetValue(observerId, out var data))
 		{
@@ -98,7 +106,9 @@ public class ReplicationGraphVisualizerInstance : MonoBehaviour
 			Name = observeeId,
 			Position = position,
 			Type = StringToType(type),
-			LastUpdateTime = Time.time
+			LastUpdateTime = Time.time,
+			CustomData = customData,
+			DrawPredictedPath = drawPredictedPath
 		};
 	}
 
@@ -239,6 +249,7 @@ public class ReplicationGraphVisualizerInstance : MonoBehaviour
 			Color timeBasedColor = GetTimeBasedColor(timeSinceUpdate);
 			Gizmos.color = timeBasedColor;
 			
+			// 绘制实体
 			switch (actor.Value.Type)
 			{
 				case ObserveeType.StaticActor:
@@ -256,11 +267,23 @@ public class ReplicationGraphVisualizerInstance : MonoBehaviour
 					UnityEditor.Handles.DrawSolidDisc(actor.Value.Position, Vector3.up, 0.4f);
 					GUIStyle style = new GUIStyle();
 					style.normal.textColor = timeBasedColor;
-					Handles.Label(actor.Value.Position + Vector3.forward * 3.5f, actor.Value.Name, style);
+					Handles.Label(actor.Value.Position + Vector3.forward * 3f, actor.Value.Name, style);
 #endif
 					break;
 			}
-			
+
+			// 如果有预测路径绘制回调，则调用它
+			if (actor.Value.DrawPredictedPath != null)
+			{
+				#if UNITY_EDITOR
+				Color pathColor = timeBasedColor;
+				pathColor.a = 0.1f;
+				UnityEditor.Handles.color = pathColor;
+				actor.Value.DrawPredictedPath(actor.Value.Position, actor.Value.CustomData);
+				#endif
+			}
+
+			// 显示时间和名称
 			#if UNITY_EDITOR
 			if (_showUpdateTime)
 			{
@@ -482,4 +505,36 @@ public class ReplicationGraphVisualizerInstance : MonoBehaviour
 		#endif
 	}
 	#endif
+
+	// 实现 IObserveeInstance 接口
+	private class ObserveeInstanceImpl : ReplicationGraphVisualizer.IObserveeInstance
+	{
+		private ObserveeData _data;
+
+		public ObserveeInstanceImpl(ObserveeData data)
+		{
+			_data = data;
+		}
+
+		public void SetCustomData(object data)
+		{
+			_data.CustomData = data;
+		}
+
+		public void SetPredictedPathDrawer(ReplicationGraphVisualizer.DrawPredictedPathDelegate drawer)
+		{
+			_data.DrawPredictedPath = drawer;
+		}
+	}
+
+	// 获取被观察者实例的内部方法
+	internal ReplicationGraphVisualizer.IObserveeInstance GetObserveeInstance_Internal(string observerId, string observeeId)
+	{
+		if (_observerRegistry.TryGetValue(observerId, out var data) &&
+			data.Observees.TryGetValue(observeeId, out var observee))
+		{
+			return new ObserveeInstanceImpl(observee);
+		}
+		return null;
+	}
 }

@@ -12,6 +12,9 @@ public static class ReplicationGraphVisualizer
     public const string TYPE_DYNAMIC = "dynamic"; 
     public const string TYPE_PLAYER = "player";
 
+    // 定义委托类型
+    public delegate void DrawPredictedPathDelegate(Vector3 position, object customData);
+
     private static ReplicationGraphVisualizerInstance _instance;
     public static ReplicationGraphVisualizerInstance Instance
     {
@@ -34,12 +37,20 @@ public static class ReplicationGraphVisualizer
     // 增加被观察者
     public static void AddObservee(string observerId, string observeeId, float x, float y, float z, string type)
     {
-        Instance.AddObservee_Internal(
-            observerId,
-            observeeId,
-            new Vector3(x, y, z),
-            type
-        );
+        Instance.AddObservee_Internal(observerId, observeeId, new Vector3(x, y, z), type);
+    }
+
+    // 获取被观察者实例的接口
+    public static IObserveeInstance GetObserveeInstance(string observerId, string observeeId)
+    {
+        return Instance.GetObserveeInstance_Internal(observerId, observeeId);
+    }
+
+    // 定义一个公共接口，用于操作被观察者实例
+    public interface IObserveeInstance
+    {
+        void SetCustomData(object data);
+        void SetPredictedPathDrawer(DrawPredictedPathDelegate drawer);
     }
 
     // 更新被观察者位置

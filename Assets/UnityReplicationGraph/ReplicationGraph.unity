@@ -167,7 +167,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _updateInterval: 0.1
-  _moveSpeed: 0.2
+  _moveSpeed: 0.05
   _moveRange: 10
   _clientViewRadius: 15
 --- !u!1 &341278431
