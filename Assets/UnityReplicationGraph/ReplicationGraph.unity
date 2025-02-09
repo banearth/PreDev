@@ -209,9 +209,11 @@ MonoBehaviour:
   _recentDataColor: {r: 0, g: 1, b: 0, a: 1}
   _normalDataColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   _staleDataColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  _smartLabelOffsetMultiple: 0.7
   _showUpdateTime: 1
   _showRadius: 1
   _showLegend: 1
+  _nameDisplayMask: -1
 --- !u!4 &341278433
 Transform:
   m_ObjectHideFlags: 0

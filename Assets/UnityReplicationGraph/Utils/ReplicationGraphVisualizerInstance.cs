@@ -47,7 +47,6 @@ namespace ReplicationGraph
 		{
 			public string text;
 			public Color color;
-			public float height = 15f; // 每行文本的默认高度
 		}
 
 		[Header("观察模式")]
@@ -67,11 +66,10 @@ namespace ReplicationGraph
 		[SerializeField] private Color _staleDataColor = Color.gray;   // 旧数据颜色
 
 		[Header("调试显示")]
+		[SerializeField] private float _smartLabelOffsetMultiple = 1;// 智能Label整体偏移倍数
 		[SerializeField] private bool _showUpdateTime = true;    // 是否显示更新时间
 		[SerializeField] private bool _showRadius = true;        // 是否显示观察半径
 		[SerializeField] private bool _showLegend = true;        // 是否显示图例
-
-		// 添加名字显示控制
 		[SerializeField] private int _nameDisplayMask = -1;      // 默认全部显示
 
 		// 定义显示选项的枚举（按位标记）
@@ -300,17 +298,16 @@ namespace ReplicationGraph
 #if UNITY_EDITOR
 			if (contents == null || contents.Count == 0) return;
 
-			float currentHeight = 0f;
 			Vector3 basePosition = position + Vector3.forward * 0.5f;
 
-			foreach (var content in contents)
+			for (int i = 0;i<contents.Count;i++)
 			{
+				var content = contents[i];
 				GUIStyle style = new GUIStyle();
 				style.normal.textColor = content.color;
-				// 根据累积的高度向上偏移
-				Vector3 labelPosition = basePosition + Vector3.up * currentHeight;
+				// 根据累积的高度向上偏移，使用整体偏移倍数
+				Vector3 labelPosition = basePosition + Vector3.back * _smartLabelOffsetMultiple * i;
 				UnityEditor.Handles.Label(labelPosition, content.text, style);
-				currentHeight += content.height;
 			}
 #endif
 		}
@@ -357,7 +354,7 @@ namespace ReplicationGraph
 					labelContents.Add(new LabelContent
 					{
 						text = observeeData.name,
-						color = timeBasedColor
+						color = timeBasedColor,
 					});
 				}
 
@@ -367,7 +364,7 @@ namespace ReplicationGraph
 					labelContents.Add(new LabelContent
 					{
 						text = $"{timeSinceUpdate:F1}s",
-						color = timeBasedColor
+						color = timeBasedColor,
 					});
 				}
 

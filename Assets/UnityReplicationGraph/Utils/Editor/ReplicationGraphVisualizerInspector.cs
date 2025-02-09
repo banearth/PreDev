@@ -18,8 +18,18 @@ namespace ReplicationGraph
 		{
 			var instance = (ReplicationGraphVisualizerInstance)target;
 			
-			// 绘制默认检查器
-			DrawDefaultInspector();
+			// 开始隐藏指定属性
+			serializedObject.Update();
+			SerializedProperty iterator = serializedObject.GetIterator();
+			bool enterChildren = true;
+			while (iterator.NextVisible(enterChildren))
+			{
+				enterChildren = false;
+				// 跳过 _nameDisplayMask 属性的显示
+				if (iterator.name == "_nameDisplayMask") continue;
+				EditorGUILayout.PropertyField(iterator, true);
+			}
+			serializedObject.ApplyModifiedProperties();
 
 			// 添加名字显示控制
 			EditorGUILayout.Space(10);
