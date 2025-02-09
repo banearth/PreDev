@@ -7,12 +7,36 @@ namespace ReplicationGraph
 	[CustomEditor(typeof(ReplicationGraphVisualizerInstance))]
 	public class ReplicationGraphVisualizerInspector : Editor
 	{
+		private static readonly string[] _nameDisplayOptions = new[]
+		{
+			"静态物体",
+			"动态物体",
+			"玩家角色"
+		};
+
 		public override void OnInspectorGUI()
 		{
+			var instance = (ReplicationGraphVisualizerInstance)target;
+			
+			// 绘制默认检查器
 			DrawDefaultInspector();
 
-			var instance = (ReplicationGraphVisualizerInstance)target;
-			if (instance == null) return;
+			// 添加名字显示控制
+			EditorGUILayout.Space(10);
+			EditorGUILayout.LabelField("名字显示控制", EditorStyles.boldLabel);
+
+			var nameDisplayMaskProp = serializedObject.FindProperty("_nameDisplayMask");
+			EditorGUI.BeginChangeCheck();
+			
+			// 使用 LayerMask 风格的多选框
+			int maskValue = nameDisplayMaskProp.intValue;
+			maskValue = EditorGUILayout.MaskField("显示名字", maskValue, _nameDisplayOptions);
+			
+			if (EditorGUI.EndChangeCheck())
+			{
+				nameDisplayMaskProp.intValue = maskValue;
+				serializedObject.ApplyModifiedProperties();
+			}
 
 			EditorGUILayout.Space(10);
 			EditorGUILayout.LabelField("视角切换", EditorStyles.boldLabel);

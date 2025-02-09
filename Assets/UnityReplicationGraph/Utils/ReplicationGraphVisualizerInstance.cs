@@ -63,6 +63,20 @@ namespace ReplicationGraph
 		[SerializeField] private bool _showUpdateTime = true;    // 是否显示更新时间
 		[SerializeField] private bool _showRadius = true;        // 是否显示观察半径
 		[SerializeField] private bool _showLegend = true;        // 是否显示图例
+		
+		// 添加名字显示控制
+		[SerializeField] private int _nameDisplayMask = -1;      // 默认全部显示
+
+		// 定义显示选项的枚举（按位标记）
+		[System.Flags]
+		public enum NameDisplayOptions
+		{
+			None = 0,
+			StaticActor = 1 << 0,
+			DynamicActor = 1 << 1,
+			PlayerCharacter = 1 << 2,
+			All = StaticActor | DynamicActor | PlayerCharacter
+		}
 
 		// 观察者数据: <观察者ID, 观察者数据>
 		private Dictionary<string, ObserverData> _observerRegistry = new Dictionary<string, ObserverData>();
@@ -264,9 +278,14 @@ namespace ReplicationGraph
 			if (_showRadius)
 			{
 				string radiusInfo = $"R:{_observationRadius}m";
-				Handles.Label(center + Vector3.up, radiusInfo);
+				Handles.Label(center + Vector3.up * 0, radiusInfo);
 			}
 #endif
+		}
+
+		private bool ShouldShowName(ObserveeType type)
+		{
+			return (_nameDisplayMask & (1 << (int)type)) != 0;
 		}
 
 		private void DrawObservees(ObserverData data)
@@ -295,12 +314,20 @@ namespace ReplicationGraph
 #if UNITY_EDITOR
 						UnityEditor.Handles.color = timeBasedColor;
 						UnityEditor.Handles.DrawSolidDisc(observeeData.position, Vector3.up, 0.4f);
-						GUIStyle style = new GUIStyle();
-						style.normal.textColor = timeBasedColor;
-						Handles.Label(observeeData.position + Vector3.forward * 3.7f, observeeData.name, style);
 #endif
 						break;
 				}
+
+				// 显示名字（根据掩码控制）
+#if UNITY_EDITOR
+				if (ShouldShowName(observeeData.type))
+				{
+					GUIStyle style = new GUIStyle();
+					style.normal.textColor = timeBasedColor;
+					UnityEditor.Handles.Label(observeeData.position + Vector3.forward * 0.5f, 
+						observeeData.name, style);
+				}
+#endif
 
 				// 如果有预测路径绘制回调，则调用它
 
@@ -316,7 +343,7 @@ namespace ReplicationGraph
 					string timeInfo = $"{timeSinceUpdate:F1}s";
 					GUIStyle style = new GUIStyle();
 					style.normal.textColor = timeBasedColor;
-					Handles.Label(observeeData.position + Vector3.forward * 1.5f, timeInfo, style);
+					Handles.Label(observeeData.position + Vector3.forward * 0.5f, timeInfo, style);
 				}
 #endif
 			}
