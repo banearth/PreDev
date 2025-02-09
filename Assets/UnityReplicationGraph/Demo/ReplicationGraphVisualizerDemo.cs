@@ -84,9 +84,13 @@ namespace ReplicationGraph
 		private List<Actor> _actors = new List<Actor>();
 		private List<Client> _clients = new List<Client>();
 		private float _lastUpdateTime;
+		private Actor _draggingActor = null;
+		private Vector3 _dragOffset;
+		private Camera _camera;
 
 		private void Start()
 		{
+			_camera = Camera.main;
 			// 创建服务器观察者（全图视野）
 			ReplicationGraphVisualizer.AddObserver(ReplicationGraphVisualizer.MODE_SERVER, 0, 0, 0);
 
@@ -116,13 +120,19 @@ namespace ReplicationGraph
 
 		private void Update()
 		{
+			// 处理拖拽逻辑
+			HandleActorDragging();
+
+			// 只有在非拖拽状态下才更新 Actor 的自动移动
 			if (Time.time - _lastUpdateTime < _updateInterval) return;
 			_lastUpdateTime = Time.time;
 
-			// 更新所有Actor位置，不再传入moveRange参数
 			foreach (var actor in _actors)
 			{
-				actor.UpdatePosition(Time.time, _moveSpeed);
+				if (actor != _draggingActor)  // 不是正在拖拽的 Actor 才更新位置
+				{
+					actor.UpdatePosition(Time.time, _moveSpeed);
+				}
 
 				// 如果是玩家角色，更新对应的客户端观察者位置
 				var client = _clients.Find(c => c.PlayerActorId == actor.Id);
@@ -164,6 +174,88 @@ namespace ReplicationGraph
 					}
 				}
 			}
+		}
+
+		private void HandleActorDragging()
+		{
+			if (Input.GetMouseButtonDown(0))
+			{
+				// 尝试选中 Actor
+				Ray ray = _camera.ScreenPointToRay(Input.mousePosition);
+				RaycastHit[] hits = Physics.RaycastAll(ray);
+				
+				// 由于我们没有实际的碰撞体，我们需要手动检查点击位置是否在 Actor 范围内
+				Vector3 clickWorldPos = GetWorldPositionFromMouse();
+				_draggingActor = FindClickedActor(clickWorldPos);
+				
+				if (_draggingActor != null)
+				{
+					// 记录点击位置与 Actor 位置的偏移
+					_dragOffset = _draggingActor.Position - clickWorldPos;
+				}
+			}
+			else if (Input.GetMouseButton(0) && _draggingActor != null)
+			{
+				// 更新被拖拽 Actor 的位置
+				Vector3 newPos = GetWorldPositionFromMouse() + _dragOffset;
+				Vector3 movement = newPos - _draggingActor.Position;
+				
+				// 更新 Actor 的当前位置和初始位置（圆心）
+				_draggingActor.Position = newPos;
+				_draggingActor._initialPosition += movement;
+
+				// 通知观察者位置更新
+				ReplicationGraphVisualizer.UpdateObservee(
+					ReplicationGraphVisualizer.MODE_SERVER,
+					_draggingActor.Id,
+					newPos.x,
+					newPos.y,
+					newPos.z
+				);
+
+				// 更新客户端视图
+				foreach (var client in _clients)
+				{
+					if (client.CanSeeActor(_draggingActor))
+					{
+						ReplicationGraphVisualizer.UpdateObservee(
+							client.Id,
+							_draggingActor.Id,
+							newPos.x,
+							newPos.y,
+							newPos.z
+						);
+					}
+				}
+			}
+			else if (Input.GetMouseButtonUp(0) && _draggingActor != null)
+			{
+				// 释放拖拽的 Actor
+				_draggingActor = null;
+			}
+		}
+
+		private Vector3 GetWorldPositionFromMouse()
+		{
+			// 获取鼠标在世界空间中的位置（在XZ平面上）
+			Plane plane = new Plane(Vector3.up, Vector3.zero);
+			Ray ray = _camera.ScreenPointToRay(Input.mousePosition);
+			
+			if (plane.Raycast(ray, out float distance))
+			{
+				Vector3 worldPosition = ray.GetPoint(distance);
+				return new Vector3(worldPosition.x, 0, worldPosition.z);
+			}
+			
+			return Vector3.zero;
+		}
+
+		private Actor FindClickedActor(Vector3 clickPosition)
+		{
+			const float clickRadius = 0.5f; // 点击检测半径
+			return _actors.FirstOrDefault(actor => 
+				Vector3.Distance(new Vector3(actor.Position.x, 0, actor.Position.z), 
+							   new Vector3(clickPosition.x, 0, clickPosition.z)) <= clickRadius);
 		}
 
 		private void CreateClient(string id, string playerActorId)
