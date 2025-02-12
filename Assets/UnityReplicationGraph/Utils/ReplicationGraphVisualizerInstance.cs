@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
+using System;
+
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -7,12 +9,6 @@ using System.Linq;
 
 namespace ReplicationGraph
 {
-
-	public interface IObserveePath
-	{
-		void OnDraw(Color color);
-	}
-
 	public class ReplicationGraphVisualizerInstance : MonoBehaviour
 	{
 		public enum ObserverMode
@@ -41,6 +37,13 @@ namespace ReplicationGraph
 			public Vector3 position;
 			public ObserveeType type;
 			public float lastUpdateTime;
+			public void CopyFrom(ObserveeData other)
+			{
+				name = other.name;
+				position = other.position;
+				type = other.type;
+				lastUpdateTime = other.lastUpdateTime;
+			}
 		}
 
 		private class LabelContent
@@ -85,7 +88,6 @@ namespace ReplicationGraph
 
 		// 观察者数据: <观察者ID, 观察者数据>
 		private Dictionary<string, ObserverData> _observerRegistry = new Dictionary<string, ObserverData>();
-		private Dictionary<ObserveeData, IObserveePath> _pathRegistry = new Dictionary<ObserveeData, IObserveePath>();
 
 		private void Awake()
 		{
@@ -114,20 +116,12 @@ namespace ReplicationGraph
 		}
 
 		#region Observee
-		// 增加被观察者
-		internal void AddObservee_Internal(
-			string observerId,
-			string observeeId,
-			Vector3 position,
-			string type)
-		{
-			if (!_observerRegistry.TryGetValue(observerId, out var data))
-			{
-				data = new ObserverData();
-				_observerRegistry[observerId] = data;
-			}
 
-			data.observees[observeeId] = new ObserveeData
+		private Dictionary<string, ObserveeData> _globalObservees = new Dictionary<string, ObserveeData>();
+
+		internal void AddGlobalObservee_Internal(string observeeId, Vector3 position, string type)
+		{
+			_globalObservees[observeeId] = new ObserveeData
 			{
 				name = observeeId,
 				position = position,
@@ -136,64 +130,39 @@ namespace ReplicationGraph
 			};
 		}
 
-		// 更新被观察者位置
-		internal void UpdateObservee_Internal(string observerId, string observeeId, Vector3 position)
+		internal void RemoveGlobalObservee_Internal(string observeeId)
 		{
-			// 确保观察者存在
-			if (!_observerRegistry.TryGetValue(observerId, out var data))
-			{
-				data = new ObserverData();
-				_observerRegistry[observerId] = data;
-			}
+			_globalObservees.Remove(observeeId);
+		}
 
-			// 如果被观察者不存在，则添加一个新的
-			if (!data.observees.TryGetValue(observeeId, out var observee))
+		internal void UpdateGlobalObservee_Internal(string observeeId, Vector3 position)
+		{
+			if(_globalObservees.TryGetValue(observeeId, out ObserveeData observeeData))
 			{
-				// 注意：由于是Update时发现的，我们默认其为动态对象类型
-				observee = new ObserveeData
-				{
-					name = observeeId,
-					type = ObserveeType.DynamicActor,
-					position = position,
-					lastUpdateTime = Time.time
-				};
-				data.observees[observeeId] = observee;
-			}
-			else
-			{
-				// 已存在则更新位置和时间
-				observee.position = position;
-				observee.lastUpdateTime = Time.time;
+				observeeData.position = position;
+				observeeData.lastUpdateTime = Time.time;
 			}
 		}
 
-		// 移除被观察者
-		internal void RemoveObservee_Internal(string observerId, string observeeId)
+		// 更新被观察者位置
+		internal void UpdateObservee_Internal(string observerId, string observeeId)
 		{
-			if (_observerRegistry.TryGetValue(observerId, out var data) &&
-				data.observees.TryGetValue(observeeId,out var observeeData))
+			if (_globalObservees.TryGetValue(observeeId, out var globalData))
 			{
-				data.observees.Remove(observeeId);
-				// 如果存在路径，那么删除
-				if (_pathRegistry.ContainsKey(observeeData))
+				// 如果全局存在，本地观察者不存在，则需要创建
+				if (!_observerRegistry.TryGetValue(observerId, out var localData))
 				{
-					_pathRegistry.Remove(observeeData);
+					localData = new ObserverData();
+					_observerRegistry[observerId] = localData;
 				}
 			}
-		}
-
-		// 绑定被观察者路径展示
-		internal void BindObserveePath(string observerId, string observeeId, IObserveePath observeePath)
-		{
-
-			if (_observerRegistry.TryGetValue(observerId, out var data) &&
-					data.observees.TryGetValue(observeeId, out var observeeData))
-			{
-				_pathRegistry[observeeData] = observeePath;
-			}
 			else
 			{
-				Debug.LogWarning(string.Format("无法找到 observerId:{0} observeeId:{1}的被观察者", observerId, observeeId));
+				// 如果全局观察者不存在，本地观察者已经存在，则需要删除
+				if (_observerRegistry.TryGetValue(observerId, out var data))
+				{
+					data.observees.Remove(observeeId);
+				}
 			}
 		}
 
@@ -371,12 +340,6 @@ namespace ReplicationGraph
 				// 绘制所有标签
 				DrawSmartLabel(observeeData.position, labelContents);
 #endif
-
-				// 如果有预测路径绘制回调，则调用它
-				if (_pathRegistry.TryGetValue(observeeData, out var pathData))
-				{
-					pathData.OnDraw(timeBasedColor);
-				}
 			}
 		}
 

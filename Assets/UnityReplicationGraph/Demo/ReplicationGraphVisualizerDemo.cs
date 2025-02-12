@@ -13,6 +13,8 @@ namespace ReplicationGraph
 		[SerializeField] private float _moveRange = 10f;        // 移动范围
 		[SerializeField] private float _clientViewRadius = 15f; // 客户端视野范围
 
+		[SerializeField] private bool _drawActorEnable = true;
+		[SerializeField] private Color _actorColor = new Color(1,1,1,0.1f); 
 		public class Actor
 		{
 			public string Id;
@@ -48,23 +50,22 @@ namespace ReplicationGraph
 
 				Position = _initialPosition + offset;
 			}
-		}
 
-		public class ActorPath : IObserveePath
-		{
-			public Actor actor;
-			public void OnDraw(Color color)
+			public void OnDrawGizmos(Color color)
 			{
 #if UNITY_EDITOR
+				if (!IsDynamic) return;
 				color.a *= 0.1f;
+				var oldColor = UnityEditor.Handles.color;
 				UnityEditor.Handles.color = color;
 				UnityEditor.Handles.DrawWireDisc(
-						actor._initialPosition,
+						this._initialPosition,
 						Vector3.up,
-						actor._moveRange
+						this._moveRange
 					);
 #endif
 			}
+
 		}
 
 		private class Client
@@ -87,7 +88,6 @@ namespace ReplicationGraph
 		private Actor _draggingActor = null;
 		private Vector3 _dragOffset;
 		private Camera _camera;
-
 		private void Start()
 		{
 			_camera = Camera.main;
@@ -144,15 +144,22 @@ namespace ReplicationGraph
 				}
 			}
 
+			// 更新全局被观察者的位置
+			foreach (var actor in _actors)
+			{
+				ReplicationGraphVisualizer.UpdateGlobalObservee(
+					actor.Id, 
+					actor.Position.x,
+					actor.Position.y,
+					actor.Position.z);
+			}
+
 			// 服务器始终知道所有Actor的位置
 			foreach (var actor in _actors)
 			{
 				ReplicationGraphVisualizer.UpdateObservee(
 					ReplicationGraphVisualizer.MODE_SERVER,
-					actor.Id,
-					actor.Position.x,
-					actor.Position.y,
-					actor.Position.z
+					actor.Id
 				);
 			}
 
@@ -165,13 +172,21 @@ namespace ReplicationGraph
 					{
 						ReplicationGraphVisualizer.UpdateObservee(
 							client.Id,
-							actor.Id,
-							actor.Position.x,
-							actor.Position.y,
-							actor.Position.z
+							actor.Id
 						);
 						client.LastUpdateTimes[actor.Id] = Time.time;
 					}
+				}
+			}
+		}
+
+		private void OnDrawGizmos()
+		{
+			if(_drawActorEnable)
+			{
+				foreach (var actor in _actors)
+				{
+					actor.OnDrawGizmos(_actorColor);
 				}
 			}
 		}
@@ -203,30 +218,6 @@ namespace ReplicationGraph
 				// 更新 Actor 的当前位置和初始位置（圆心）
 				_draggingActor.Position = newPos;
 				_draggingActor._initialPosition += movement;
-
-				// 通知观察者位置更新
-				ReplicationGraphVisualizer.UpdateObservee(
-					ReplicationGraphVisualizer.MODE_SERVER,
-					_draggingActor.Id,
-					newPos.x,
-					newPos.y,
-					newPos.z
-				);
-
-				// 更新客户端视图
-				foreach (var client in _clients)
-				{
-					if (client.CanSeeActor(_draggingActor))
-					{
-						ReplicationGraphVisualizer.UpdateObservee(
-							client.Id,
-							_draggingActor.Id,
-							newPos.x,
-							newPos.y,
-							newPos.z
-						);
-					}
-				}
 			}
 			else if (Input.GetMouseButtonUp(0) && _draggingActor != null)
 			{
@@ -288,38 +279,13 @@ namespace ReplicationGraph
 			var actor = new Actor(id, position, type, isDynamic, moveRange);
 			_actors.Add(actor);
 
-			// 先添加被观察者（基础API调用）
-			ReplicationGraphVisualizer.AddObservee(
+			// 添加到全局被观察者
+			ReplicationGraphVisualizer.AddGlobalObservee(
 				ReplicationGraphVisualizer.MODE_SERVER,
-				id,
 				position.x,
 				position.y,
 				position.z,
-				type
-			);
-
-			// 获取实例并设置自定义数据和绘制回调
-			if (isDynamic)
-			{
-				ReplicationGraphVisualizer.Instance.BindObserveePath(ReplicationGraphVisualizer.MODE_SERVER, id, new ActorPath { actor = actor });
-			}
-
-			// 检查哪些客户端可以看到这个Actor
-			foreach (var client in _clients)
-			{
-				if (client.CanSeeActor(actor))
-				{
-					ReplicationGraphVisualizer.AddObservee(
-						client.Id,
-						id,
-						position.x,
-						position.y,
-						position.z,
-						type
-					);
-					client.LastUpdateTimes[id] = Time.time;
-				}
-			}
+				type);
 		}
 
 	}

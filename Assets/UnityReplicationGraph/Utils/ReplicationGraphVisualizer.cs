@@ -33,26 +33,28 @@ namespace ReplicationGraph
 			_instance = instance;
 		}
 
-		// 增加被观察者
-		public static void AddObservee(string observerId, string observeeId, float x, float y, float z, string type)
+		// 增加全局被观察者
+		public static void AddGlobalObservee(string observeeId, float x, float y, float z, string type)
 		{
-			Instance.AddObservee_Internal(observerId, observeeId, new Vector3(x, y, z), type);
+			Instance.AddGlobalObservee_Internal(observeeId, new Vector3(x, y, z), type);
+		}
+
+		// 更新全局被观察者位置
+		public static void UpdateGlobalObservee(string observeeId, float x, float y, float z)
+		{
+			Instance.UpdateGlobalObservee_Internal(observeeId, new Vector3(x, y, z));
+		}
+
+		// 移除全局被观察者
+		public static void RemoveGlobalObservee(string observeeId)
+		{
+			Instance.RemoveGlobalObservee_Internal(observeeId);
 		}
 
 		// 更新被观察者位置
-		public static void UpdateObservee(string observerId, string observeeId, float x, float y, float z)
+		public static void UpdateObservee(string observerId, string observeeId)
 		{
-			Instance.UpdateObservee_Internal(
-				observerId,
-				observeeId,
-				new Vector3(x, y, z)
-			);
-		}
-
-		// 移除被观察者
-		public static void RemoveObservee(string observerId, string observeeId)
-		{
-			Instance.RemoveObservee_Internal(observerId, observeeId);
+			Instance.UpdateObservee_Internal(observerId, observeeId);
 		}
 
 		// 切换观察者视角
