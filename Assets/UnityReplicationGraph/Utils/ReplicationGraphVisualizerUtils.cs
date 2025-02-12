@@ -46,6 +46,7 @@ namespace ReplicationGraph
 		// 标签
 		private static Dictionary<Color, GUIStyle> _cachedLabelStyle = new Dictionary<Color, GUIStyle>();
 
+		// 文字
 		public static void DrawLabel(Vector3 position, string text, Color? color = null)
 		{
 #if UNITY_EDITOR
@@ -62,6 +63,34 @@ namespace ReplicationGraph
 				UnityEditor.Handles.color = color.Value;
 			}
 			UnityEditor.Handles.Label(position, text, style);
+			UnityEditor.Handles.color = oldColor;
+#endif
+		}
+
+		// 绘制空心圆
+		public static void DrawWireCircle(Vector3 position, float radius, Color? color = null)
+		{
+#if UNITY_EDITOR
+			Color oldColor = UnityEditor.Handles.color;
+			if (color != null)
+			{
+				UnityEditor.Handles.color = color.Value;
+			}
+			UnityEditor.Handles.DrawWireDisc(position, Vector3.up, radius);
+			UnityEditor.Handles.color = oldColor;
+#endif
+		}
+
+		// 绘制实心圆
+		public static void DrawSolidCircle(Vector3 position, float radius, Color? color = null)
+		{
+#if UNITY_EDITOR
+			Color oldColor = UnityEditor.Handles.color;
+			if (color != null)
+			{
+				UnityEditor.Handles.color = color.Value;
+			}
+			UnityEditor.Handles.DrawSolidDisc(position, Vector3.up, radius);
 			UnityEditor.Handles.color = oldColor;
 #endif
 		}

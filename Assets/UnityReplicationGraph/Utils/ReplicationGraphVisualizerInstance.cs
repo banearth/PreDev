@@ -246,7 +246,7 @@ namespace ReplicationGraph
 
 		private void DrawViewSphere(Vector3 center)
 		{
-			Gizmos.DrawWireSphere(center, _observationRadius);
+			ReplicationGraphVisualizerUtils.DrawWireCircle(center, _observationRadius);
 			if (_showRadius)
 			{
 				string radiusInfo = $"R:{_observationRadius}m";
