@@ -1,7 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
-using static ReplicationGraph.ReplicationGraphVisualizerDemo;
 
 namespace ReplicationGraph
 {
@@ -55,7 +54,6 @@ namespace ReplicationGraph
 			{
 #if UNITY_EDITOR
 				if (!IsDynamic) return;
-				color.a *= 0.1f;
 				var oldColor = UnityEditor.Handles.color;
 				UnityEditor.Handles.color = color;
 				UnityEditor.Handles.DrawWireDisc(
@@ -63,6 +61,7 @@ namespace ReplicationGraph
 						Vector3.up,
 						this._moveRange
 					);
+				UnityEditor.Handles.color = oldColor;
 #endif
 			}
 
@@ -182,6 +181,10 @@ namespace ReplicationGraph
 
 		private void OnDrawGizmos()
 		{
+			if(!Application.isPlaying)
+			{
+				return;
+			}
 			if(_drawActorEnable)
 			{
 				foreach (var actor in _actors)

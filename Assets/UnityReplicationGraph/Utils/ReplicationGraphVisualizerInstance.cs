@@ -247,14 +247,11 @@ namespace ReplicationGraph
 		private void DrawViewSphere(Vector3 center)
 		{
 			Gizmos.DrawWireSphere(center, _observationRadius);
-
-#if UNITY_EDITOR
 			if (_showRadius)
 			{
 				string radiusInfo = $"R:{_observationRadius}m";
-				Handles.Label(center + Vector3.up * 0, radiusInfo);
+				ReplicationGraphVisualizerUtils.DrawLabel(center + Vector3.up * 0, radiusInfo);
 			}
-#endif
 		}
 
 		private bool ShouldShowName(ObserveeType type)
@@ -264,21 +261,13 @@ namespace ReplicationGraph
 
 		private void DrawSmartLabel(Vector3 position, List<LabelContent> contents)
 		{
-#if UNITY_EDITOR
 			if (contents == null || contents.Count == 0) return;
-
 			Vector3 basePosition = position + Vector3.forward * 0.5f;
-
 			for (int i = 0;i<contents.Count;i++)
 			{
 				var content = contents[i];
-				GUIStyle style = new GUIStyle();
-				style.normal.textColor = content.color;
-				// 根据累积的高度向上偏移，使用整体偏移倍数
-				Vector3 labelPosition = basePosition + Vector3.back * _smartLabelOffsetMultiple * i;
-				UnityEditor.Handles.Label(labelPosition, content.text, style);
+				ReplicationGraphVisualizerUtils.DrawLabel(basePosition + Vector3.back * _smartLabelOffsetMultiple * i, content.text, content.color);
 			}
-#endif
 		}
 
 		// 准备标签内容
@@ -293,23 +282,17 @@ namespace ReplicationGraph
 				float timeSinceUpdate = currentTime - observeeData.lastUpdateTime;
 				Color timeBasedColor = GetTimeBasedColor(timeSinceUpdate);
 				Gizmos.color = timeBasedColor;
-
 				// 绘制实体
 				switch (observeeData.type)
 				{
 					case ObserveeType.StaticActor:
-						// 静态物体用空心方块
-						Gizmos.DrawWireCube(observeeData.position, Vector3.one * 0.5f);
+						ReplicationGraphVisualizerUtils.DrawStaticActor(observeeData.position, timeBasedColor);
 						break;
 					case ObserveeType.DynamicActor:
-						// 动态物体用实心方块
-						Gizmos.DrawCube(observeeData.position, Vector3.one * 0.5f);
+						ReplicationGraphVisualizerUtils.DrawDynamicActor(observeeData.position, timeBasedColor);
 						break;
 					case ObserveeType.PlayerCharacter:
-#if UNITY_EDITOR
-						UnityEditor.Handles.color = timeBasedColor;
-						UnityEditor.Handles.DrawSolidDisc(observeeData.position, Vector3.up, 0.4f);
-#endif
+						ReplicationGraphVisualizerUtils.DrawPlayerCharacter(observeeData.position, timeBasedColor);
 						break;
 				}
 
