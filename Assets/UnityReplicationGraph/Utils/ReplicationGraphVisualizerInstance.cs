@@ -147,21 +147,32 @@ namespace ReplicationGraph
 		// 更新被观察者位置
 		internal void UpdateObservee_Internal(string observerId, string observeeId)
 		{
+			// 如果全局被观察者存在
 			if (_globalObservees.TryGetValue(observeeId, out var globalData))
 			{
-				// 如果全局存在，本地观察者不存在，则需要创建
-				if (!_observerRegistry.TryGetValue(observerId, out var localData))
+				// 观察者不存在，则需要创建
+				if (!_observerRegistry.TryGetValue(observerId, out var observerData))
 				{
-					localData = new ObserverData();
-					_observerRegistry[observerId] = localData;
+					observerData = new ObserverData();
+					_observerRegistry[observerId] = observerData;
 				}
+				// 如果本地被观察者不存在，则需要创建
+				if (!observerData.observees.TryGetValue(observeeId, out var localData))
+				{
+					localData = new ObserveeData();
+					observerData.observees[observeeId] = new ObserveeData();
+				}
+				localData.CopyFrom(globalData);
 			}
 			else
 			{
 				// 如果全局观察者不存在，本地观察者已经存在，则需要删除
-				if (_observerRegistry.TryGetValue(observerId, out var data))
+				if (_observerRegistry.TryGetValue(observerId, out var observerData))
 				{
-					data.observees.Remove(observeeId);
+					if (observerData.observees.ContainsKey(observeeId))
+					{
+						observerData.observees.Remove(observeeId);
+					}
 				}
 			}
 		}

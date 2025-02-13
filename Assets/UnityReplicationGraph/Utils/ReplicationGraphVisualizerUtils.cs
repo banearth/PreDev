@@ -25,7 +25,7 @@ namespace ReplicationGraph
 			{
 				Gizmos.color = color.Value;
 			}
-			Gizmos.DrawCube(position, Vector3.one * 0.5f);
+			Gizmos.DrawCube(position, Vector3.one * 0.6f);
 			Gizmos.color = oldColor;
 		}
 

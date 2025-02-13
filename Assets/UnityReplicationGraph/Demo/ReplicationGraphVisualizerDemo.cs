@@ -305,7 +305,7 @@ namespace ReplicationGraph
 
 			// 添加到全局被观察者
 			ReplicationGraphVisualizer.AddGlobalObservee(
-				ReplicationGraphVisualizer.MODE_SERVER,
+				id,
 				position.x,
 				position.y,
 				position.z,
