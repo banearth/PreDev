@@ -164,6 +164,7 @@ public static class ReplicationGraphDebugger
         }
     }
 
+    //TODO
     private static void DrawActor(TestActor actor, bool isVisible)
     {
         var color = isVisible ? visibleActorColor : culledActorColor;

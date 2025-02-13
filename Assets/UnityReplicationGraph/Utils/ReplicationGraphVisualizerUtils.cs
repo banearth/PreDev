@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine.UIElements;
 
 namespace ReplicationGraph
 {
@@ -43,10 +44,8 @@ namespace ReplicationGraph
 #endif
 		}
 
-		// 标签
 		private static Dictionary<Color, GUIStyle> _cachedLabelStyle = new Dictionary<Color, GUIStyle>();
 
-		// 文字
 		public static void DrawLabel(Vector3 position, string text, Color? color = null)
 		{
 #if UNITY_EDITOR
@@ -67,8 +66,7 @@ namespace ReplicationGraph
 #endif
 		}
 
-		// 绘制空心圆
-		public static void DrawWireCircle(Vector3 position, float radius, Color? color = null)
+		public static void DrawCirclePath(Vector3 position, float radius, Color? color = null)
 		{
 #if UNITY_EDITOR
 			Color oldColor = UnityEditor.Handles.color;
@@ -81,20 +79,38 @@ namespace ReplicationGraph
 #endif
 		}
 
-		// 绘制实心圆
-		public static void DrawSolidCircle(Vector3 position, float radius, Color? color = null)
+		// 绘制观察者
+		public static void DrawObserver(Vector3 position, float viewRadius, Color? viewColor = null, Color? borderColor = null)
 		{
 #if UNITY_EDITOR
-			Color oldColor = UnityEditor.Handles.color;
-			if (color != null)
+			// 中心十字
+			Color oldGizmosColor = Gizmos.color;
+			if (borderColor != null)
 			{
-				UnityEditor.Handles.color = color.Value;
+				Gizmos.color = borderColor.Value;
 			}
-			UnityEditor.Handles.DrawSolidDisc(position, Vector3.up, radius);
-			UnityEditor.Handles.color = oldColor;
+			float crossSize = 0.5f;
+			Gizmos.DrawLine(
+				position + Vector3.left * crossSize,
+				position + Vector3.right * crossSize
+			);
+			Gizmos.DrawLine(
+				position + Vector3.forward * crossSize,
+				position + Vector3.back * crossSize
+			);
+			Gizmos.color = oldGizmosColor;
+			// 绘制半透明圆形
+			var oldHandlesColor = UnityEditor.Handles.color;
+			if (viewColor != null)
+			{
+				UnityEditor.Handles.color = oldHandlesColor;
+			}
+			UnityEditor.Handles.DrawSolidDisc(position, Vector3.up, viewRadius);
+			// 绘制边界线
+			UnityEditor.Handles.DrawWireDisc(position, Vector3.up, viewRadius);
+			UnityEditor.Handles.color = oldHandlesColor;
 #endif
 		}
-
 
 
 	}

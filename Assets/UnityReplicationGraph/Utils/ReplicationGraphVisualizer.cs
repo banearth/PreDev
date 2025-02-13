@@ -80,17 +80,18 @@ namespace ReplicationGraph
 		}
 
 		// 增加观察者
-		public static void AddObserver(string observerId, float x, float y, float z)
+		public static void AddObserver(string observerId, float x, float y, float z, float viewRadius)
 		{
-			Instance.AddObserver_Internal(observerId, new Vector3(x, y, z));
+			Instance.AddObserver_Internal(observerId, new Vector3(x, y, z), viewRadius);
 		}
 
 		// 更新观察者位置
-		public static void UpdateObserver(string observerId, float x, float y, float z)
+		public static void UpdateObserver(string observerId, float x, float y, float z,float viewRadius)
 		{
 			Instance.UpdateObserver_Internal(
 				observerId,
-				new Vector3(x, y, z)
+				new Vector3(x, y, z),
+				viewRadius
 			);
 		}
 

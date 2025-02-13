@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 using System;
+using UnityEngine.UIElements;
+
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -28,6 +30,7 @@ namespace ReplicationGraph
 		private class ObserverData
 		{
 			public Vector3 position;
+			public float viewRadius;
 			public Dictionary<string, ObserveeData> observees = new Dictionary<string, ObserveeData>();
 		}
 		private class ObserveeData
@@ -56,9 +59,8 @@ namespace ReplicationGraph
 		[SerializeField] private string _targetObserverId = "";
 
 		[Header("可视化样式")]
-		[SerializeField] private Color _serverColor = new Color(1, 0, 0, 0.3f);
-		[SerializeField] private Color _clientColor = new Color(0, 1, 1, 0.3f);
-		[SerializeField] private float _observationRadius = 15f;
+		[SerializeField] private Color _viewColor = new Color(0, 1, 1, 0.3f);
+		[SerializeField] private Color _borderColor = new Color(0, 1, 1, 0.3f);
 
 		[Header("时效性可视化")]
 		[SerializeField] private float _recentDataThreshold = 1f;     // 最新数据阈值（秒）
@@ -182,7 +184,7 @@ namespace ReplicationGraph
 		#region Observer
 
 		// 增加观察者
-		internal void AddObserver_Internal(string observerId, Vector3 position)
+		internal void AddObserver_Internal(string observerId, Vector3 position, float viewRadius)
 		{
 			if (!_observerRegistry.TryGetValue(observerId, out var data))
 			{
@@ -191,15 +193,17 @@ namespace ReplicationGraph
 				RefreshCachedObservers();
 			}
 			data.position = position;
+			data.viewRadius = viewRadius;
 		}
 
 		// 更新观察者位置
-		internal void UpdateObserver_Internal(string observerId, Vector3 position)
+		internal void UpdateObserver_Internal(string observerId, Vector3 position, float viewRadius)
 		{
 			// 确保观察者存在
 			if (_observerRegistry.TryGetValue(observerId, out var data))
 			{
 				data.position = position;
+				data.viewRadius = viewRadius;
 			}
 		}
 
@@ -223,25 +227,28 @@ namespace ReplicationGraph
 		}
 
 		// 绘制单个客户端视角
-		private void DrawSingleClient(string observerId, Color? overrideColor = null)
+		private void DrawSingleClient(string observerId)
 		{
-			if (_observerRegistry.TryGetValue(observerId, out var data))
+			if (_observerRegistry.TryGetValue(observerId, out var observerData))
 			{
 				// 使用传入的颜色或默认的客户端颜色
 				bool isServer = observerId == ReplicationGraphVisualizer.MODE_SERVER;
-				Color viewColor = overrideColor ?? (isServer ? _serverColor : _clientColor);
 
 				// 只绘制当前观察者的十字标记和视野范围
-				DrawObserver(data.position, isServer);
+				if (isServer)
+				{
+					ReplicationGraphVisualizerUtils.DrawObserver(observerData.position, observerData.viewRadius, _viewColor, _borderColor);
+				}
 
 				// 绘制被观察者（不带十字标记）
-				DrawObservees(data);
+				DrawObservees(observerData);
 			}
 		}
 
 		// 绘制所有客户端视角
 		private void DrawAllClients()
 		{
+			//haha
 			Color[] colors = { Color.red, Color.green, Color.blue };
 			int colorIndex = 0;
 
@@ -253,18 +260,8 @@ namespace ReplicationGraph
 
 				// 为每个客户端使用不同的半透明颜色
 				Color observerColor = colors[colorIndex % colors.Length] * 0.5f;
-				DrawSingleClient(observerId, observerColor);
+				DrawSingleClient(observerId);
 				colorIndex++;
-			}
-		}
-
-		private void DrawViewSphere(Vector3 center)
-		{
-			ReplicationGraphVisualizerUtils.DrawWireCircle(center, _observationRadius);
-			if (_showRadius)
-			{
-				string radiusInfo = $"R:{_observationRadius}m";
-				ReplicationGraphVisualizerUtils.DrawLabel(center + Vector3.up * 0, radiusInfo);
 			}
 		}
 
@@ -384,7 +381,7 @@ namespace ReplicationGraph
 			switch (_currentMode)
 			{
 				case ObserverMode.Server:
-					DrawSingleClient(ReplicationGraphVisualizer.MODE_SERVER, _serverColor);
+					DrawSingleClient(ReplicationGraphVisualizer.MODE_SERVER);
 					break;
 				case ObserverMode.SingleClient:
 					DrawSingleClient(_targetObserverId);
@@ -415,7 +412,6 @@ namespace ReplicationGraph
 			return _cachedObservers;
 		}
 
-#if UNITY_EDITOR
 		private void OnGUI()
 		{
 			if (!_onguiEnable) { return; }
@@ -456,13 +452,6 @@ namespace ReplicationGraph
 			GUILayout.Label($"<color={ColorToHex(_recentDataColor)}>■</color> 最新数据 (<{_recentDataThreshold}s)");
 			GUILayout.Label($"<color={ColorToHex(_normalDataColor)}>■</color> 正常数据 (<{_staleDataThreshold}s)");
 			GUILayout.Label($"<color={ColorToHex(_staleDataColor)}>■</color> 过期数据");
-
-			GUILayout.Space(10);
-
-			// 显示观察者说明
-			GUILayout.Label("观察者标记:");
-			GUILayout.Label($"<color={ColorToHex(_serverColor)}>+</color> 服务器 (无范围限制)");
-			GUILayout.Label($"<color={ColorToHex(_clientColor)}>+</color> 客户端 (R={_observationRadius}m)");
 
 			GUILayout.EndArea();
 		}
@@ -533,56 +522,6 @@ namespace ReplicationGraph
 
 			GUILayout.EndArea();
 		}
-
-		// 在OnInspectorGUI中使用的按钮样式
-		public GUIStyle GetSelectedButtonStyle()
-		{
-			GUIStyle style = new GUIStyle(GUI.skin.button);
-			style.fontStyle = FontStyle.Bold;
-			return style;
-		}
-
-		private void DrawObserver(Vector3 position, bool isServer = false)
-		{
-			// 如果是服务器观察者，直接返回，不绘制任何标记
-			if (isServer)
-			{
-				return;
-			}
-
-			float crossSize = 0.5f;
-			Color viewColor = new Color(_clientColor.r, _clientColor.g, _clientColor.b, 0.2f);
-			Color borderColor = _clientColor;
-
-			// 绘制观察者位置标记（十字线）
-			Gizmos.color = borderColor;
-			Gizmos.DrawLine(
-				position + Vector3.left * crossSize,
-				position + Vector3.right * crossSize
-			);
-			Gizmos.DrawLine(
-				position + Vector3.forward * crossSize,
-				position + Vector3.back * crossSize
-			);
-
-#if UNITY_EDITOR
-			// 绘制半透明圆形
-			UnityEditor.Handles.color = viewColor;
-			UnityEditor.Handles.DrawSolidDisc(position, Vector3.up, _observationRadius);
-
-			// 绘制边界线
-			UnityEditor.Handles.color = borderColor;
-			UnityEditor.Handles.DrawWireDisc(position, Vector3.up, _observationRadius);
-
-			// 只在开启时显示半径信息
-			if (_showRadius)
-			{
-				string radiusInfo = $"R:{_observationRadius}m";
-				UnityEditor.Handles.Label(position + Vector3.up, radiusInfo);
-			}
-#endif
-		}
-#endif
 
 	
 	}

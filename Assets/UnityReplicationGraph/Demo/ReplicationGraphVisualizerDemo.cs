@@ -75,7 +75,7 @@ namespace ReplicationGraph
 				// 绘制路径
 				if (IsDynamic)
 				{
-					ReplicationGraphVisualizerUtils.DrawWireCircle(this._initialPosition, this._moveRange, color);
+					ReplicationGraphVisualizerUtils.DrawCirclePath(this._initialPosition, this._moveRange, color);
 				}
 			}
 
@@ -103,7 +103,7 @@ namespace ReplicationGraph
 		}
 
 		private List<Actor> _actors = new List<Actor>();
-		private List<Client> _clients = new List<Client>();
+		private Dictionary<string, Client> _clients = new Dictionary<string, Client>();
 		private float _lastUpdateTime;
 		private Actor _draggingActor = null;
 		private Vector3 _dragOffset;
@@ -112,7 +112,7 @@ namespace ReplicationGraph
 		{
 			_camera = Camera.main;
 			// 创建服务器观察者（全图视野）
-			ReplicationGraphVisualizer.AddObserver(ReplicationGraphVisualizer.MODE_SERVER, 0, 0, 0);
+			ReplicationGraphVisualizer.AddObserver(ReplicationGraphVisualizer.MODE_SERVER, 0, 0, 0, -1);
 
 			// 先创建玩家角色
 			CreateActor("player1", new Vector3(-5, 0, -5), ReplicationGraphVisualizer.TYPE_PLAYER, true);
@@ -168,11 +168,13 @@ namespace ReplicationGraph
 			{
 				if (actor.IsOwnedByClient)
 				{
+					//_clients.Find();
 					ReplicationGraphVisualizer.UpdateObserver(
-						actor.Id,
+						actor.OwnedClientId,
 						actor.Position.x, 
 						actor.Position.y,
-						actor.Position.z);
+						actor.Position.z,
+						_clientViewRadius);
 				}
 			}
 
@@ -196,7 +198,7 @@ namespace ReplicationGraph
 			}
 
 			// 根据视野范围更新客户端的可见性
-			foreach (var client in _clients)
+			foreach (var client in _clients.Values)
 			{
 				foreach (var actor in _actors)
 				{
@@ -291,24 +293,25 @@ namespace ReplicationGraph
 			return _clientViewRadius;
 		}
 
-		private void CreateClient(string id, string playerActorId)
+		private void CreateClient(string clientId, string playerActorId)
 		{
 			// 获取对应玩家的位置
 			var playerActor = _actors.Find(a => a.Id == playerActorId);
 			if (playerActor == null) return;
 
-			_clients.Add(new Client(GetClientViewRadius)
+			_clients.Add(clientId, new Client(GetClientViewRadius)
 			{
-				Id = id,
+				Id = clientId,
 				Position = playerActor.Position, // 使用玩家的位置
 				PlayerActorId = playerActorId
 			});
 
 			// 使用玩家位置创建观察者
-			ReplicationGraphVisualizer.AddObserver(id,
+			ReplicationGraphVisualizer.AddObserver(clientId,
 				playerActor.Position.x,
 				playerActor.Position.y,
-				playerActor.Position.z);
+				playerActor.Position.z,
+				_clientViewRadius);
 		}
 
 		private void CreateActor(string id, Vector3 position, string type, bool isDynamic)
