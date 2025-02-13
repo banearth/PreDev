@@ -235,7 +235,7 @@ namespace ReplicationGraph
 				bool isServer = observerId == ReplicationGraphVisualizer.MODE_SERVER;
 
 				// 只绘制当前观察者的十字标记和视野范围
-				if (isServer)
+				if (!isServer)
 				{
 					ReplicationGraphVisualizerUtils.DrawObserver(observerData.position, observerData.viewRadius, _viewColor, _borderColor);
 				}
