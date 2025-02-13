@@ -169,7 +169,9 @@ MonoBehaviour:
   _updateInterval: 0.1
   _moveSpeed: 0.05
   _moveRange: 10
-  _clientViewRadius: 15
+  _clientViewRadius: 5
+  _drawEnable: 1
+  _actorColor: {r: 1, g: 1, b: 1, a: 0.1}
 --- !u!1 &341278431
 GameObject:
   m_ObjectHideFlags: 0
