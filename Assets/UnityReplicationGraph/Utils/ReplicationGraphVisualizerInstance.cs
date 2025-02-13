@@ -188,6 +188,7 @@ namespace ReplicationGraph
 			{
 				data = new ObserverData();
 				_observerRegistry[observerId] = data;
+				RefreshCachedObservers();
 			}
 			data.position = position;
 		}
@@ -196,18 +197,20 @@ namespace ReplicationGraph
 		internal void UpdateObserver_Internal(string observerId, Vector3 position)
 		{
 			// 确保观察者存在
-			if (!_observerRegistry.TryGetValue(observerId, out var data))
+			if (_observerRegistry.TryGetValue(observerId, out var data))
 			{
-				data = new ObserverData();
-				_observerRegistry[observerId] = data;
+				data.position = position;
 			}
-			data.position = position;
 		}
 
 		// 移除观察者
 		internal void RemoveObserver_Internal(string observerId)
 		{
-			_observerRegistry.Remove(observerId);
+			if (_observerRegistry.ContainsKey(observerId))
+			{
+				_observerRegistry.Remove(observerId);
+				RefreshCachedObservers();
+			}
 		}
 
 		#endregion
@@ -377,13 +380,24 @@ namespace ReplicationGraph
 			}
 		}
 
-		public List<string> GetObservers()
+		private List<string> _cachedObservers = null;
+
+		private void RefreshCachedObservers()
+		{ 
+			_cachedObservers = null;
+		}
+
+		public List<string> GetObserversExceptServer()
 		{
-			return _observerRegistry?
+			if (_cachedObservers == null)
+			{
+				_cachedObservers = _observerRegistry?
 				.Keys
 				.Where(id => id != ReplicationGraphVisualizer.MODE_SERVER)
 				.OrderBy(id => id)
 				.ToList();
+			}
+			return _cachedObservers;
 		}
 
 #if UNITY_EDITOR
@@ -478,7 +492,7 @@ namespace ReplicationGraph
 
 			// 第二行按钮
 			GUILayout.BeginHorizontal();
-			var observers = GetObservers();
+			var observers = GetObserversExceptServer();
 			foreach (var observer in observers)
 			{
 				GUI.backgroundColor = (_currentMode == ObserverMode.SingleClient && _targetObserverId == observer) ?

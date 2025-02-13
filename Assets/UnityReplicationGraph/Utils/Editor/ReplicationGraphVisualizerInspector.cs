@@ -80,7 +80,7 @@ namespace ReplicationGraph
 			EditorGUILayout.Space(5);
 
 			// 获取所有客户端观察者
-			var observers = instance.GetObservers();
+			var observers = instance.GetObserversExceptServer();
 			if (observers != null && observers.Any())
 			{
 				for (int i = 0; i < observers.Count; i += 2)
