@@ -29,9 +29,15 @@ namespace ReplicationGraph
 
 		private class ObserverData
 		{
+			private static int NEXT_UUID = 0;
+			public int uuid;
 			public Vector3 position;
 			public float viewRadius;
 			public Dictionary<string, ObserveeData> observees = new Dictionary<string, ObserveeData>();
+			public ObserverData()
+			{
+				uuid = NEXT_UUID++;
+			}
 		}
 		private class ObserveeData
 		{
@@ -59,7 +65,12 @@ namespace ReplicationGraph
 		[SerializeField] private string _targetObserverId = "";
 
 		[Header("可视化样式")]
-		[SerializeField] private Color _viewColor = new Color(0, 1, 1, 0.3f);
+		[SerializeField] private Color [] _viewColors = new Color[]
+		{
+			new Color(0, 1, 1, 0.3f),
+			new Color(0, 1, 1, 0.3f),
+			new Color(0, 1, 1, 0.3f),
+		};
 		[SerializeField] private Color _borderColor = new Color(0, 1, 1, 0.3f);
 
 		[Header("时效性可视化")]
@@ -231,13 +242,11 @@ namespace ReplicationGraph
 		{
 			if (_observerRegistry.TryGetValue(observerId, out var observerData))
 			{
-				// 使用传入的颜色或默认的客户端颜色
 				bool isServer = observerId == ReplicationGraphVisualizer.MODE_SERVER;
-
-				// 只绘制当前观察者的十字标记和视野范围
+				// 只绘制客户端的
 				if (!isServer)
 				{
-					ReplicationGraphVisualizerUtils.DrawObserver(observerData.position, observerData.viewRadius, _viewColor, _borderColor);
+					ReplicationGraphVisualizerUtils.DrawObserver(observerData.position, observerData.viewRadius, _viewColors[0], _borderColor);
 				}
 
 				// 绘制被观察者（不带十字标记）
@@ -248,18 +257,15 @@ namespace ReplicationGraph
 		// 绘制所有客户端视角
 		private void DrawAllClients()
 		{
-			//haha
-			Color[] colors = { Color.red, Color.green, Color.blue };
 			int colorIndex = 0;
-
-			foreach (var observerId in _observerRegistry.Keys)
+			foreach (var pair  in _observerRegistry)
 			{
-				// 跳过服务器观察者
+				var observerData = pair.Value;
+				var observerId = pair.Key;
 				if (observerId == ReplicationGraphVisualizer.MODE_SERVER)
 					continue;
-
 				// 为每个客户端使用不同的半透明颜色
-				Color observerColor = colors[colorIndex % colors.Length] * 0.5f;
+				Color observerColor = _viewColors[observerData.uuid % _viewColors.Length] * 0.5f;
 				DrawSingleClient(observerId);
 				colorIndex++;
 			}
