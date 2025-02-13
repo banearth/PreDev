@@ -13,6 +13,7 @@ namespace ReplicationGraph
 		[SerializeField] private float _clientViewRadius = 15f; // 客户端视野范围
 
 		[SerializeField] private bool _drawActorEnable = true;
+		[SerializeField] private bool _drawActorPathEnable = true;
 		[SerializeField] private Color _actorColor = new Color(1,1,1,0.1f); 
 		public class Actor
 		{
@@ -24,8 +25,9 @@ namespace ReplicationGraph
 			public Vector3 _initialPosition;  // 保存初始位置作为圆心
 			public float _phaseOffset;        // 每个Actor的相位偏移
 			public float _moveRange;          // 每个Actor的运动半径
+			public bool _ownedByClient;
 
-			public Actor(string id, Vector3 position, string type, bool isDynamic, float moveRange)
+			public Actor(string id, Vector3 position, string type, bool isDynamic, float moveRange, bool ownedByClient)
 			{
 				Id = id;
 				Position = position;
@@ -34,6 +36,7 @@ namespace ReplicationGraph
 				IsDynamic = isDynamic;
 				_moveRange = moveRange;
 				_phaseOffset = Random.Range(0f, Mathf.PI * 2f); // 随机初始相位
+				_ownedByClient = ownedByClient;
 			}
 
 			public void UpdatePosition(float time, float speed)
@@ -50,19 +53,30 @@ namespace ReplicationGraph
 				Position = _initialPosition + offset;
 			}
 
-			public void OnDrawGizmos(Color color)
+			public void OnDrawActor(Color color)
 			{
-#if UNITY_EDITOR
-				if (!IsDynamic) return;
-				var oldColor = UnityEditor.Handles.color;
-				UnityEditor.Handles.color = color;
-				UnityEditor.Handles.DrawWireDisc(
-						this._initialPosition,
-						Vector3.up,
-						this._moveRange
-					);
-				UnityEditor.Handles.color = oldColor;
-#endif
+				// 绘制本体
+				if(_ownedByClient)
+				{
+					ReplicationGraphVisualizerUtils.DrawPlayerCharacter(this.Position, color);
+				}
+				else if (IsDynamic)
+				{
+					ReplicationGraphVisualizerUtils.DrawDynamicActor(this.Position, color);
+				}
+				else
+				{
+					ReplicationGraphVisualizerUtils.DrawStaticActor(this.Position, color);
+				}
+			}
+
+			public void OnDrawActorPath(Color color)
+			{
+				// 绘制路径
+				if (IsDynamic)
+				{
+					ReplicationGraphVisualizerUtils.DrawWireCircle(this._initialPosition, this._moveRange, color);
+				}
 			}
 
 		}
@@ -94,17 +108,17 @@ namespace ReplicationGraph
 			ReplicationGraphVisualizer.AddObserver(ReplicationGraphVisualizer.MODE_SERVER, 0, 0, 0);
 
 			// 先创建玩家角色
-			CreateActor("player1", new Vector3(-5, 0, -5), ReplicationGraphVisualizer.TYPE_PLAYER, true);
-			CreateActor("player2", new Vector3(5, 0, 5), ReplicationGraphVisualizer.TYPE_PLAYER, true);
+			CreateActor("player1", new Vector3(-5, 0, -5), ReplicationGraphVisualizer.TYPE_PLAYER, true, true);
+			CreateActor("player2", new Vector3(5, 0, 5), ReplicationGraphVisualizer.TYPE_PLAYER, true, true);
 
 			// 创建静态物体
-			CreateActor("static1", Vector3.zero, ReplicationGraphVisualizer.TYPE_STATIC, false);
-			CreateActor("static2", new Vector3(10, 0, 10), ReplicationGraphVisualizer.TYPE_STATIC, false);
-			CreateActor("static3", new Vector3(-10, 0, -10), ReplicationGraphVisualizer.TYPE_STATIC, false);
+			CreateActor("static1", Vector3.zero, ReplicationGraphVisualizer.TYPE_STATIC, false, false);
+			CreateActor("static2", new Vector3(10, 0, 10), ReplicationGraphVisualizer.TYPE_STATIC, false, false);
+			CreateActor("static3", new Vector3(-10, 0, -10), ReplicationGraphVisualizer.TYPE_STATIC, false, false);
 
 			// 创建动态物体
-			CreateActor("dynamic1", new Vector3(3, 0, 3), ReplicationGraphVisualizer.TYPE_DYNAMIC, true);
-			CreateActor("dynamic2", new Vector3(-3, 0, -3), ReplicationGraphVisualizer.TYPE_DYNAMIC, true);
+			CreateActor("dynamic1", new Vector3(3, 0, 3), ReplicationGraphVisualizer.TYPE_DYNAMIC, true, false);
+			CreateActor("dynamic2", new Vector3(-3, 0, -3), ReplicationGraphVisualizer.TYPE_DYNAMIC, true, false);
 
 			// 创建客户端，使用对应玩家的位置
 			foreach (var actor in _actors.Where(a => a.Type == ReplicationGraphVisualizer.TYPE_PLAYER))
@@ -189,7 +203,14 @@ namespace ReplicationGraph
 			{
 				foreach (var actor in _actors)
 				{
-					actor.OnDrawGizmos(_actorColor);
+					actor.OnDrawActor(_actorColor);
+				}
+			}
+			if (_drawActorPathEnable)
+			{
+				foreach (var actor in _actors)
+				{
+					actor.OnDrawActorPath(_actorColor);
 				}
 			}
 		}
@@ -273,13 +294,13 @@ namespace ReplicationGraph
 				playerActor.Position.z);
 		}
 
-		private void CreateActor(string id, Vector3 position, string type, bool isDynamic)
+		private void CreateActor(string id, Vector3 position, string type, bool isDynamic,bool ownedByClient)
 		{
 			float moveRange = isDynamic ?
 				Random.Range(_moveRange * 0.5f, _moveRange * 1.5f) :
 				0f;
 
-			var actor = new Actor(id, position, type, isDynamic, moveRange);
+			var actor = new Actor(id, position, type, isDynamic, moveRange, ownedByClient);
 			_actors.Add(actor);
 
 			// 添加到全局被观察者
