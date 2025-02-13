@@ -69,6 +69,7 @@ namespace ReplicationGraph
 		[SerializeField] private Color _staleDataColor = Color.gray;   // 旧数据颜色
 
 		[Header("调试显示")]
+		[SerializeField] private bool _onguiEnable = true;
 		[SerializeField] private float _smartLabelOffsetMultiple = 1;// 智能Label整体偏移倍数
 		[SerializeField] private bool _showUpdateTime = true;    // 是否显示更新时间
 		[SerializeField] private bool _showRadius = true;        // 是否显示观察半径
@@ -273,11 +274,13 @@ namespace ReplicationGraph
 			return (_nameDisplayMask & (1 << (int)type)) != 0;
 		}
 
-		private void DrawSmartLabel(Vector3 position, List<LabelContent> contents)
+		private void DrawSmartLabel(Vector3 position, List<LabelContent> contents, int count)
 		{
-			if (contents == null || contents.Count == 0) return;
+			if (contents == null) { return; }
+			count = Mathf.Min(count, contents.Count);
+			if (count == 0) return;
 			Vector3 basePosition = position + Vector3.forward * 0.5f;
-			for (int i = 0;i<contents.Count;i++)
+			for (int i = 0;i< count; i++)
 			{
 				var content = contents[i];
 				ReplicationGraphVisualizerUtils.DrawLabel(basePosition + Vector3.back * _smartLabelOffsetMultiple * i, content.text, content.color);
@@ -285,7 +288,30 @@ namespace ReplicationGraph
 		}
 
 		// 准备标签内容
-		private List<LabelContent> labelContents = new List<LabelContent>();
+		private List<LabelContent> _labelContents = new List<LabelContent>();
+		private int _labelContentUseCount = 0;
+
+		private void ClearLabelContent()
+		{
+			_labelContentUseCount = 0;
+		}
+
+		private void AddLabelContent(string text, Color color)
+		{
+			_labelContentUseCount++;
+			LabelContent curLabelContent = null;
+			if (_labelContents.Count >= _labelContentUseCount)
+			{
+				curLabelContent = _labelContents[_labelContentUseCount - 1];
+			}
+			else
+			{
+				curLabelContent = new LabelContent();
+				_labelContents.Add(curLabelContent);
+			}
+			curLabelContent.text = text;
+			curLabelContent.color = color;
+		}
 
 		private void DrawObservees(ObserverData data)
 		{
@@ -310,33 +336,23 @@ namespace ReplicationGraph
 						break;
 				}
 
-#if UNITY_EDITOR
 				// 准备标签内容
-				labelContents.Clear();
+				ClearLabelContent();
 
-				// 添加名字（如果启用）
+				// 添加名字
 				if (ShouldShowName(observeeData.type))
 				{
-					labelContents.Add(new LabelContent
-					{
-						text = observeeData.name,
-						color = timeBasedColor,
-					});
+					AddLabelContent(observeeData.name, timeBasedColor);
 				}
 
-				// 添加更新时间（如果启用）
+				// 添加更新时间
 				if (_showUpdateTime)
 				{
-					labelContents.Add(new LabelContent
-					{
-						text = $"{timeSinceUpdate:F1}s",
-						color = timeBasedColor,
-					});
+					AddLabelContent($"{timeSinceUpdate:F1}s", timeBasedColor);
 				}
 
 				// 绘制所有标签
-				DrawSmartLabel(observeeData.position, labelContents);
-#endif
+				DrawSmartLabel(observeeData.position, _labelContents, _labelContentUseCount);
 			}
 		}
 
@@ -364,7 +380,7 @@ namespace ReplicationGraph
 		// 根据当前模式选择绘制方式
 		private void OnDrawGizmos()
 		{
-			//if (!Application.isPlaying) return;
+			if (!Application.isPlaying) return;
 
 			switch (_currentMode)
 			{
@@ -403,6 +419,7 @@ namespace ReplicationGraph
 #if UNITY_EDITOR
 		private void OnGUI()
 		{
+			if (!_onguiEnable) { return; }
 			if (!Application.isPlaying) return;
 
 			// 右上角图例
@@ -451,9 +468,16 @@ namespace ReplicationGraph
 			GUILayout.EndArea();
 		}
 
+		private Dictionary<Color, string> _colorToHex = new Dictionary<Color, string>();
+
 		private string ColorToHex(Color color)
 		{
-			return $"#{ColorUtility.ToHtmlStringRGBA(color)}";
+			if (!_colorToHex.TryGetValue(color, out var hex))
+			{
+				hex = $"#{ColorUtility.ToHtmlStringRGBA(color)}";
+				_colorToHex[color] = hex;
+			}
+			return hex;
 		}
 
 		private void DrawViewControls()

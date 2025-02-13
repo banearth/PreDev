@@ -167,7 +167,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _updateInterval: 0.1
-  _moveSpeed: 0.05
+  _moveSpeed: 0.01
   _moveRange: 10
   _clientViewRadius: 5
   _drawEnable: 1
@@ -211,8 +211,9 @@ MonoBehaviour:
   _recentDataColor: {r: 0, g: 1, b: 0, a: 1}
   _normalDataColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   _staleDataColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  _onguiEnable: 1
   _smartLabelOffsetMultiple: 0.7
-  _showUpdateTime: 1
+  _showUpdateTime: 0
   _showRadius: 1
   _showLegend: 1
   _nameDisplayMask: -1
