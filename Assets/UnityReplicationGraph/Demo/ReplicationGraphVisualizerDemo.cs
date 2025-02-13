@@ -1,8 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
-using static ReplicationGraph.ReplicationGraphVisualizerDemo;
-using UnityEditor.PackageManager;
 
 namespace ReplicationGraph
 {
@@ -23,7 +21,7 @@ namespace ReplicationGraph
 			public string Type;
 			public bool IsDynamic;
 			public string OwnedClientId;
-			public bool IsOwnedByClient => string.IsNullOrEmpty(OwnedClientId);
+			public bool IsOwnedByClient => !string.IsNullOrEmpty(OwnedClientId);
 
 			public Vector3 _initialPosition;  // 保存初始位置作为圆心
 			public float _phaseOffset;        // 每个Actor的相位偏移
@@ -38,6 +36,7 @@ namespace ReplicationGraph
 				IsDynamic = isDynamic;
 				_moveRange = moveRange;
 				_phaseOffset = Random.Range(0f, Mathf.PI * 2f); // 随机初始相位
+				UpdatePosition(0, 0);
 			}
 
 			public void UpdatePosition(float time, float speed)
@@ -84,15 +83,22 @@ namespace ReplicationGraph
 
 		private class Client
 		{
+
 			public string Id;
 			public Vector3 Position;
-			public float ViewRadius;
+			public float ViewRadius => _getViewRadius();
 			public string PlayerActorId;  // 添加对应玩家Actor的ID引用
 			public Dictionary<string, float> LastUpdateTimes = new Dictionary<string, float>();
 
+			private System.Func<float> _getViewRadius = null;
+			public Client(System.Func<float> getViewRadius)
+			{
+				_getViewRadius = getViewRadius;
+			}
 			public bool CanSeeActor(Actor actor)
 			{
-				return Vector3.Distance(Position, actor.Position) <= ViewRadius;
+				var viewRadius = ViewRadius;
+				return Vector3.SqrMagnitude(Position - actor.Position) <= viewRadius * viewRadius;
 			}
 		}
 
@@ -144,16 +150,22 @@ namespace ReplicationGraph
 			HandleActorDragging();
 
 			// 只有在非拖拽状态下才更新 Actor 的自动移动
-			if (Time.time - _lastUpdateTime < _updateInterval) return;
-			_lastUpdateTime = Time.time;
-
+			if (Time.time - _lastUpdateTime >= _updateInterval)
+			{
+				_lastUpdateTime = Time.time;
+				// Actor进行移动
+				foreach (var actor in _actors)
+				{
+					if (actor != _draggingActor)  // 不是正在拖拽的 Actor 才更新位置
+					{
+						actor.UpdatePosition(Time.time, _moveSpeed);
+					}
+				}
+			}
+			
 			// Actor进行移动
 			foreach (var actor in _actors)
 			{
-				if (actor != _draggingActor)  // 不是正在拖拽的 Actor 才更新位置
-				{
-					actor.UpdatePosition(Time.time, _moveSpeed);
-				}
 				if (actor.IsOwnedByClient)
 				{
 					ReplicationGraphVisualizer.UpdateObserver(
@@ -274,17 +286,21 @@ namespace ReplicationGraph
 							   new Vector3(clickPosition.x, 0, clickPosition.z)) <= clickRadius);
 		}
 
+		private float GetClientViewRadius()
+		{
+			return _clientViewRadius;
+		}
+
 		private void CreateClient(string id, string playerActorId)
 		{
 			// 获取对应玩家的位置
 			var playerActor = _actors.Find(a => a.Id == playerActorId);
 			if (playerActor == null) return;
 
-			_clients.Add(new Client
+			_clients.Add(new Client(GetClientViewRadius)
 			{
 				Id = id,
 				Position = playerActor.Position, // 使用玩家的位置
-				ViewRadius = _clientViewRadius,
 				PlayerActorId = playerActorId
 			});
 

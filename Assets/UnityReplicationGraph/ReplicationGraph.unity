@@ -166,8 +166,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 290d3b7e74bf4a047a9747f8aa7d4a3f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _updateInterval: 0.1
-  _moveSpeed: 0.01
+  _updateInterval: 0.3
+  _moveSpeed: 0.03
   _moveRange: 10
   _clientViewRadius: 5
   _drawEnable: 1

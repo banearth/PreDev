@@ -30,7 +30,6 @@ namespace ReplicationGraph
 			public Vector3 position;
 			public Dictionary<string, ObserveeData> observees = new Dictionary<string, ObserveeData>();
 		}
-
 		private class ObserveeData
 		{
 			public string name;
