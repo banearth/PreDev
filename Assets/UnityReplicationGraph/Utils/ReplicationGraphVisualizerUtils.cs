@@ -103,7 +103,7 @@ namespace ReplicationGraph
 			var oldHandlesColor = UnityEditor.Handles.color;
 			if (viewColor != null)
 			{
-				UnityEditor.Handles.color = oldHandlesColor;
+				UnityEditor.Handles.color = viewColor.Value;
 			}
 			UnityEditor.Handles.DrawSolidDisc(position, Vector3.up, viewRadius);
 			// 绘制边界线
