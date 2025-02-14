@@ -182,7 +182,7 @@ namespace ReplicationGraph
 			// 处理拖拽逻辑
 			HandleActorDragging();
 
-			// 只有在非拖拽状态下才更新 Actor 的自动移动
+			// Actor 的自动移动
 			if (Time.time - _lastUpdatePositionTime >= _updatePositionInterval)
 			{
 				// 计算时间差
@@ -198,7 +198,7 @@ namespace ReplicationGraph
 				}
 			}
 			
-			// Actor进行移动
+			// 同步服务器位置
 			foreach (var actor in _actors)
 			{
 				if (actor.IsOwnedByClient)

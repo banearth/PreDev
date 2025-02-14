@@ -170,9 +170,9 @@ MonoBehaviour:
   _moveSpeed: 0.03
   _moveRange: 10
   _clientViewRadius: 5
-  _staticActorCount: 3
-  _dynamicActorCount: 2
-  _playerActorCount: 2
+  _staticActorCount: 30
+  _dynamicActorCount: 20
+  _playerActorCount: 10
   _spawnAreaRect:
     serializedVersion: 2
     x: -20
@@ -182,7 +182,7 @@ MonoBehaviour:
   _drawEnable: 1
   _actorColor: {r: 1, g: 1, b: 1, a: 0.1}
   _smartLabelOffsetMultiple: 0.9
-  _smartLabelBaseOffset: 2.5
+  _smartLabelBaseOffset: 2.1
   _autoDestroyOutOfSightActor: 1
 --- !u!1 &699662515
 GameObject:
@@ -568,6 +568,22 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 197433985661912456, guid: 8596f9df25029b04e81085917399cf37, type: 3}
+      propertyPath: _expiredDataColor.b
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 197433985661912456, guid: 8596f9df25029b04e81085917399cf37, type: 3}
+      propertyPath: _expiredDataColor.g
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 197433985661912456, guid: 8596f9df25029b04e81085917399cf37, type: 3}
+      propertyPath: _expiredDataColor.r
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 197433985661912456, guid: 8596f9df25029b04e81085917399cf37, type: 3}
+      propertyPath: _smartLabelBaseOffset
+      value: 0.7
+      objectReference: {fileID: 0}
     - target: {fileID: 5902307612292473060, guid: 8596f9df25029b04e81085917399cf37, type: 3}
       propertyPath: m_LocalPosition.x
       value: 4.606839

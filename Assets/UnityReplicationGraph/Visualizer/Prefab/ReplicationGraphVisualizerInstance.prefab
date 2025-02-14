@@ -51,14 +51,14 @@ MonoBehaviour:
   - {r: 0, g: 0.5827391, b: 1, a: 0.3}
   - {r: 0, g: 0.012422562, b: 1, a: 0.3}
   _borderColor: {r: 1, g: 1, b: 1, a: 0.3}
-  _recentDataThreshold: 1
-  _staleDataThreshold: 3
-  _recentDataColor: {r: 0, g: 1, b: 0, a: 1}
-  _normalDataColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  _staleDataColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  _newDataThreshold: 1
+  _laggingDataThreshold: 5
+  _newDataColor: {r: 0, g: 1, b: 0, a: 1}
+  _laggingDataColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  _expiredDataColor: {r: 1, g: 0, b: 0, a: 1}
   _onguiEnable: 1
   _smartLabelOffsetMultiple: -0.9
-  _smartLabelBaseOffset: 0.9
+  _smartLabelBaseOffset: 0.7
   _showUpdateTime: 0
   _showRadius: 1
   _showLegend: 1
