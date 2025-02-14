@@ -188,7 +188,7 @@ namespace ReplicationGraph
 				if (!observerData.observees.TryGetValue(observeeId, out var localData))
 				{
 					localData = new ObserveeData();
-					observerData.observees[observeeId] = new ObserveeData();
+					observerData.observees[observeeId] = localData;
 				}
 				localData.CopyFrom(globalData);
 			}

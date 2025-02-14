@@ -170,9 +170,9 @@ MonoBehaviour:
   _moveSpeed: 0.03
   _moveRange: 10
   _clientViewRadius: 5
-  _staticActorCount: 10
-  _dynamicActorCount: 10
-  _playerActorCount: 3
+  _staticActorCount: 1
+  _dynamicActorCount: 0
+  _playerActorCount: 1
   _spawnAreaRect:
     serializedVersion: 2
     x: -20
