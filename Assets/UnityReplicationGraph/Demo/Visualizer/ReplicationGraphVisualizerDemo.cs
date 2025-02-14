@@ -12,6 +12,12 @@ namespace ReplicationGraph
 		[SerializeField] private float _moveRange = 3f;              // 移动范围
 		[SerializeField] private float _clientViewRadius = 10f;      // 客户端视野半径
 
+		[Header("出生配置")]
+		[SerializeField] private int _staticActorCount = 10;
+		[SerializeField] private int _dynamicActorCount = 10;
+		[SerializeField] private int _playerActorCount = 3;
+		[SerializeField] private Rect _spawnAreaRect = new Rect(-10, -10, 20, 20);
+
 		[Header("可视化配置")]
 		[SerializeField] private bool _drawEnable = true;            // 是否启用绘制
 		[SerializeField] private Color _actorColor = Color.white;    // Actor颜色
@@ -119,6 +125,15 @@ namespace ReplicationGraph
 		private Camera _camera;
 		private SmartLabel _actorLabel; // 用于显示Actor名字的标签管理器
 
+		private Vector3 GetRandomSpawnPosition()
+		{
+			return new Vector3(
+				Random.Range(_spawnAreaRect.xMin, _spawnAreaRect.xMax),
+				0,
+				Random.Range(_spawnAreaRect.yMin, _spawnAreaRect.yMax)
+			);
+		}
+
 		private void Start()
 		{
 			_camera = Camera.main;
@@ -128,17 +143,22 @@ namespace ReplicationGraph
 			ReplicationGraphVisualizer.AddObserver(ReplicationGraphVisualizer.MODE_SERVER, 0, 0, 0, -1);
 
 			// 先创建玩家角色
-			CreateActor("player1", new Vector3(-5, 0, -5), ReplicationGraphVisualizer.TYPE_PLAYER, true);
-			CreateActor("player2", new Vector3(5, 0, 5), ReplicationGraphVisualizer.TYPE_PLAYER, true);
+			for(int i = 0; i < _playerActorCount; i++)
+			{
+				CreateActor("player" + i, GetRandomSpawnPosition(), ReplicationGraphVisualizer.TYPE_PLAYER, true);
+			}
 
 			// 创建静态物体
-			CreateActor("static1", Vector3.zero, ReplicationGraphVisualizer.TYPE_STATIC, false);
-			CreateActor("static2", new Vector3(10, 0, 10), ReplicationGraphVisualizer.TYPE_STATIC, false);
-			CreateActor("static3", new Vector3(-10, 0, -10), ReplicationGraphVisualizer.TYPE_STATIC, false);
+			for(int i = 0; i < _staticActorCount; i++)
+			{
+				CreateActor("static" + i, GetRandomSpawnPosition(), ReplicationGraphVisualizer.TYPE_STATIC, false);
+			}
 
 			// 创建动态物体
-			CreateActor("dynamic1", new Vector3(3, 0, 3), ReplicationGraphVisualizer.TYPE_DYNAMIC, true);
-			CreateActor("dynamic2", new Vector3(-3, 0, -3), ReplicationGraphVisualizer.TYPE_DYNAMIC, true);
+			for(int i = 0; i < _dynamicActorCount; i++)
+			{
+				CreateActor("dynamic" + i, GetRandomSpawnPosition(), ReplicationGraphVisualizer.TYPE_DYNAMIC, true);
+			}
 
 			// 创建客户端，使用对应玩家的位置
 			foreach (var actor in _actors.Where(a => a.Type == ReplicationGraphVisualizer.TYPE_PLAYER))
@@ -278,6 +298,13 @@ namespace ReplicationGraph
 		{
 			if(!Application.isPlaying)
 			{
+				//绘制出生区域
+				Gizmos.color = new Color(1, 0, 0, 0.5f);
+				// 调整为XZ平面绘制，使用Rect的x作为X轴，y作为Z轴，Y轴固定为0
+				Gizmos.DrawWireCube(
+					new Vector3(_spawnAreaRect.center.x, 0, _spawnAreaRect.center.y),
+					new Vector3(_spawnAreaRect.width, 0, _spawnAreaRect.height)
+				);
 				return;
 			}
 			if(_drawEnable)

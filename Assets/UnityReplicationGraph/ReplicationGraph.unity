@@ -170,6 +170,15 @@ MonoBehaviour:
   _moveSpeed: 0.03
   _moveRange: 10
   _clientViewRadius: 5
+  _staticActorCount: 10
+  _dynamicActorCount: 10
+  _playerActorCount: 3
+  _spawnAreaRect:
+    serializedVersion: 2
+    x: -20
+    y: -15
+    width: 40
+    height: 30
   _drawEnable: 1
   _actorColor: {r: 1, g: 1, b: 1, a: 0.1}
   _smartLabelOffsetMultiple: 0.9
