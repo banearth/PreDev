@@ -112,6 +112,22 @@ namespace ReplicationGraph
 #endif
 		}
 
+		private class LabelContent
+		{
+			public string text;
+			public Color color;
+		}
+
+		// 准备标签内容
+		private static List<LabelContent> _labelContents = new List<LabelContent>();
+		private static int _labelContentUseCount = 0;
+
+		private static void ClearLabelContent()
+		{
+			_labelContentUseCount = 0;
+		}
+
+
 
 	}
 }

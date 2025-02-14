@@ -203,9 +203,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _currentMode: 0
   _targetObserverId: 
-  _serverColor: {r: 1, g: 0, b: 0, a: 0.3}
-  _clientColor: {r: 0, g: 1, b: 1, a: 0.3}
-  _observationRadius: 15
+  _viewColors:
+  - {r: 0, g: 1, b: 1, a: 0.3}
+  - {r: 0, g: 0.5827391, b: 1, a: 0.3}
+  - {r: 0, g: 0.012422562, b: 1, a: 0.3}
+  _borderColor: {r: 1, g: 1, b: 1, a: 0.3}
   _recentDataThreshold: 1
   _staleDataThreshold: 5
   _recentDataColor: {r: 0, g: 1, b: 0, a: 1}
