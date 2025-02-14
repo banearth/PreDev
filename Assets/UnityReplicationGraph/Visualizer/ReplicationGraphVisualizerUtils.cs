@@ -182,6 +182,16 @@ namespace ReplicationGraph
 		public static void DrawObserver(Vector3 position, float viewRadius, Color? viewColor = null, Color? borderColor = null)
 		{
 #if UNITY_EDITOR
+			// 绘制半透明圆形
+			var oldHandlesColor = UnityEditor.Handles.color;
+			if (viewColor != null)
+			{
+				UnityEditor.Handles.color = viewColor.Value;
+			}
+			UnityEditor.Handles.DrawSolidDisc(position, Vector3.up, viewRadius);
+			// 绘制边界线
+			UnityEditor.Handles.DrawWireDisc(position, Vector3.up, viewRadius);
+			UnityEditor.Handles.color = oldHandlesColor;
 			// 中心十字
 			Color oldGizmosColor = Gizmos.color;
 			if (borderColor != null)
@@ -198,16 +208,6 @@ namespace ReplicationGraph
 				position + Vector3.back * crossSize
 			);
 			Gizmos.color = oldGizmosColor;
-			// 绘制半透明圆形
-			var oldHandlesColor = UnityEditor.Handles.color;
-			if (viewColor != null)
-			{
-				UnityEditor.Handles.color = viewColor.Value;
-			}
-			UnityEditor.Handles.DrawSolidDisc(position, Vector3.up, viewRadius);
-			// 绘制边界线
-			UnityEditor.Handles.DrawWireDisc(position, Vector3.up, viewRadius);
-			UnityEditor.Handles.color = oldHandlesColor;
 #endif
 		}
 

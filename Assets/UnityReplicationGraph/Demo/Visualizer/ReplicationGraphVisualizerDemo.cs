@@ -7,7 +7,7 @@ namespace ReplicationGraph
 	public class ReplicationGraphVisualizerDemo : MonoBehaviour
 	{
 		[Header("Mock数据配置")]
-		[SerializeField] private float _updateInterval = 0.1f;       // 更新间隔
+		[SerializeField] private float _updatePositionInterval = 0.1f;       // 更新间隔
 		[SerializeField] private float _moveSpeed = 1f;              // 移动速度
 		[SerializeField] private float _moveRange = 3f;              // 移动范围
 		[SerializeField] private float _clientViewRadius = 10f;      // 客户端视野半径
@@ -119,7 +119,7 @@ namespace ReplicationGraph
 
 		private List<Actor> _actors = new List<Actor>();
 		private Dictionary<string, Client> _clients = new Dictionary<string, Client>();
-		private float _lastUpdateTime;
+		private float _lastUpdatePositionTime;
 		private Actor _draggingActor = null;
 		private Vector3 _dragOffset;
 		private Camera _camera;
@@ -183,10 +183,11 @@ namespace ReplicationGraph
 			HandleActorDragging();
 
 			// 只有在非拖拽状态下才更新 Actor 的自动移动
-			if (Time.time - _lastUpdateTime >= _updateInterval)
+			if (Time.time - _lastUpdatePositionTime >= _updatePositionInterval)
 			{
-				_lastUpdateTime = Time.time;
-				var deltaTime = Time.deltaTime;
+				// 计算时间差
+				var deltaTime = Time.time - _lastUpdatePositionTime;
+				_lastUpdatePositionTime = Time.time;
 				// Actor进行移动
 				foreach (var actor in _actors)
 				{

@@ -2,6 +2,8 @@
 using UnityEngine;
 using System;
 using UnityEngine.UIElements;
+using static ReplicationGraph.SmartLabel;
+
 
 
 #if UNITY_EDITOR
@@ -258,14 +260,15 @@ namespace ReplicationGraph
 			if (_observerRegistry.TryGetValue(observerId, out var observerData))
 			{
 				bool isServer = observerId == ReplicationGraphVisualizer.MODE_SERVER;
+
+				// 绘制被观察者（不带十字标记）
+				DrawObservees(observerData);
+
 				// 只绘制客户端的
 				if (!isServer)
 				{
 					ReplicationGraphVisualizerUtils.DrawObserver(observerData.position, observerData.viewRadius, _viewColors[0], _borderColor);
 				}
-
-				// 绘制被观察者（不带十字标记）
-				DrawObservees(observerData);
 			}
 		}
 
@@ -438,6 +441,56 @@ namespace ReplicationGraph
 			}
 		}
 
+		#region DistanceReferObject
+
+		private class DistanceReferObject
+		{
+			public float distance;
+			public object referObject;
+			public T GetObjectAsType<T>() => (T)referObject;
+		}
+
+		private class DistanceReferObjectComparer : IComparer<DistanceReferObject>
+		{
+			public int Compare(DistanceReferObject x, DistanceReferObject y)
+			{
+				return x.distance.CompareTo(y.distance);
+			}
+		}
+
+		private List<DistanceReferObject> _sortedDistanceReferObjectList = new List<DistanceReferObject>();
+		private int _sortedDistanceReferObjectCount = 0;
+		private DistanceReferObjectComparer _distanceReferObjectComparer = new DistanceReferObjectComparer();
+
+		private void AddDistanceReferObject(float distance, object referObject)
+		{
+			_sortedDistanceReferObjectCount++;
+			DistanceReferObject curDistanceReferObject = null;
+			if (_sortedDistanceReferObjectList.Count >= _sortedDistanceReferObjectCount)
+			{
+				curDistanceReferObject = _sortedDistanceReferObjectList[_sortedDistanceReferObjectCount - 1];
+			}
+			else
+			{
+				curDistanceReferObject = new DistanceReferObject();
+				_sortedDistanceReferObjectList.Add(curDistanceReferObject);
+			}
+			curDistanceReferObject.distance = distance;
+			curDistanceReferObject.referObject = referObject;
+		}
+
+		private void ClearDistanceReferObjectList()
+		{
+			_sortedDistanceReferObjectCount = 0;
+		}
+
+		private void SortDistanceReferObjectList()
+		{
+			_sortedDistanceReferObjectList.Sort(0, _sortedDistanceReferObjectCount, _distanceReferObjectComparer);
+		}
+
+		#endregion
+
 		private void DrawGUI_ObserverInfo(string observerId, ObserverData observer, int index)
 		{
 			int padding = 10;
@@ -452,26 +505,26 @@ namespace ReplicationGraph
 
 			GUILayout.BeginArea(new Rect(xPos + 5, Screen.height - height - padding + 25, width - 10, height - 30));
 
-			// 按ID排序显示所有被观察者
-			var sortedObservees = observer.observees
-				.OrderBy(kvp => kvp.Key)
-				.ToList();
-
-			foreach (var kvp in sortedObservees)
+			// 计算所有被观察者到观察者的距离
+			ClearDistanceReferObjectList();
+			foreach (var observee in observer.observees.Values)
 			{
-				var observeeData = kvp.Value;
-				float timeSinceUpdate = Time.time - observeeData.lastUpdateTime;
-				
-				// 根据时间获取显示颜色
+				AddDistanceReferObject(Vector3.Distance(observer.position, observee.position), observee);
+			}
+			SortDistanceReferObjectList();
+
+			for(int i = 0;i<_sortedDistanceReferObjectCount;i++)
+			{
+				var distanceReferObject = _sortedDistanceReferObjectList[i];
+				var observee = distanceReferObject.GetObjectAsType<ObserveeData>();
+				float timeSinceUpdate = Time.time - observee.lastUpdateTime;
 				Color timeBasedColor = GetTimeBasedColor(timeSinceUpdate);
 				string colorHex = ColorToHex(timeBasedColor);
-				
-				// 获取类型显示文本
-				string typeText = GetTypeDisplayText(observeeData.type);
-				
-				// 使用富文本显示带颜色的信息
-				GUILayout.Label($"<color={colorHex}>{observeeData.name} ({typeText})</color>");
-				
+				string typeText = GetTypeDisplayText(observee.type);
+
+				// 显示名称、类型和距离
+				GUILayout.Label($"<color={colorHex}>{observee.name} ({typeText}) - {distanceReferObject.distance:F1}m</color>");
+
 				if (_showUpdateTime)
 				{
 					GUILayout.Label($"<color={colorHex}>  {timeSinceUpdate:F1}s</color>");
