@@ -232,31 +232,27 @@ namespace ReplicationGraph
 					_clientVisibleActors[client.Id] = new HashSet<string>();
 				}
 				
-				var visibleActors = _clientVisibleActors[client.Id];
+				var currentVisibleActors = _clientVisibleActors[client.Id];
+				var previousVisibleActors = new HashSet<string>(currentVisibleActors); // 保存上一帧的可见性状态
+				currentVisibleActors.Clear();
 				
 				// 检查所有Actor的可见性
 				foreach (var actor in _actors)
 				{
 					bool isVisible = client.CanSeeActor(actor);
-					bool wasVisible = visibleActors.Contains(actor.Id);
+					bool wasVisible = previousVisibleActors.Contains(actor.Id);
 
-					if (isVisible && !wasVisible)
+					if (isVisible)
 					{
-						// 新进入视野
-						visibleActors.Add(actor.Id);
+						// Actor在视野内，更新或添加
+						currentVisibleActors.Add(actor.Id);
 						client.LastUpdateTimes[actor.Id] = Time.time;
 						ReplicationGraphVisualizer.UpdateObservee(client.Id, actor.Id);
 					}
-					else if (!isVisible && wasVisible && _autoDestroyOutOfSightActor)
+					else if (wasVisible && _autoDestroyOutOfSightActor)
 					{
-						// 刚离开视野
+						// Actor刚离开视野，主动通知销毁
 						RemoveActorFromClient(client.Id, actor.Id);
-					}
-					else if (isVisible)
-					{
-						// 持续在视野内，更新时间戳
-						client.LastUpdateTimes[actor.Id] = Time.time;
-						ReplicationGraphVisualizer.UpdateObservee(client.Id, actor.Id);
 					}
 				}
 			}
@@ -418,44 +414,86 @@ namespace ReplicationGraph
 		{
 			if (!_showVisibleActors) return;
 
-			string currentClientId = ReplicationGraphVisualizer.GetCurObserver();
-			if (string.IsNullOrEmpty(currentClientId) || 
-				currentClientId == ReplicationGraphVisualizer.MODE_SERVER || 
-				currentClientId == ReplicationGraphVisualizer.MODE_ALL_CLIENTS) 
-				return;
+			string currentObserver = ReplicationGraphVisualizer.GetCurObserver();
+			if (string.IsNullOrEmpty(currentObserver)) return;
 
-			// 显示当前客户端可见的Actor列表
-			if (_clientVisibleActors.TryGetValue(currentClientId, out var visibleActors) &&
-				_clients.TryGetValue(currentClientId, out var currentClient))
+			// 如果是查看所有客户端
+			if (currentObserver == ReplicationGraphVisualizer.MODE_ALL_CLIENTS)
 			{
 				int padding = 10;
 				int width = 200;
 				int height = 150;
+				int spacing = 20; // 窗口之间的间距
 				
-				// 在左下角显示
-				GUI.Box(new Rect(padding, Screen.height - height - padding, width, height), 
-					$"Client {currentClientId} 可见Actor");
-
-				GUILayout.BeginArea(new Rect(padding + 5, Screen.height - height - padding + 25, width - 10, height - 30));
-
-				foreach (var actorId in visibleActors)
+				// 从左到右显示每个客户端的信息
+				int index = 0;
+				foreach (var clientId in _clients.Keys)
 				{
-					var actor = _actors.Find(a => a.Id == actorId);
-					if (actor != null)
+					if (_clientVisibleActors.TryGetValue(clientId, out var visibleActors) &&
+						_clients.TryGetValue(clientId, out var client))
 					{
-						string actorType = actor.IsDynamic ? "动态" : "静态";
-						if (actor.IsOwnedByClient)
-						{
-							actorType = "玩家";
-						}
+						int xPos = padding + (width + spacing) * index;
 						
-						// 计算距离
-						float distance = Vector3.Distance(currentClient.Position, actor.Position);
-						GUILayout.Label($"{actorId} ({actorType}) - {distance:F1}m");
+						// 绘制窗口
+						GUI.Box(new Rect(xPos, Screen.height - height - padding, width, height), 
+							$"Client {clientId} 可见Actor");
+
+						GUILayout.BeginArea(new Rect(xPos + 5, Screen.height - height - padding + 25, width - 10, height - 30));
+
+						foreach (var actorId in visibleActors)
+						{
+							var actor = _actors.Find(a => a.Id == actorId);
+							if (actor != null)
+							{
+								string actorType = actor.IsDynamic ? "动态" : "静态";
+								if (actor.IsOwnedByClient)
+								{
+									actorType = "玩家";
+								}
+								
+								float distance = Vector3.Distance(client.Position, actor.Position);
+								GUILayout.Label($"{actorId} ({actorType}) - {distance:F1}m");
+							}
+						}
+
+						GUILayout.EndArea();
+						index++;
 					}
 				}
+			}
+			// 单个客户端视角的显示保持不变
+			else if (currentObserver != ReplicationGraphVisualizer.MODE_SERVER)
+			{
+				if (_clientVisibleActors.TryGetValue(currentObserver, out var visibleActors) &&
+					_clients.TryGetValue(currentObserver, out var currentClient))
+				{
+					int padding = 10;
+					int width = 200;
+					int height = 150;
+					
+					GUI.Box(new Rect(padding, Screen.height - height - padding, width, height), 
+						$"Client {currentObserver} 可见Actor");
 
-				GUILayout.EndArea();
+					GUILayout.BeginArea(new Rect(padding + 5, Screen.height - height - padding + 25, width - 10, height - 30));
+
+					foreach (var actorId in visibleActors)
+					{
+						var actor = _actors.Find(a => a.Id == actorId);
+						if (actor != null)
+						{
+							string actorType = actor.IsDynamic ? "动态" : "静态";
+							if (actor.IsOwnedByClient)
+							{
+								actorType = "玩家";
+							}
+							
+							float distance = Vector3.Distance(currentClient.Position, actor.Position);
+							GUILayout.Label($"{actorId} ({actorType}) - {distance:F1}m");
+						}
+					}
+
+					GUILayout.EndArea();
+				}
 			}
 		}
 	}
