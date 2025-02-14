@@ -226,31 +226,39 @@ namespace ReplicationGraph
 		{
 			foreach (var client in _clients.Values)
 			{
-				var currentVisibleActors = new HashSet<string>();
+				// 确保每个client都有对应的可见性集合
+				if (!_clientVisibleActors.ContainsKey(client.Id))
+				{
+					_clientVisibleActors[client.Id] = new HashSet<string>();
+				}
+				
+				var visibleActors = _clientVisibleActors[client.Id];
 				
 				// 检查所有Actor的可见性
 				foreach (var actor in _actors)
 				{
 					bool isVisible = client.CanSeeActor(actor);
-					bool wasVisible = _clientVisibleActors.ContainsKey(client.Id) && 
-									_clientVisibleActors[client.Id].Contains(actor.Id);
+					bool wasVisible = visibleActors.Contains(actor.Id);
 
-					if (isVisible)
+					if (isVisible && !wasVisible)
 					{
-						// Actor在视野内，更新或添加
-						currentVisibleActors.Add(actor.Id);
+						// 新进入视野
+						visibleActors.Add(actor.Id);
 						client.LastUpdateTimes[actor.Id] = Time.time;
 						ReplicationGraphVisualizer.UpdateObservee(client.Id, actor.Id);
 					}
-					else if (wasVisible && _autoDestroyOutOfSightActor)
+					else if (!isVisible && wasVisible && _autoDestroyOutOfSightActor)
 					{
-						// Actor刚离开视野，主动通知销毁
+						// 刚离开视野
 						RemoveActorFromClient(client.Id, actor.Id);
 					}
+					else if (isVisible)
+					{
+						// 持续在视野内，更新时间戳
+						client.LastUpdateTimes[actor.Id] = Time.time;
+						ReplicationGraphVisualizer.UpdateObservee(client.Id, actor.Id);
+					}
 				}
-
-				// 更新可见性记录
-				_clientVisibleActors[client.Id] = currentVisibleActors;
 			}
 		}
 
