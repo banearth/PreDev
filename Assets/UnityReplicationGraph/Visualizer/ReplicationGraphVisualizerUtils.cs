@@ -1,9 +1,80 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
-using UnityEngine.UIElements;
 
 namespace ReplicationGraph
 {
+
+	/// <summary>
+    /// 智能标签管理器
+    /// 用于复用标签内容，避免频繁创建新对象
+    /// </summary>
+	public class SmartLabel
+    {
+        public class LabelContent
+        {
+            public string text;
+            public Color color;
+        }
+
+        private List<LabelContent> _labelContents = new List<LabelContent>();
+        private int _labelContentUseCount = 0;
+        private float _offsetMultiple = 0.5f; // 默认偏移倍数
+
+        public SmartLabel(float offsetMultiple = 0.5f)
+        {
+            _offsetMultiple = offsetMultiple;
+        }
+
+        /// <summary>
+        /// 清空当前使用的标签内容
+        /// </summary>
+        public void Clear()
+        {
+            _labelContentUseCount = 0;
+        }
+
+        /// <summary>
+        /// 添加标签内容
+        /// </summary>
+        public void Add(string text, Color color)
+        {
+            _labelContentUseCount++;
+            LabelContent curLabelContent = null;
+            
+            if (_labelContents.Count >= _labelContentUseCount)
+            {
+                curLabelContent = _labelContents[_labelContentUseCount - 1];
+            }
+            else
+            {
+                curLabelContent = new LabelContent();
+                _labelContents.Add(curLabelContent);
+            }
+            
+            curLabelContent.text = text;
+            curLabelContent.color = color;
+        }
+
+        /// <summary>
+        /// 绘制标签
+        /// </summary>
+        public void Draw(Vector3 position)
+        {
+            if (_labelContentUseCount == 0) return;
+
+            Vector3 basePosition = position + Vector3.forward * 0.5f;
+            for (int i = 0; i < _labelContentUseCount; i++)
+            {
+                var content = _labelContents[i];
+                ReplicationGraphVisualizerUtils.DrawLabel(
+                    basePosition + Vector3.back * _offsetMultiple * i, 
+                    content.text, 
+                    content.color
+                );
+            }
+        }
+    }
+
 	public static class ReplicationGraphVisualizerUtils
 	{
 		// 静态物体用空心方块
