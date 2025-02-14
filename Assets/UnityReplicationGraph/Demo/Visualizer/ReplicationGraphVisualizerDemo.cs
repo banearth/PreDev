@@ -180,13 +180,19 @@ namespace ReplicationGraph
 			{
 				if (actor.IsOwnedByClient)
 				{
-					//_clients.Find();
-					ReplicationGraphVisualizer.UpdateObserver(
-						actor.OwnedClientId,
-						actor.Position.x, 
-						actor.Position.y,
-						actor.Position.z,
-						_clientViewRadius);
+					// 更新客户端观察者的位置，使用对应玩家的位置
+					if (_clients.TryGetValue(actor.OwnedClientId, out var client))
+					{
+						// 同步客户端位置到玩家位置
+						client.Position = actor.Position;
+						
+						ReplicationGraphVisualizer.UpdateObserver(
+							actor.OwnedClientId,
+							actor.Position.x, 
+							actor.Position.y,
+							actor.Position.z,
+							_clientViewRadius);
+					}
 				}
 			}
 
@@ -335,12 +341,13 @@ namespace ReplicationGraph
 			var playerActor = _actors.Find(a => a.Id == playerActorId);
 			if (playerActor == null) return;
 
-			_clients.Add(clientId, new Client(GetClientViewRadius)
+			var client = new Client(GetClientViewRadius)
 			{
 				Id = clientId,
-				Position = playerActor.Position, // 使用玩家的位置
+				Position = playerActor.Position, // 初始化时使用玩家位置
 				PlayerActorId = playerActorId
-			});
+			};
+			_clients.Add(clientId, client);
 
 			// 使用玩家位置创建观察者
 			ReplicationGraphVisualizer.AddObserver(clientId,
