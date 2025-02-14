@@ -412,12 +412,13 @@ namespace ReplicationGraph
 		private void DrawLegend()
 		{
 			int padding = 10;
-			int width = 200;
+			int width = 150;
+			int height = 240;
 
 			// 创建一个背景框
-			GUI.Box(new Rect(Screen.width - width - padding, padding, width, 200), "图例");
+			GUI.Box(new Rect(Screen.width - width - padding, padding, width, height), "图例");
 
-			GUILayout.BeginArea(new Rect(Screen.width - width - padding + 5, padding + 20, width - 10, 180));
+			GUILayout.BeginArea(new Rect(Screen.width - width - padding + 5, padding + 25, width - 10, height - 30));
 
 			GUI.skin.label.richText = true;  // 启用富文本
 
@@ -453,7 +454,7 @@ namespace ReplicationGraph
 		private void DrawViewControls()
 		{
 			int padding = 10;
-			int width = 200;
+			int width = 170;
 			int buttonHeight = 30;
 
 			// 创建一个背景框
