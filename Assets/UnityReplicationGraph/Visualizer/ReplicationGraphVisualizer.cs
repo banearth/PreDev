@@ -101,5 +101,10 @@ namespace ReplicationGraph
 			Instance.RemoveObserver_Internal(observerId);
 		}
 
+		// 获取当前观察者ID
+		public static string GetCurObserver()
+		{
+			return Instance.GetCurObserver_Internal();
+		}
 	}
 }

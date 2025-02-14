@@ -506,6 +506,20 @@ namespace ReplicationGraph
 			GUILayout.EndArea();
 		}
 
-	
+		// 获取当前观察者ID
+		internal string GetCurObserver_Internal()
+		{
+			switch (_currentMode)
+			{
+				case ObserverMode.Server:
+					return ReplicationGraphVisualizer.MODE_SERVER;
+				case ObserverMode.AllClients:
+					return ReplicationGraphVisualizer.MODE_ALL_CLIENTS;
+				case ObserverMode.SingleClient:
+					return _targetObserverId;
+				default:
+					return string.Empty;
+			}
+		}
 	}
 }

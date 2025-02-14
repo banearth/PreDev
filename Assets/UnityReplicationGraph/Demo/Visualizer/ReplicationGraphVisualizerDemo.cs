@@ -18,6 +18,10 @@ namespace ReplicationGraph
 		[SerializeField] private float _smartLabelOffsetMultiple = 0.5f;  // 标签间距
 		[SerializeField] private float _smartLabelBaseOffset = 0.5f;      // 标签基础偏移
 
+		[Header("UI配置")]
+		[SerializeField] private bool _showVisibleActors = true;  // 是否显示可见Actor列表
+		private Dictionary<string, HashSet<string>> _clientVisibleActors = new Dictionary<string, HashSet<string>>();
+
 		public class Actor
 		{
 			public string Id;
@@ -206,6 +210,22 @@ namespace ReplicationGraph
 			}
 
 			// 根据视野范围更新客户端的可见性
+			UpdateVisibility();
+		}
+
+		private void UpdateVisibility()
+		{
+			// 清空上一帧的可见性数据
+			foreach (var client in _clients.Values)
+			{
+				if (!_clientVisibleActors.ContainsKey(client.Id))
+				{
+					_clientVisibleActors[client.Id] = new HashSet<string>();
+				}
+				_clientVisibleActors[client.Id].Clear();
+			}
+
+			// 根据视野范围更新客户端的可见性
 			foreach (var client in _clients.Values)
 			{
 				foreach (var actor in _actors)
@@ -217,6 +237,8 @@ namespace ReplicationGraph
 							actor.Id
 						);
 						client.LastUpdateTimes[actor.Id] = Time.time;
+						// 记录可见性
+						_clientVisibleActors[client.Id].Add(actor.Id);
 					}
 				}
 			}
@@ -353,6 +375,48 @@ namespace ReplicationGraph
 			{
 				_actorLabel.SetOffsetMultiple(_smartLabelOffsetMultiple);
 				_actorLabel.SetBaseOffset(_smartLabelBaseOffset);
+			}
+		}
+
+		private void OnGUI()
+		{
+			if (!_showVisibleActors) return;
+
+			// 使用新的GetObserver API
+			string currentClientId = ReplicationGraphVisualizer.GetCurObserver();
+			if (string.IsNullOrEmpty(currentClientId) || 
+				currentClientId == ReplicationGraphVisualizer.MODE_SERVER || 
+				currentClientId == ReplicationGraphVisualizer.MODE_ALL_CLIENTS) 
+				return;
+
+			// 显示当前客户端可见的Actor列表
+			if (_clientVisibleActors.TryGetValue(currentClientId, out var visibleActors))
+			{
+				int padding = 10;
+				int width = 200;
+				int height = 150;
+				
+				// 在左下角显示
+				GUI.Box(new Rect(padding, Screen.height - height - padding, width, height), 
+					$"Client {currentClientId} 可见Actor");
+
+				GUILayout.BeginArea(new Rect(padding + 5, Screen.height - height - padding + 25, width - 10, height - 30));
+
+				foreach (var actorId in visibleActors)
+				{
+					var actor = _actors.Find(a => a.Id == actorId);
+					if (actor != null)
+					{
+						string actorType = actor.IsDynamic ? "动态" : "静态";
+						if (actor.IsOwnedByClient)
+						{
+							actorType = "玩家";
+						}
+						GUILayout.Label($"{actorId} ({actorType})");
+					}
+				}
+
+				GUILayout.EndArea();
 			}
 		}
 	}
