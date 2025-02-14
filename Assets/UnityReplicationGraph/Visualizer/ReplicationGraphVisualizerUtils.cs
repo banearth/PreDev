@@ -19,12 +19,22 @@ namespace ReplicationGraph
         private List<LabelContent> _labelContents = new List<LabelContent>();
         private int _labelContentUseCount = 0;
         private float _offsetMultiple = 0.5f;     // 标签间距倍数
-        private Vector3 _baseOffset = Vector3.forward * 0.5f;  // 初始偏移
+        private float _baseOffset = 0.5f;         // 初始偏移距离
+        private Vector3 _direction = Vector3.forward;  // 标签排列方向
 
-        public SmartLabel(float offsetMultiple = 0.5f, Vector3? baseOffset = null)
+        public SmartLabel(float offsetMultiple = 0.5f, float baseOffset = 0.5f, Vector3 direction = default)
         {
             _offsetMultiple = offsetMultiple;
-            _baseOffset = baseOffset ?? Vector3.forward * 0.5f;
+            _baseOffset = baseOffset;
+            _direction = direction == default ? Vector3.forward : direction.normalized;
+        }
+
+        /// <summary>
+        /// 设置标签排列方向
+        /// </summary>
+        public void SetDirection(Vector3 direction)
+        {
+            _direction = direction.normalized;
         }
 
         /// <summary>
@@ -38,7 +48,7 @@ namespace ReplicationGraph
         /// <summary>
         /// 设置初始偏移
         /// </summary>
-        public void SetBaseOffset(Vector3 baseOffset)
+        public void SetBaseOffset(float baseOffset)
         {
             _baseOffset = baseOffset;
         }
@@ -80,12 +90,12 @@ namespace ReplicationGraph
         {
             if (_labelContentUseCount == 0) return;
 
-            Vector3 basePosition = position + _baseOffset;
+            Vector3 basePosition = position + _direction * _baseOffset;
             for (int i = 0; i < _labelContentUseCount; i++)
             {
                 var content = _labelContents[i];
                 ReplicationGraphVisualizerUtils.DrawLabel(
-                    basePosition + Vector3.back * _offsetMultiple * i, 
+                    basePosition + _direction * _offsetMultiple * i, 
                     content.text, 
                     content.color
                 );

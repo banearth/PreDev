@@ -108,9 +108,14 @@ namespace ReplicationGraph
 		private Actor _draggingActor = null;
 		private Vector3 _dragOffset;
 		private Camera _camera;
+		private SmartLabel _actorLabel; // 用于显示Actor名字的标签管理器
+
 		private void Start()
 		{
 			_camera = Camera.main;
+			// 初始化ActorLabel，设置向上偏移
+			_actorLabel = new SmartLabel(0.5f, 0.5f);
+
 			// 创建服务器观察者（全图视野）
 			ReplicationGraphVisualizer.AddObserver(ReplicationGraphVisualizer.MODE_SERVER, 0, 0, 0, -1);
 
@@ -224,8 +229,14 @@ namespace ReplicationGraph
 			{
 				foreach (var actor in _actors)
 				{
+					// 绘制Actor本体和路径
 					actor.OnDrawActor(_actorColor);
 					actor.OnDrawActorPath(_actorColor);
+
+					// 绘制标签，不需要每次传入方向	
+					_actorLabel.Clear();
+					_actorLabel.Add(actor.Id, _actorColor);
+					_actorLabel.Draw(actor.Position);
 				}
 			}
 		}
