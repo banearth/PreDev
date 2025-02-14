@@ -106,5 +106,11 @@ namespace ReplicationGraph
 		{
 			return Instance.GetCurObserver_Internal();
 		}
+
+		// 从客户端移除被观察者
+		public static void RemoveObservee(string observerId, string observeeId)
+		{
+			Instance.RemoveObservee_Internal(observerId, observeeId);
+		}
 	}
 }

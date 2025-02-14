@@ -20,6 +20,9 @@ namespace ReplicationGraph
 
 		[Header("UI配置")]
 		[SerializeField] private bool _showVisibleActors = true;  // 是否显示可见Actor列表
+		[Header("可见性配置")]
+		[SerializeField] private bool _autoDestroyOutOfSightActor = true;  // 是否自动销毁视野外Actor
+
 		private Dictionary<string, HashSet<string>> _clientVisibleActors = new Dictionary<string, HashSet<string>>();
 
 		public class Actor
@@ -221,33 +224,51 @@ namespace ReplicationGraph
 
 		private void UpdateVisibility()
 		{
-			// 清空上一帧的可见性数据
 			foreach (var client in _clients.Values)
 			{
-				if (!_clientVisibleActors.ContainsKey(client.Id))
-				{
-					_clientVisibleActors[client.Id] = new HashSet<string>();
-				}
-				_clientVisibleActors[client.Id].Clear();
-			}
-
-			// 根据视野范围更新客户端的可见性
-			foreach (var client in _clients.Values)
-			{
+				var currentVisibleActors = new HashSet<string>();
+				
+				// 检查所有Actor的可见性
 				foreach (var actor in _actors)
 				{
-					if (client.CanSeeActor(actor))
+					bool isVisible = client.CanSeeActor(actor);
+					bool wasVisible = _clientVisibleActors.ContainsKey(client.Id) && 
+									_clientVisibleActors[client.Id].Contains(actor.Id);
+
+					if (isVisible)
 					{
-						ReplicationGraphVisualizer.UpdateObservee(
-							client.Id,
-							actor.Id
-						);
+						// Actor在视野内，更新或添加
+						currentVisibleActors.Add(actor.Id);
 						client.LastUpdateTimes[actor.Id] = Time.time;
-						// 记录可见性
-						_clientVisibleActors[client.Id].Add(actor.Id);
+						ReplicationGraphVisualizer.UpdateObservee(client.Id, actor.Id);
+					}
+					else if (wasVisible && _autoDestroyOutOfSightActor)
+					{
+						// Actor刚离开视野，主动通知销毁
+						RemoveActorFromClient(client.Id, actor.Id);
 					}
 				}
+
+				// 更新可见性记录
+				_clientVisibleActors[client.Id] = currentVisibleActors;
 			}
+		}
+
+		// 从客户端移除Actor
+		private void RemoveActorFromClient(string clientId, string actorId)
+		{
+			if (_clientVisibleActors.ContainsKey(clientId))
+			{
+				_clientVisibleActors[clientId].Remove(actorId);
+			}
+			
+			if (_clients.TryGetValue(clientId, out var client))
+			{
+				client.LastUpdateTimes.Remove(actorId);
+			}
+			
+			// 通知可视化系统移除Actor
+			ReplicationGraphVisualizer.RemoveObservee(clientId, actorId);
 		}
 
 		private void OnDrawGizmos()

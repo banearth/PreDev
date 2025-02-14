@@ -521,5 +521,25 @@ namespace ReplicationGraph
 					return string.Empty;
 			}
 		}
+
+		internal void RemoveObservee_Internal(string observerId, string observeeId)
+		{
+			// 检查观察者是否存在
+			if (!_observerRegistry.TryGetValue(observerId, out var observer))
+			{
+				return;
+			}
+
+			// 从观察者的可见列表中移除被观察者
+			if (observer.observees.ContainsKey(observeeId))
+			{
+				observer.observees.Remove(observeeId);
+			}
+
+			// 如果是全局被观察者，不从_globalObservees中移除
+			// 因为其他观察者可能还需要看到它
+			// 只有在RemoveGlobalObservee时才真正移除全局被观察者
+		}
+
 	}
 }
