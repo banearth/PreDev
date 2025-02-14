@@ -7,19 +7,17 @@ namespace ReplicationGraph
 	public class ReplicationGraphVisualizerDemo : MonoBehaviour
 	{
 		[Header("Mock数据配置")]
-		[SerializeField] private float _updateInterval = 0.5f;  // 更新间隔
-		[SerializeField] private float _moveSpeed = 2f;         // 移动速度
-		[SerializeField] private float _moveRange = 10f;        // 移动范围
-		[SerializeField] private float _clientViewRadius = 15f; // 客户端视野范围
+		[SerializeField] private float _updateInterval = 0.1f;       // 更新间隔
+		[SerializeField] private float _moveSpeed = 1f;              // 移动速度
+		[SerializeField] private float _moveRange = 3f;              // 移动范围
+		[SerializeField] private float _clientViewRadius = 10f;      // 客户端视野半径
 
 		[Header("可视化配置")]
-		[SerializeField] private bool _drawEnable = true;
-		[SerializeField] private Color _actorColor = new Color(1,1,1,0.1f);
-		[SerializeField] private float _smartLabelOffsetMultiple = 0.5f;  // 标签间距
-		[SerializeField] private float _smartLabelBaseOffset = 0.5f;      // 标签基础偏移
+		[SerializeField] private bool _drawEnable = true;            // 是否启用绘制
+		[SerializeField] private Color _actorColor = Color.white;    // Actor颜色
+		[SerializeField] private float _smartLabelOffsetMultiple = 1;  // 智能Label整体偏移倍数
+		[SerializeField] private float _smartLabelBaseOffset = 0.5f;   // 智能Label基础偏移
 
-		[Header("UI配置")]
-		[SerializeField] private bool _showVisibleActors = true;  // 是否显示可见Actor列表
 		[Header("可见性配置")]
 		[SerializeField] private bool _autoDestroyOutOfSightActor = true;  // 是否自动销毁视野外Actor
 
@@ -407,93 +405,6 @@ namespace ReplicationGraph
 			{
 				_actorLabel.SetOffsetMultiple(_smartLabelOffsetMultiple);
 				_actorLabel.SetBaseOffset(_smartLabelBaseOffset);
-			}
-		}
-
-		private void OnGUI()
-		{
-			if (!_showVisibleActors) return;
-
-			string currentObserver = ReplicationGraphVisualizer.GetCurObserver();
-			if (string.IsNullOrEmpty(currentObserver)) return;
-
-			// 如果是查看所有客户端
-			if (currentObserver == ReplicationGraphVisualizer.MODE_ALL_CLIENTS)
-			{
-				int padding = 10;
-				int width = 200;
-				int height = 150;
-				int spacing = 20; // 窗口之间的间距
-				
-				// 从左到右显示每个客户端的信息
-				int index = 0;
-				foreach (var clientId in _clients.Keys)
-				{
-					if (_clientVisibleActors.TryGetValue(clientId, out var visibleActors) &&
-						_clients.TryGetValue(clientId, out var client))
-					{
-						int xPos = padding + (width + spacing) * index;
-						
-						// 绘制窗口
-						GUI.Box(new Rect(xPos, Screen.height - height - padding, width, height), 
-							$"Client {clientId} 可见Actor");
-
-						GUILayout.BeginArea(new Rect(xPos + 5, Screen.height - height - padding + 25, width - 10, height - 30));
-
-						foreach (var actorId in visibleActors)
-						{
-							var actor = _actors.Find(a => a.Id == actorId);
-							if (actor != null)
-							{
-								string actorType = actor.IsDynamic ? "动态" : "静态";
-								if (actor.IsOwnedByClient)
-								{
-									actorType = "玩家";
-								}
-								
-								float distance = Vector3.Distance(client.Position, actor.Position);
-								GUILayout.Label($"{actorId} ({actorType}) - {distance:F1}m");
-							}
-						}
-
-						GUILayout.EndArea();
-						index++;
-					}
-				}
-			}
-			// 单个客户端视角的显示保持不变
-			else if (currentObserver != ReplicationGraphVisualizer.MODE_SERVER)
-			{
-				if (_clientVisibleActors.TryGetValue(currentObserver, out var visibleActors) &&
-					_clients.TryGetValue(currentObserver, out var currentClient))
-				{
-					int padding = 10;
-					int width = 200;
-					int height = 150;
-					
-					GUI.Box(new Rect(padding, Screen.height - height - padding, width, height), 
-						$"Client {currentObserver} 可见Actor");
-
-					GUILayout.BeginArea(new Rect(padding + 5, Screen.height - height - padding + 25, width - 10, height - 30));
-
-					foreach (var actorId in visibleActors)
-					{
-						var actor = _actors.Find(a => a.Id == actorId);
-						if (actor != null)
-						{
-							string actorType = actor.IsDynamic ? "动态" : "静态";
-							if (actor.IsOwnedByClient)
-							{
-								actorType = "玩家";
-							}
-							
-							float distance = Vector3.Distance(currentClient.Position, actor.Position);
-							GUILayout.Label($"{actorId} ({actorType}) - {distance:F1}m");
-						}
-					}
-
-					GUILayout.EndArea();
-				}
 			}
 		}
 	}

@@ -7,8 +7,8 @@ namespace ReplicationGraph
 	{
 		// Lua可访问的常量定义
 		public const string MODE_SERVER = "server";
-		public const string MODE_SINGLE_CLIENT = "single";
-		public const string MODE_ALL_CLIENTS = "all";
+		public const string MODE_SINGLE_CLIENT = "single_client";
+		public const string MODE_ALL_CLIENTS = "all_clients";
 
 		public const string TYPE_STATIC = "static";
 		public const string TYPE_DYNAMIC = "dynamic";
@@ -99,12 +99,6 @@ namespace ReplicationGraph
 		public static void RemoveObserver(string observerId)
 		{
 			Instance.RemoveObserver_Internal(observerId);
-		}
-
-		// 获取当前观察者ID
-		public static string GetCurObserver()
-		{
-			return Instance.GetCurObserver_Internal();
 		}
 
 		// 从客户端移除被观察者

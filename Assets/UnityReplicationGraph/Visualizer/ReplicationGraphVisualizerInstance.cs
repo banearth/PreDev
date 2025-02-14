@@ -396,17 +396,99 @@ namespace ReplicationGraph
 
 		private void OnGUI()
 		{
-			if (!_onguiEnable) { return; }
-			if (!Application.isPlaying) return;
+			if (!_onguiEnable || !Application.isPlaying) return;
 
-			// 右上角图例
-			if (_showLegend)
+			// 绘制图例和控制面板
+			if (_showLegend) DrawLegend();
+			DrawViewControls();
+
+			// 根据当前模式绘制观察关系
+			switch (_currentMode)
 			{
-				DrawLegend();
+				case ObserverMode.AllClients:
+					DrawAllObservers();
+					break;
+				case ObserverMode.SingleClient:
+					DrawSingleObserver(_targetObserverId);
+					break;
+				// ... 其他模式
+			}
+		}
+
+		private void DrawAllObservers()
+		{
+			var observers = GetObserversExceptServer();
+			int index = 0;
+			foreach (var observerId in observers)
+			{
+				if (_observerRegistry.TryGetValue(observerId, out var observer))
+				{
+					DrawObserverInfo(observerId, observer, index);
+					index++;
+				}
+			}
+		}
+
+		private void DrawObserverInfo(string observerId, ObserverData observer, int index)
+		{
+			int padding = 10;
+			int width = 200;
+			int height = 150;
+			int spacing = 20;
+			int xPos = padding + (width + spacing) * index;
+			
+			// 绘制窗口
+			GUI.Box(new Rect(xPos, Screen.height - height - padding, width, height), 
+				$"Observer {observerId}");
+
+			GUILayout.BeginArea(new Rect(xPos + 5, Screen.height - height - padding + 25, width - 10, height - 30));
+
+			// 按ID排序显示所有被观察者
+			var sortedObservees = observer.observees
+				.OrderBy(kvp => kvp.Key)
+				.ToList();
+
+			foreach (var kvp in sortedObservees)
+			{
+				var observeeData = kvp.Value;
+				float timeSinceUpdate = Time.time - observeeData.lastUpdateTime;
+				
+				// 根据时间获取显示颜色
+				Color timeBasedColor = GetTimeBasedColor(timeSinceUpdate);
+				string colorHex = ColorToHex(timeBasedColor);
+				
+				// 获取类型显示文本
+				string typeText = GetTypeDisplayText(observeeData.type);
+				
+				// 使用富文本显示带颜色的信息
+				GUILayout.Label($"<color={colorHex}>{observeeData.name} ({typeText})</color>");
+				
+				if (_showUpdateTime)
+				{
+					GUILayout.Label($"<color={colorHex}>  {timeSinceUpdate:F1}s</color>");
+				}
 			}
 
-			// 左上角视角切换面板
-			DrawViewControls();
+			GUILayout.EndArea();
+		}
+
+		private string GetTypeDisplayText(ObserveeType type)
+		{
+			return type switch
+			{
+				ObserveeType.StaticActor => "静态",
+				ObserveeType.DynamicActor => "动态",
+				ObserveeType.PlayerCharacter => "玩家",
+				_ => "未知"
+			};
+		}
+
+		private void DrawSingleObserver(string observerId)
+		{
+			if (_observerRegistry.TryGetValue(observerId, out var observer))
+			{
+				DrawObserverInfo(observerId, observer, 0);
+			}
 		}
 
 		private void DrawLegend()
