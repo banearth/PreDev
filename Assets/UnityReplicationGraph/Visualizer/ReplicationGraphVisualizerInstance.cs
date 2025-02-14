@@ -83,6 +83,7 @@ namespace ReplicationGraph
 		[Header("调试显示")]
 		[SerializeField] private bool _onguiEnable = true;
 		[SerializeField] private float _smartLabelOffsetMultiple = 1;// 智能Label整体偏移倍数
+		[SerializeField] private float _smartLabelBaseOffset = 0.5f; // 智能Label基础偏移
 		[SerializeField] private bool _showUpdateTime = true;    // 是否显示更新时间
 		[SerializeField] private bool _showRadius = true;        // 是否显示观察半径
 		[SerializeField] private bool _showLegend = true;        // 是否显示图例
@@ -107,7 +108,7 @@ namespace ReplicationGraph
 		private void Awake()
 		{
 			ReplicationGraphVisualizer.SetupInstance(this);
-			_smartLabel = new SmartLabel(_smartLabelOffsetMultiple);
+			_smartLabel = new SmartLabel(_smartLabelOffsetMultiple, _smartLabelBaseOffset);
 		}
 
 		private void OnValidate()
@@ -116,6 +117,7 @@ namespace ReplicationGraph
 			if (_smartLabel != null)
 			{
 				_smartLabel.SetOffsetMultiple(_smartLabelOffsetMultiple);
+				_smartLabel.SetBaseOffset(_smartLabelBaseOffset);
 			}
 		}
 

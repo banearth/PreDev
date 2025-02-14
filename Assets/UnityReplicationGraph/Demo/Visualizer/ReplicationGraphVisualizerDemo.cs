@@ -12,8 +12,12 @@ namespace ReplicationGraph
 		[SerializeField] private float _moveRange = 10f;        // 移动范围
 		[SerializeField] private float _clientViewRadius = 15f; // 客户端视野范围
 
+		[Header("可视化配置")]
 		[SerializeField] private bool _drawEnable = true;
-		[SerializeField] private Color _actorColor = new Color(1,1,1,0.1f); 
+		[SerializeField] private Color _actorColor = new Color(1,1,1,0.1f);
+		[SerializeField] private float _smartLabelOffsetMultiple = 0.5f;  // 标签间距
+		[SerializeField] private float _smartLabelBaseOffset = 0.5f;      // 标签基础偏移
+
 		public class Actor
 		{
 			public string Id;
@@ -113,9 +117,8 @@ namespace ReplicationGraph
 		private void Start()
 		{
 			_camera = Camera.main;
-			// 初始化ActorLabel，设置向上偏移
-			_actorLabel = new SmartLabel(0.5f, 0.5f);
-
+			// 初始化ActorLabel，使用序列化的参数
+			_actorLabel = new SmartLabel(_smartLabelOffsetMultiple, _smartLabelBaseOffset);
 			// 创建服务器观察者（全图视野）
 			ReplicationGraphVisualizer.AddObserver(ReplicationGraphVisualizer.MODE_SERVER, 0, 0, 0, -1);
 
@@ -343,5 +346,14 @@ namespace ReplicationGraph
 				type);
 		}
 
+		private void OnValidate()
+		{
+			// 当在Inspector中修改offset时，更新SmartLabel的设置
+			if (_actorLabel != null)
+			{
+				_actorLabel.SetOffsetMultiple(_smartLabelOffsetMultiple);
+				_actorLabel.SetBaseOffset(_smartLabelBaseOffset);
+			}
+		}
 	}
 }
