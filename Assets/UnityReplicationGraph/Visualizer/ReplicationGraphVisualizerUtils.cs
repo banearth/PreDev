@@ -18,11 +18,29 @@ namespace ReplicationGraph
 
         private List<LabelContent> _labelContents = new List<LabelContent>();
         private int _labelContentUseCount = 0;
-        private float _offsetMultiple = 0.5f; // 默认偏移倍数
+        private float _offsetMultiple = 0.5f;     // 标签间距倍数
+        private Vector3 _baseOffset = Vector3.forward * 0.5f;  // 初始偏移
 
-        public SmartLabel(float offsetMultiple = 0.5f)
+        public SmartLabel(float offsetMultiple = 0.5f, Vector3? baseOffset = null)
         {
             _offsetMultiple = offsetMultiple;
+            _baseOffset = baseOffset ?? Vector3.forward * 0.5f;
+        }
+
+        /// <summary>
+        /// 设置标签偏移倍数
+        /// </summary>
+        public void SetOffsetMultiple(float offsetMultiple)
+        {
+            _offsetMultiple = offsetMultiple;
+        }
+
+        /// <summary>
+        /// 设置初始偏移
+        /// </summary>
+        public void SetBaseOffset(Vector3 baseOffset)
+        {
+            _baseOffset = baseOffset;
         }
 
         /// <summary>
@@ -62,7 +80,7 @@ namespace ReplicationGraph
         {
             if (_labelContentUseCount == 0) return;
 
-            Vector3 basePosition = position + Vector3.forward * 0.5f;
+            Vector3 basePosition = position + _baseOffset;
             for (int i = 0; i < _labelContentUseCount; i++)
             {
                 var content = _labelContents[i];
@@ -182,22 +200,6 @@ namespace ReplicationGraph
 			UnityEditor.Handles.color = oldHandlesColor;
 #endif
 		}
-
-		private class LabelContent
-		{
-			public string text;
-			public Color color;
-		}
-
-		// 准备标签内容
-		private static List<LabelContent> _labelContents = new List<LabelContent>();
-		private static int _labelContentUseCount = 0;
-
-		private static void ClearLabelContent()
-		{
-			_labelContentUseCount = 0;
-		}
-
 
 
 	}

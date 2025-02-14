@@ -102,9 +102,21 @@ namespace ReplicationGraph
 		// 观察者数据: <观察者ID, 观察者数据>
 		private Dictionary<string, ObserverData> _observerRegistry = new Dictionary<string, ObserverData>();
 
+		private SmartLabel _smartLabel;
+
 		private void Awake()
 		{
 			ReplicationGraphVisualizer.SetupInstance(this);
+			_smartLabel = new SmartLabel(_smartLabelOffsetMultiple);
+		}
+
+		private void OnValidate()
+		{
+			// 当在Inspector中修改offset时，更新SmartLabel的偏移量
+			if (_smartLabel != null)
+			{
+				_smartLabel.SetOffsetMultiple(_smartLabelOffsetMultiple);
+			}
 		}
 
 		// 字符串转枚举的工具方法
@@ -276,45 +288,6 @@ namespace ReplicationGraph
 			return (_nameDisplayMask & (1 << (int)type)) != 0;
 		}
 
-		private void DrawSmartLabel(Vector3 position, List<LabelContent> contents, int count)
-		{
-			if (contents == null) { return; }
-			count = Mathf.Min(count, contents.Count);
-			if (count == 0) return;
-			Vector3 basePosition = position + Vector3.forward * 0.5f;
-			for (int i = 0;i< count; i++)
-			{
-				var content = contents[i];
-				ReplicationGraphVisualizerUtils.DrawLabel(basePosition + Vector3.back * _smartLabelOffsetMultiple * i, content.text, content.color);
-			}
-		}
-
-		// 准备标签内容
-		private List<LabelContent> _labelContents = new List<LabelContent>();
-		private int _labelContentUseCount = 0;
-
-		private void ClearLabelContent()
-		{
-			_labelContentUseCount = 0;
-		}
-
-		private void AddLabelContent(string text, Color color)
-		{
-			_labelContentUseCount++;
-			LabelContent curLabelContent = null;
-			if (_labelContents.Count >= _labelContentUseCount)
-			{
-				curLabelContent = _labelContents[_labelContentUseCount - 1];
-			}
-			else
-			{
-				curLabelContent = new LabelContent();
-				_labelContents.Add(curLabelContent);
-			}
-			curLabelContent.text = text;
-			curLabelContent.color = color;
-		}
-
 		private void DrawObservees(ObserverData data)
 		{
 			float currentTime = Time.time;
@@ -324,6 +297,7 @@ namespace ReplicationGraph
 				float timeSinceUpdate = currentTime - observeeData.lastUpdateTime;
 				Color timeBasedColor = GetTimeBasedColor(timeSinceUpdate);
 				Gizmos.color = timeBasedColor;
+				
 				// 绘制实体
 				switch (observeeData.type)
 				{
@@ -338,23 +312,23 @@ namespace ReplicationGraph
 						break;
 				}
 
-				// 准备标签内容
-				ClearLabelContent();
+				// 使用SmartLabel管理标签
+				_smartLabel.Clear();
 
 				// 添加名字
 				if (ShouldShowName(observeeData.type))
 				{
-					AddLabelContent(observeeData.name, timeBasedColor);
+					_smartLabel.Add(observeeData.name, timeBasedColor);
 				}
 
 				// 添加更新时间
 				if (_showUpdateTime)
 				{
-					AddLabelContent($"{timeSinceUpdate:F1}s", timeBasedColor);
+					_smartLabel.Add($"{timeSinceUpdate:F1}s", timeBasedColor);
 				}
 
 				// 绘制所有标签
-				DrawSmartLabel(observeeData.position, _labelContents, _labelContentUseCount);
+				_smartLabel.Draw(observeeData.position);
 			}
 		}
 
