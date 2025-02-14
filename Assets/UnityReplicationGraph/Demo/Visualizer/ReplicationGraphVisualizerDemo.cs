@@ -382,7 +382,6 @@ namespace ReplicationGraph
 		{
 			if (!_showVisibleActors) return;
 
-			// 使用新的GetObserver API
 			string currentClientId = ReplicationGraphVisualizer.GetCurObserver();
 			if (string.IsNullOrEmpty(currentClientId) || 
 				currentClientId == ReplicationGraphVisualizer.MODE_SERVER || 
@@ -390,7 +389,8 @@ namespace ReplicationGraph
 				return;
 
 			// 显示当前客户端可见的Actor列表
-			if (_clientVisibleActors.TryGetValue(currentClientId, out var visibleActors))
+			if (_clientVisibleActors.TryGetValue(currentClientId, out var visibleActors) &&
+				_clients.TryGetValue(currentClientId, out var currentClient))
 			{
 				int padding = 10;
 				int width = 200;
@@ -412,7 +412,10 @@ namespace ReplicationGraph
 						{
 							actorType = "玩家";
 						}
-						GUILayout.Label($"{actorId} ({actorType})");
+						
+						// 计算距离
+						float distance = Vector3.Distance(currentClient.Position, actor.Position);
+						GUILayout.Label($"{actorId} ({actorType}) - {distance:F1}m");
 					}
 				}
 
