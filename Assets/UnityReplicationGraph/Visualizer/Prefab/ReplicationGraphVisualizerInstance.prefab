@@ -52,7 +52,7 @@ MonoBehaviour:
   - {r: 0, g: 0.012422562, b: 1, a: 0.3}
   _borderColor: {r: 1, g: 1, b: 1, a: 0.3}
   _recentDataThreshold: 1
-  _staleDataThreshold: 5
+  _staleDataThreshold: 3
   _recentDataColor: {r: 0, g: 1, b: 0, a: 1}
   _normalDataColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   _staleDataColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}

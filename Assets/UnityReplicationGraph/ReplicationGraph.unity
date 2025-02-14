@@ -174,7 +174,6 @@ MonoBehaviour:
   _actorColor: {r: 1, g: 1, b: 1, a: 0.1}
   _smartLabelOffsetMultiple: 0.9
   _smartLabelBaseOffset: 2.5
-  _showVisibleActors: 1
   _autoDestroyOutOfSightActor: 1
 --- !u!1 &699662515
 GameObject:

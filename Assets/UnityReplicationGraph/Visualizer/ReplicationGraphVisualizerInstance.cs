@@ -74,20 +74,21 @@ namespace ReplicationGraph
 		[SerializeField] private Color _borderColor = new Color(0, 1, 1, 0.3f);
 
 		[Header("时效性可视化")]
-		[SerializeField] private float _recentDataThreshold = 1f;     // 最新数据阈值（秒）
-		[SerializeField] private float _staleDataThreshold = 5f;      // 过期数据阈值（秒）
-		[SerializeField] private Color _recentDataColor = Color.green; // 新数据颜色
-		[SerializeField] private Color _normalDataColor = Color.yellow; // 正常数据颜色
-		[SerializeField] private Color _staleDataColor = Color.gray;   // 旧数据颜色
+		[SerializeField] private float _newDataThreshold = 1f;     			// 新数据阈值（秒）
+		[SerializeField] private float _laggingDataThreshold = 5f;      	// 滞后数据阈值（秒）
+		[SerializeField] private Color _newDataColor = Color.green; 		// 新数据颜色
+		[SerializeField] private Color _laggingDataColor = Color.yellow; 	// 滞后数据颜色
+		[SerializeField] private Color _expiredDataColor = Color.gray;   	// 过期数据颜色
 
 		[Header("调试显示")]
 		[SerializeField] private bool _onguiEnable = true;
 		[SerializeField] private float _smartLabelOffsetMultiple = 1;// 智能Label整体偏移倍数
 		[SerializeField] private float _smartLabelBaseOffset = 0.5f; // 智能Label基础偏移
-		[SerializeField] private bool _showUpdateTime = true;    // 是否显示更新时间
-		[SerializeField] private bool _showRadius = true;        // 是否显示观察半径
-		[SerializeField] private bool _showLegend = true;        // 是否显示图例
-		[SerializeField] private int _nameDisplayMask = -1;      // 默认全部显示
+		[SerializeField] private bool _showUpdateTime = true;    	// 是否显示更新时间
+		[SerializeField] private bool _showRadius = true;        	// 是否显示观察半径
+		[SerializeField] private bool _showLegend = true;        	// 是否显示图例
+
+		[SerializeField] private int _nameDisplayMask = -1;      	// 默认全部显示
 
 		// 定义显示选项的枚举（按位标记）
 		[System.Flags]
@@ -252,7 +253,7 @@ namespace ReplicationGraph
 		}
 
 		// 绘制单个客户端视角
-		private void DrawSingleClient(string observerId)
+		private void DrawGizmos_SingleObserver(string observerId)
 		{
 			if (_observerRegistry.TryGetValue(observerId, out var observerData))
 			{
@@ -269,7 +270,7 @@ namespace ReplicationGraph
 		}
 
 		// 绘制所有客户端视角
-		private void DrawAllClients()
+		private void DrawGizmos_AllObservers()
 		{
 			int colorIndex = 0;
 			foreach (var pair  in _observerRegistry)
@@ -280,7 +281,7 @@ namespace ReplicationGraph
 					continue;
 				// 为每个客户端使用不同的半透明颜色
 				Color observerColor = _viewColors[observerData.uuid % _viewColors.Length] * 0.5f;
-				DrawSingleClient(observerId);
+				DrawGizmos_SingleObserver(observerId);
 				colorIndex++;
 			}
 		}
@@ -336,22 +337,22 @@ namespace ReplicationGraph
 
 		private Color GetTimeBasedColor(float timeSinceUpdate)
 		{
-			if (timeSinceUpdate <= _recentDataThreshold)
+			if (timeSinceUpdate <= _newDataThreshold)
 			{
 				// 最新数据
-				return _recentDataColor;
+				return _newDataColor;
 			}
-			else if (timeSinceUpdate <= _staleDataThreshold)
+			else if (timeSinceUpdate <= _laggingDataThreshold)
 			{
 				// 正常数据，根据时间插值
-				float t = (timeSinceUpdate - _recentDataThreshold) /
-						 (_staleDataThreshold - _recentDataThreshold);
-				return Color.Lerp(_normalDataColor, _staleDataColor, t);
+				float t = (timeSinceUpdate - _newDataThreshold) /
+						 (_laggingDataThreshold - _newDataThreshold);
+				return Color.Lerp(_laggingDataColor, _expiredDataColor, t);
 			}
 			else
 			{
 				// 过期数据
-				return _staleDataColor;
+				return _expiredDataColor;
 			}
 		}
 
@@ -363,13 +364,16 @@ namespace ReplicationGraph
 			switch (_currentMode)
 			{
 				case ObserverMode.Server:
-					DrawSingleClient(ReplicationGraphVisualizer.MODE_SERVER);
+					DrawGizmos_SingleObserver(ReplicationGraphVisualizer.MODE_SERVER);
 					break;
 				case ObserverMode.SingleClient:
-					DrawSingleClient(_targetObserverId);
+					DrawGizmos_SingleObserver(_targetObserverId);
 					break;
 				case ObserverMode.AllClients:
-					DrawAllClients();
+					DrawGizmos_AllObservers();
+					break;
+				default:
+					Debug.LogError($"Invalid observer mode: {_currentMode}");
 					break;
 			}
 		}
@@ -405,17 +409,22 @@ namespace ReplicationGraph
 			// 根据当前模式绘制观察关系
 			switch (_currentMode)
 			{
+				case ObserverMode.Server:
+					// 服务器视角不绘制
+					break;
 				case ObserverMode.AllClients:
-					DrawAllObservers();
+					DrawGUI_AllObservers();
 					break;
 				case ObserverMode.SingleClient:
-					DrawSingleObserver(_targetObserverId);
+					DrawGUI_SingleObserver(_targetObserverId);
 					break;
-				// ... 其他模式
+				default:
+					Debug.LogError($"Invalid observer mode: {_currentMode}");
+					break;
 			}
 		}
 
-		private void DrawAllObservers()
+		private void DrawGUI_AllObservers()
 		{
 			var observers = GetObserversExceptServer();
 			int index = 0;
@@ -423,13 +432,13 @@ namespace ReplicationGraph
 			{
 				if (_observerRegistry.TryGetValue(observerId, out var observer))
 				{
-					DrawObserverInfo(observerId, observer, index);
+					DrawGUI_ObserverInfo(observerId, observer, index);
 					index++;
 				}
 			}
 		}
 
-		private void DrawObserverInfo(string observerId, ObserverData observer, int index)
+		private void DrawGUI_ObserverInfo(string observerId, ObserverData observer, int index)
 		{
 			int padding = 10;
 			int width = 200;
@@ -483,11 +492,11 @@ namespace ReplicationGraph
 			};
 		}
 
-		private void DrawSingleObserver(string observerId)
+		private void DrawGUI_SingleObserver(string observerId)
 		{
 			if (_observerRegistry.TryGetValue(observerId, out var observer))
 			{
-				DrawObserverInfo(observerId, observer, 0);
+				DrawGUI_ObserverInfo(observerId, observer, 0);
 			}
 		}
 
@@ -514,9 +523,9 @@ namespace ReplicationGraph
 
 			// 显示时效性说明
 			GUILayout.Label("时效性颜色:");
-			GUILayout.Label($"<color={ColorToHex(_recentDataColor)}>■</color> 最新数据 (<{_recentDataThreshold}s)");
-			GUILayout.Label($"<color={ColorToHex(_normalDataColor)}>■</color> 正常数据 (<{_staleDataThreshold}s)");
-			GUILayout.Label($"<color={ColorToHex(_staleDataColor)}>■</color> 过期数据");
+			GUILayout.Label($"<color={ColorToHex(_newDataColor)}>■</color> 最新数据 (<{_newDataThreshold}s)");
+			GUILayout.Label($"<color={ColorToHex(_laggingDataColor)}>■</color> 滞后数据 (<{_laggingDataThreshold}s)");
+			GUILayout.Label($"<color={ColorToHex(_expiredDataColor)}>■</color> 过期数据");
 
 			GUILayout.EndArea();
 		}

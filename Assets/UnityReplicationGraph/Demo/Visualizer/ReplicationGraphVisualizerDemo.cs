@@ -48,11 +48,11 @@ namespace ReplicationGraph
 				UpdatePosition(0, 0);
 			}
 
-			public void UpdatePosition(float time, float speed)
+			public void UpdatePosition(float duration, float speed)
 			{
 				if (!IsDynamic) return;
-
-				float angle = time * speed + _phaseOffset;
+				_phaseOffset+= duration * speed;
+				var angle = _phaseOffset;
 				Vector3 offset = new Vector3(
 					Mathf.Sin(angle) * _moveRange,
 					0,
@@ -166,12 +166,13 @@ namespace ReplicationGraph
 			if (Time.time - _lastUpdateTime >= _updateInterval)
 			{
 				_lastUpdateTime = Time.time;
+				var deltaTime = Time.deltaTime;
 				// Actor进行移动
 				foreach (var actor in _actors)
 				{
 					if (actor != _draggingActor)  // 不是正在拖拽的 Actor 才更新位置
 					{
-						actor.UpdatePosition(Time.time, _moveSpeed);
+						actor.UpdatePosition(deltaTime, _moveSpeed);
 					}
 				}
 			}
