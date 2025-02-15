@@ -178,6 +178,27 @@ namespace ReplicationGraph
 #endif
 		}
 
+		private static void DrawCross(Vector3 position, Color? color = null)
+		{
+#if UNITY_EDITOR
+			Color oldGizmosColor = Gizmos.color;
+			if (color != null)
+			{
+				Gizmos.color = color.Value;
+			}
+			float crossSize = 0.5f;
+			Gizmos.DrawLine(
+				position + Vector3.left * crossSize,
+				position + Vector3.right * crossSize
+			);
+			Gizmos.DrawLine(
+				position + Vector3.forward * crossSize,
+				position + Vector3.back * crossSize
+			);
+			Gizmos.color = oldGizmosColor;
+#endif
+		}
+
 		// 绘制观察者
 		public static void DrawObserver(Vector3 position, float viewRadius, Color? viewColor = null, Color? borderColor = null)
 		{
@@ -193,21 +214,7 @@ namespace ReplicationGraph
 			UnityEditor.Handles.DrawWireDisc(position, Vector3.up, viewRadius);
 			UnityEditor.Handles.color = oldHandlesColor;
 			// 中心十字
-			Color oldGizmosColor = Gizmos.color;
-			if (borderColor != null)
-			{
-				Gizmos.color = borderColor.Value;
-			}
-			float crossSize = 0.5f;
-			Gizmos.DrawLine(
-				position + Vector3.left * crossSize,
-				position + Vector3.right * crossSize
-			);
-			Gizmos.DrawLine(
-				position + Vector3.forward * crossSize,
-				position + Vector3.back * crossSize
-			);
-			Gizmos.color = oldGizmosColor;
+			DrawCross(position, borderColor);
 #endif
 		}
 

@@ -58,7 +58,7 @@ MonoBehaviour:
   _expiredDataColor: {r: 1, g: 0, b: 0, a: 1}
   _onguiEnable: 1
   _smartLabelOffsetMultiple: -0.9
-  _smartLabelBaseOffset: 0.7
+  _smartLabelBaseOffset: 1.2
   _showUpdateTime: 0
   _showRadius: 1
   _showLegend: 1
