@@ -2,6 +2,8 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 using ReplicationGraph;
+using static ReplicationGraph.ReplicationGraphVisualizerDemo;
+using UnityEditor.PackageManager;
 
 public class ReplicationDemo : MonoBehaviour
 {
@@ -27,7 +29,7 @@ public class ReplicationDemo : MonoBehaviour
     [SerializeField] private float smartLabelOffsetMultiple = 1;  // 智能Label整体偏移倍数
     [SerializeField] private float smartLabelBaseOffset = 0.5f;   // 智能Label基础偏移
 
-    private List<TestActor> spawnedActors = new List<TestActor>();
+    private List<TestActor> _actors = new List<TestActor>();
     private float lastUpdateTime;
 
     private Camera _camera;
@@ -62,21 +64,21 @@ public class ReplicationDemo : MonoBehaviour
         for (int i = 0; i < playerActorCount; i++)
         {
             var actor = CreateActor($"player{i}", GetRandomSpawnPosition(), ReplicationGraphVisualizer.TYPE_PLAYER, true);
-            spawnedActors.Add(actor);
+            _actors.Add(actor);
         }
 
         // 创建静态物体
         for (int i = 0; i < staticActorCount; i++)
         {
             var actor = CreateActor($"static{i}", GetRandomSpawnPosition(), ReplicationGraphVisualizer.TYPE_STATIC, false);
-            spawnedActors.Add(actor);
+            _actors.Add(actor);
         }
 
         // 创建动态物体
         for (int i = 0; i < dynamicActorCount; i++)
         {
             var actor = CreateActor($"dynamic{i}", GetRandomSpawnPosition(), ReplicationGraphVisualizer.TYPE_DYNAMIC, true);
-            spawnedActors.Add(actor);
+            _actors.Add(actor);
         }
     }
 
@@ -92,7 +94,7 @@ public class ReplicationDemo : MonoBehaviour
 
     private void CreateClients()
     {
-        var playerActors = spawnedActors.Where(a => a.Type == ReplicationGraphVisualizer.TYPE_PLAYER).ToList();
+        var playerActors = _actors.Where(a => a.Type == ReplicationGraphVisualizer.TYPE_PLAYER).ToList();
         
         for (int i = 0; i < playerActors.Count; i++)
         {
@@ -128,37 +130,52 @@ public class ReplicationDemo : MonoBehaviour
 		if (Time.time - lastUpdateTime >= updateInterval)
         {
             float deltaTime = Time.time - lastUpdateTime;
-            lastUpdateTime = Time.time;
+			lastUpdateTime = Time.time;
             UpdateActors(deltaTime);
         }
-    }
+
+        // 同步全局被观察者位置
+		ReplicationGraphVisualizer.UpdateGlobalObservee(
+				_draggingActor.Id,
+				_draggingActor.Position.x,
+				_draggingActor.Position.y,
+				_draggingActor.Position.z
+			);
+
+		// 同步服务器位置
+		foreach (var actor in _actors)
+		{
+			if (actor.IsOwnedByClient)
+			{
+			    ReplicationGraphVisualizer.UpdateObserver(
+				    actor.OwnedClientId,
+				    actor.Position.x,
+				    actor.Position.y,
+				    actor.Position.z,
+					clientViewRadius);
+			}
+		}
+
+		// 服务器始终知道所有Actor的位置
+		foreach (var actor in _actors)
+		{
+			ReplicationGraphVisualizer.UpdateObservee(
+				ReplicationGraphVisualizer.MODE_SERVER,
+				actor.Id
+			);
+		}
+
+		// 具体每个客户端知道其对应Observee是在ReplicationGraph里面完成
+        NetworkManager.Instance.DoUpdate();
+	}
 
     private void UpdateActors(float deltaTime)
     {
-        foreach (var actor in spawnedActors)
+        foreach (var actor in _actors)
         {
             // 如果正在拖拽该Actor，跳过自动移动更新
             if (actor == _draggingActor) continue;
-
             actor.UpdateMovement(deltaTime);
-            
-            ReplicationGraphVisualizer.UpdateGlobalObservee(
-                actor.Id,
-                actor.Position.x,
-                actor.Position.y,
-                actor.Position.z
-            );
-        }
-
-        // 如果有正在拖拽的Actor，单独更新它的位置
-        if (_draggingActor != null)
-        {
-            ReplicationGraphVisualizer.UpdateGlobalObservee(
-                _draggingActor.Id,
-                _draggingActor.Position.x,
-                _draggingActor.Position.y,
-                _draggingActor.Position.z
-            );
         }
     }
 
@@ -182,7 +199,7 @@ public class ReplicationDemo : MonoBehaviour
 
         if (drawEnable)
         {
-            foreach (var actor in spawnedActors)
+            foreach (var actor in _actors)
             {
                 if (actor.IsOwnedByClient)
                 {
@@ -257,7 +274,7 @@ public class ReplicationDemo : MonoBehaviour
     private TestActor FindClickedActor(Vector3 clickPosition)
     {
         const float clickRadius = 0.5f;
-        return spawnedActors.FirstOrDefault(actor => 
+        return _actors.FirstOrDefault(actor => 
             Vector3.Distance(new Vector3(actor.Position.x, 0, actor.Position.z), 
                            new Vector3(clickPosition.x, 0, clickPosition.z)) <= clickRadius);
     }

@@ -35,7 +35,7 @@ public class NetworkManager : MonoBehaviour
         Driver.InitReplicationDriver(ReplicationGraph);
     }
 
-    private void Update()
+    public void DoUpdate()
     {
         // 更新网络状态
         Driver.TickFlush(Time.deltaTime);
