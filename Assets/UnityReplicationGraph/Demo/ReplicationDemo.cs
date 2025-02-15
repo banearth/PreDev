@@ -59,21 +59,21 @@ public class ReplicationDemo : MonoBehaviour
         // 先创建玩家角色
         for (int i = 0; i < playerActorCount; i++)
         {
-            var actor = CreateActor($"player_{i}", GetRandomSpawnPosition(), ReplicationGraphVisualizer.TYPE_PLAYER, true);
+            var actor = CreateActor($"player{i}", GetRandomSpawnPosition(), ReplicationGraphVisualizer.TYPE_PLAYER, true);
             spawnedActors.Add(actor);
         }
 
         // 创建静态物体
         for (int i = 0; i < staticActorCount; i++)
         {
-            var actor = CreateActor($"static_{i}", GetRandomSpawnPosition(), ReplicationGraphVisualizer.TYPE_STATIC, false);
+            var actor = CreateActor($"static{i}", GetRandomSpawnPosition(), ReplicationGraphVisualizer.TYPE_STATIC, false);
             spawnedActors.Add(actor);
         }
 
         // 创建动态物体
         for (int i = 0; i < dynamicActorCount; i++)
         {
-            var actor = CreateActor($"dynamic_{i}", GetRandomSpawnPosition(), ReplicationGraphVisualizer.TYPE_DYNAMIC, true);
+            var actor = CreateActor($"dynamic{i}", GetRandomSpawnPosition(), ReplicationGraphVisualizer.TYPE_DYNAMIC, true);
             spawnedActors.Add(actor);
         }
     }
@@ -83,7 +83,7 @@ public class ReplicationDemo : MonoBehaviour
         float actorMoveRange = isDynamic ? 
             Random.Range(moveRange * 0.5f, moveRange * 1.5f) : 
             0f;
-        var actor = new TestActor(id, position, type, isDynamic, actorMoveRange);
+		var actor = new TestActor(id, position, type, isDynamic, actorMoveRange, moveSpeed);
 		NetworkManager.Instance.SpawnNetworkActor(actor, type);
 		return actor;
     }
@@ -95,7 +95,7 @@ public class ReplicationDemo : MonoBehaviour
         for (int i = 0; i < playerActors.Count; i++)
         {
             var playerActor = playerActors[i];
-            string clientId = $"client_{i}";
+            string clientId = $"client{i}";
 			playerActor.OwnedClientId = clientId;
 
 			var connection = NetworkManager.Instance.Driver.CreateClientConnection();

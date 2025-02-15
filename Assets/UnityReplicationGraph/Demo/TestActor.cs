@@ -14,14 +14,15 @@ public class TestActor : FActorRepListType
     public float MoveRange { get; set; }                 // 运动半径
     private float _phaseOffset;                          // 每个Actor的相位偏移
 
-    public TestActor(string id, Vector3 position, string type, bool isDynamic, float moveRange)
-    {
+	public TestActor(string id, Vector3 position, string type, bool isDynamic, float moveRange, float moveSpeed)
+	{
         Id = id;
         Position = position;
         InitialPosition = position;
         Type = type;
         IsDynamic = isDynamic;
         MoveRange = moveRange;
+        MoveSpeed = moveSpeed;
         _phaseOffset = Random.Range(0f, Mathf.PI * 2f); // 随机初始相位
         
         // 设置默认的网络属性
