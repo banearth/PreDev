@@ -156,14 +156,11 @@ public abstract class UReplicationGraph : UReplicationDriver
 			// 甚至还有录像相关内容，也是和这里有关
 			ConnectionViewers.Add(new FNetViewer(NetConnection));
 
-			// 这里考虑把被观察者加进来
-			if (ReplicationGraphDebugger.Debug_ShowGizmos)
-			{
-				//ReplicationGraphVisualizer.UpdateObservee();	
-				//ReplicationGraphDebugger.DrawViewers(ConnectionViewers);
-			}
+			//TODO
+			//ReplicationGraphVisualizer.UpdateObservee();	
+			//ReplicationGraphDebugger.DrawViewers(ConnectionViewers);
 
-            numChildrenConnectionsProcessed++;
+			numChildrenConnectionsProcessed++;
 
 			FReplicationGraphDestructionSettings DestructionSettings = new FReplicationGraphDestructionSettings(
                 DestructInfoMaxDistanceSquared,

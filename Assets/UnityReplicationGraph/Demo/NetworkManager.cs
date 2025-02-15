@@ -1,4 +1,6 @@
+using ReplicationGraph;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 public class NetworkManager : MonoBehaviour
 {
@@ -39,9 +41,20 @@ public class NetworkManager : MonoBehaviour
         Driver.TickFlush(Time.deltaTime);
     }
 
-    public void SpawnNetworkActor(FActorRepListType actor)
-    {
+	public void SpawnNetworkActor(FActorRepListType actor, string type)
+	{
         // 添加actor到复制图中
         ReplicationGraph.AddNetworkActor(actor);
-    }
+        // 可视化
+		var observeeId = actor.NetId.ToString();
+        var position = actor.Position;
+		ReplicationGraphVisualizer.AddGlobalObservee(
+			observeeId,
+	        position.x,
+	        position.y,
+	        position.z,
+	        type
+        );
+
+	}
 }

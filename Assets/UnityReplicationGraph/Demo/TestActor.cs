@@ -2,17 +2,27 @@ using UnityEngine;
 
 public class TestActor : FActorRepListType
 {
-    public bool IsMoving { get; set; }
-    public Vector3 InitialPosition { get; set; }
-    public float MoveRadius { get; set; }
-    public float MoveSpeed { get; set; }
+    public string Id { get; private set; }
+    public Vector3 Position { get; set; }
+    public string Type { get; private set; }
+    public bool IsDynamic { get; private set; }
+    public string OwnedClientId { get; set; }
+    public bool IsOwnedByClient => !string.IsNullOrEmpty(OwnedClientId);
 
-	public TestActor(string name, Vector3 position, float moveRadius = 10f, float moveSpeed = 5f)
-	{
+    public Vector3 InitialPosition { get; private set; }  // 保存初始位置作为圆心
+    public float MoveSpeed { get; set; }                 // 移动速度
+    public float MoveRange { get; set; }                 // 运动半径
+    private float _phaseOffset;                          // 每个Actor的相位偏移
+
+    public TestActor(string id, Vector3 position, string type, bool isDynamic, float moveRange)
+    {
+        Id = id;
         Position = position;
         InitialPosition = position;
-        MoveRadius = moveRadius;
-        MoveSpeed = moveSpeed;
+        Type = type;
+        IsDynamic = isDynamic;
+        MoveRange = moveRange;
+        _phaseOffset = Random.Range(0f, Mathf.PI * 2f); // 随机初始相位
         
         // 设置默认的网络属性
         NetUpdateFrequency = 30f;  // 30Hz更新
@@ -23,37 +33,36 @@ public class TestActor : FActorRepListType
 
     public void UpdateMovement(float deltaTime)
     {
-        if (!IsMoving) return;
+        if (!IsDynamic) return;
 
-        // 简单的圆周运动
-        float angle = Time.time * MoveSpeed;
-        Position = InitialPosition + new Vector3(
-            Mathf.Cos(angle) * MoveRadius,
+        _phaseOffset += deltaTime * MoveSpeed;
+        var angle = _phaseOffset;
+        Vector3 offset = new Vector3(
+            Mathf.Sin(angle) * MoveRange,
             0,
-            Mathf.Sin(angle) * MoveRadius
+            Mathf.Cos(angle) * MoveRange
         );
+
+        Position = InitialPosition + offset;
     }
 
     public override void GetPlayerViewPoint(ref Vector3 viewPosition, ref Vector3 viewDir)
     {
-        // 当前角度
-        float angle = Time.time * MoveSpeed;
+        if (!IsDynamic)
+        {
+            viewPosition = Position;
+            viewDir = Vector3.forward;
+            return;
+        }
 
-		// 计算当前角度的切线方向
-		viewDir = new Vector3(
-            -Mathf.Sin(angle),
+        // 计算当前角度的切线方向
+        viewDir = new Vector3(
+            Mathf.Cos(_phaseOffset),
             0,
-            Mathf.Cos(angle)
+            -Mathf.Sin(_phaseOffset)
         ).normalized;
 
-		// 当前的位置
-		var selfPosition = InitialPosition + new Vector3(
-		   Mathf.Cos(angle) * MoveRadius,
-		   0,
-		   Mathf.Sin(angle) * MoveRadius
-	   );
-
-       float time = 1;
-       viewPosition = viewDir * MoveSpeed * time + selfPosition;
-	}
+        // 当前位置就是视点位置
+        viewPosition = Position;
+    }
 }
