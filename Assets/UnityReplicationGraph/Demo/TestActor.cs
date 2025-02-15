@@ -3,7 +3,6 @@ using UnityEngine;
 public class TestActor : FActorRepListType
 {
     public string Id { get; private set; }
-    public Vector3 Position { get; set; }
     public string Type { get; private set; }
     public bool IsDynamic { get; private set; }
     public string OwnedClientId { get; set; }

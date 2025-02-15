@@ -265,14 +265,14 @@ namespace ReplicationGraph
 			{
 				bool isServer = observerId == ReplicationGraphVisualizer.MODE_SERVER;
 
-				// 绘制被观察者（不带十字标记）
-				DrawObservees(observerData);
-
-				// 只绘制客户端的
+				// 绘制观察者
 				if (!isServer)
 				{
 					ReplicationGraphVisualizerUtils.DrawObserver(observerData.position, observerData.viewRadius, _viewColors[0], _borderColor);
 				}
+
+				// 绘制被观察者（不带十字标记）
+				DrawObservees(observerData);
 			}
 		}
 

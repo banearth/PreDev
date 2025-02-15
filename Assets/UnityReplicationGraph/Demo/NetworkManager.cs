@@ -41,15 +41,14 @@ public class NetworkManager : MonoBehaviour
         Driver.TickFlush(Time.deltaTime);
     }
 
-	public void SpawnNetworkActor(FActorRepListType actor, string type)
+	public void SpawnNetworkActor(FActorRepListType actor, string id, string type)
 	{
         // 添加actor到复制图中
         ReplicationGraph.AddNetworkActor(actor);
         // 可视化
-		var observeeId = actor.NetId.ToString();
         var position = actor.Position;
 		ReplicationGraphVisualizer.AddGlobalObservee(
-			observeeId,
+			id,
 	        position.x,
 	        position.y,
 	        position.z,

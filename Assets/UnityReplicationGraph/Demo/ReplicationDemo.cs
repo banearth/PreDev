@@ -88,7 +88,7 @@ public class ReplicationDemo : MonoBehaviour
             Random.Range(moveRange * 0.5f, moveRange * 1.5f) : 
             0f;
 		var actor = new TestActor(id, position, type, isDynamic, actorMoveRange, moveSpeed);
-		NetworkManager.Instance.SpawnNetworkActor(actor, type);
+		NetworkManager.Instance.SpawnNetworkActor(actor, id, type);
 		return actor;
     }
 
