@@ -108,6 +108,10 @@ namespace ReplicationGraph
 
 		private SmartLabel _smartLabel;
 
+		// 添加滚动视图相关变量
+		private Vector2 _clientButtonsScrollPos = Vector2.zero;  // 左上角客户端按钮的滚动位置
+		private Vector2 _observerInfoScrollPos = Vector2.zero;   // 底部Observer信息的滚动位置
+
 		private void Awake()
 		{
 			ReplicationGraphVisualizer.SetupInstance(this);
@@ -430,6 +434,19 @@ namespace ReplicationGraph
 		private void DrawGUI_AllObservers()
 		{
 			var observers = GetObserversExceptServer();
+			
+			int padding = 10;
+			int width = 200;
+			int height = 150;
+			int totalWidth = Screen.width - (padding * 2);
+			
+			// 使用滚动视图
+			_observerInfoScrollPos = GUI.BeginScrollView(
+				new Rect(padding, Screen.height - height - padding, totalWidth, height),
+				_observerInfoScrollPos,
+				new Rect(0, 0, observers.Count * (width + 20), height - 20)
+			);
+			
 			int index = 0;
 			foreach (var observerId in observers)
 			{
@@ -439,6 +456,8 @@ namespace ReplicationGraph
 					index++;
 				}
 			}
+			
+			GUI.EndScrollView();
 		}
 
 		#region DistanceReferObject
@@ -493,17 +512,16 @@ namespace ReplicationGraph
 
 		private void DrawGUI_ObserverInfo(string observerId, ObserverData observer, int index)
 		{
-			int padding = 10;
 			int width = 200;
 			int height = 150;
 			int spacing = 20;
-			int xPos = padding + (width + spacing) * index;
+			int xPos = (width + spacing) * index;
 			
-			// 绘制窗口
-			GUI.Box(new Rect(xPos, Screen.height - height - padding, width, height), 
+			// 绘制窗口（注意x坐标现在是相对于滚动视图的）
+			GUI.Box(new Rect(xPos, 0, width, height - 20), 
 				$"Observer {observerId}");
 
-			GUILayout.BeginArea(new Rect(xPos + 5, Screen.height - height - padding + 25, width - 10, height - 30));
+			GUILayout.BeginArea(new Rect(xPos + 5, 25, width - 10, height - 50));
 
 			// 计算所有被观察者到观察者的距离
 			ClearDistanceReferObjectList();
@@ -599,55 +617,75 @@ namespace ReplicationGraph
 		{
 			int padding = 10;
 			int width = 170;
-			int buttonHeight = 30;
-
+			int height = 120;
+			
 			// 创建一个背景框
-			GUI.Box(new Rect(padding, padding, width, 120), "视角切换");
-
-			GUILayout.BeginArea(new Rect(padding + 5, padding + 25, width - 10, 90));
-
-			// 第一行按钮
+			GUI.Box(new Rect(padding, padding, width, height), "视角切换");
+			
+			GUILayout.BeginArea(new Rect(padding + 5, padding + 25, width - 10, height - 30));
+			
+			// 第一行固定按钮
 			GUILayout.BeginHorizontal();
+			DrawServerButton();
+			DrawAllClientsButton();
+			GUILayout.EndHorizontal();
+			
+			// 客户端按钮使用滚动视图
+			_clientButtonsScrollPos = GUILayout.BeginScrollView(_clientButtonsScrollPos, 
+				GUILayout.Height(60));  // 固定滚动区域高度
+			
+			var observers = GetObserversExceptServer();
+			int buttonsPerRow = 2;  // 每行显示的按钮数
+			
+			for (int i = 0; i < observers.Count; i += buttonsPerRow)
+			{
+				GUILayout.BeginHorizontal();
+				for (int j = 0; j < buttonsPerRow && (i + j) < observers.Count; j++)
+				{
+					string observer = observers[i + j];
+					DrawClientButton(observer);
+				}
+				GUILayout.EndHorizontal();
+			}
+			
+			GUILayout.EndScrollView();
+			GUILayout.EndArea();
+		}
 
-			// 服务器视角按钮
-			Color originalColor = GUI.backgroundColor;
+		// 辅助方法：绘制服务器按钮
+		private void DrawServerButton()
+		{
 			GUI.backgroundColor = _currentMode == ObserverMode.Server ?
 				new Color(0.7f, 0.3f, 0.3f) : new Color(0.3f, 0.3f, 0.3f);
-
-			if (GUILayout.Button("服务器视角", GUILayout.Height(buttonHeight)))
+			
+			if (GUILayout.Button("服务器视角", GUILayout.Height(30)))
 			{
 				ReplicationGraphVisualizer.SwitchObserver(ReplicationGraphVisualizer.MODE_SERVER);
 			}
+		}
 
-			// 所有客户端按钮
+		// 辅助方法：绘制所有客户端按钮
+		private void DrawAllClientsButton()
+		{
 			GUI.backgroundColor = _currentMode == ObserverMode.AllClients ?
 				new Color(0.3f, 0.7f, 0.7f) : new Color(0.3f, 0.3f, 0.3f);
-
-			if (GUILayout.Button("所有客户端", GUILayout.Height(buttonHeight)))
+			
+			if (GUILayout.Button("所有客户端", GUILayout.Height(30)))
 			{
 				ReplicationGraphVisualizer.SwitchObserver(ReplicationGraphVisualizer.MODE_ALL_CLIENTS);
 			}
-			GUILayout.EndHorizontal();
+		}
 
-			// 第二行按钮
-			GUILayout.BeginHorizontal();
-			var observers = GetObserversExceptServer();
-			foreach (var observer in observers)
+		// 辅助方法：绘制单个客户端按钮
+		private void DrawClientButton(string observer)
+		{
+			GUI.backgroundColor = (_currentMode == ObserverMode.SingleClient && _targetObserverId == observer) ?
+				new Color(0.3f, 0.7f, 0.3f) : new Color(0.3f, 0.3f, 0.3f);
+			
+			if (GUILayout.Button(observer, GUILayout.Height(25)))
 			{
-				GUI.backgroundColor = (_currentMode == ObserverMode.SingleClient && _targetObserverId == observer) ?
-					new Color(0.3f, 0.7f, 0.3f) : new Color(0.3f, 0.3f, 0.3f);
-
-				if (GUILayout.Button(observer, GUILayout.Height(buttonHeight)))
-				{
-					ReplicationGraphVisualizer.SwitchObserver(observer);
-				}
+				ReplicationGraphVisualizer.SwitchObserver(observer);
 			}
-			GUILayout.EndHorizontal();
-
-			// 恢复原始背景色
-			GUI.backgroundColor = originalColor;
-
-			GUILayout.EndArea();
 		}
 
 		// 获取当前观察者ID
