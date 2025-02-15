@@ -434,12 +434,12 @@ namespace ReplicationGraph
 		private void DrawGUI_AllObservers()
 		{
 			var observers = GetObserversExceptServer();
-			
+
 			int padding = 10;
 			int width = 200;
 			int height = 150;
 			int totalWidth = Screen.width - (padding * 2);
-			
+
 			// 使用滚动视图
 			_observerInfoScrollPos = GUI.BeginScrollView(
 				new Rect(padding, Screen.height - height - padding, totalWidth, height),
@@ -565,10 +565,22 @@ namespace ReplicationGraph
 
 		private void DrawGUI_SingleObserver(string observerId)
 		{
+			// 使用相同的滚动视图
+			int padding = 10;
+			int width = 200;
+			int height = 150;
+			int totalWidth = Screen.width - (padding * 2);
+			int observerCount = 1;
+			_observerInfoScrollPos = GUI.BeginScrollView(
+				new Rect(padding, Screen.height - height - padding, totalWidth, height),
+				_observerInfoScrollPos,
+				new Rect(0, 0, observerCount * (width + 20), height - 20)
+			);
 			if (_observerRegistry.TryGetValue(observerId, out var observer))
 			{
 				DrawGUI_ObserverInfo(observerId, observer, 0);
 			}
+			GUI.EndScrollView();
 		}
 
 		private void DrawLegend()
