@@ -12,7 +12,8 @@ public class ReplicationDemo : MonoBehaviour
     [SerializeField] private float clientViewRadius = 50f;     // 客户端视野半径
     
     [Header("出生配置")]
-    [SerializeField] private int staticActorCount = 10;        // 静态Actor数量
+	[SerializeField] private Color _spawnAreaColor = new Color(1, 0, 0, 0.5f);
+	[SerializeField] private int staticActorCount = 10;        // 静态Actor数量
     [SerializeField] private int dynamicActorCount = 10;       // 动态Actor数量
     [SerializeField] private int playerActorCount = 3;         // 玩家Actor数量
     [SerializeField] private Rect spawnAreaRect = new Rect(-50, -50, 100, 100);
@@ -155,7 +156,7 @@ public class ReplicationDemo : MonoBehaviour
     {
         if (!Application.isPlaying)
         {
-            Gizmos.color = new Color(1, 0, 0, 0.5f);
+			Gizmos.color = _spawnAreaColor;
             Gizmos.DrawWireCube(
                 new Vector3(spawnAreaRect.center.x, 0, spawnAreaRect.center.y),
                 new Vector3(spawnAreaRect.width, 0, spawnAreaRect.height)

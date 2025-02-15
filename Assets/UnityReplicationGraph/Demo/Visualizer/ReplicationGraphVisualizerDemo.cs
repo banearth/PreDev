@@ -13,6 +13,7 @@ namespace ReplicationGraph
 		[SerializeField] private float _clientViewRadius = 10f;      // 客户端视野半径
 
 		[Header("出生配置")]
+		[SerializeField] private Color _spawnAreaColor = new Color(1, 0, 0, 0.5f);
 		[SerializeField] private int _staticActorCount = 10;
 		[SerializeField] private int _dynamicActorCount = 10;
 		[SerializeField] private int _playerActorCount = 3;
@@ -300,7 +301,7 @@ namespace ReplicationGraph
 			if(!Application.isPlaying)
 			{
 				//绘制出生区域
-				Gizmos.color = new Color(1, 0, 0, 0.5f);
+				Gizmos.color = _spawnAreaColor;
 				// 调整为XZ平面绘制，使用Rect的x作为X轴，y作为Z轴，Y轴固定为0
 				Gizmos.DrawWireCube(
 					new Vector3(_spawnAreaRect.center.x, 0, _spawnAreaRect.center.y),
