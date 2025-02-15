@@ -134,17 +134,15 @@ public class ReplicationDemo : MonoBehaviour
             UpdateActors(deltaTime);
         }
 
-        // 同步全局被观察者位置
-		ReplicationGraphVisualizer.UpdateGlobalObservee(
-				_draggingActor.Id,
-				_draggingActor.Position.x,
-				_draggingActor.Position.y,
-				_draggingActor.Position.z
-			);
-
-		// 同步服务器位置
+		// 同步位置
 		foreach (var actor in _actors)
 		{
+			ReplicationGraphVisualizer.UpdateGlobalObservee(
+					actor.Id,
+					actor.Position.x,
+					actor.Position.y,
+					actor.Position.z
+				);
 			if (actor.IsOwnedByClient)
 			{
 			    ReplicationGraphVisualizer.UpdateObserver(
