@@ -9,7 +9,7 @@ public class TestActor : FActorRepListType
     public string OwnedClientId { get; set; }
     public bool IsOwnedByClient => !string.IsNullOrEmpty(OwnedClientId);
 
-    public Vector3 InitialPosition { get; private set; }  // 保存初始位置作为圆心
+    public Vector3 InitialPosition { get; set; }  // 保存初始位置作为圆心
     public float MoveSpeed { get; set; }                 // 移动速度
     public float MoveRange { get; set; }                 // 运动半径
     private float _phaseOffset;                          // 每个Actor的相位偏移

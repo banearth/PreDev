@@ -33,7 +33,9 @@ public class ReplicationDemo : MonoBehaviour
     private Camera _camera;
     private SmartLabel _actorLabel; // 用于显示Actor名字的标签管理器
     private TestActor _draggingActor = null;
-    private Vector3 _dragOffset;
+    private Vector3 _dragStartPosition;  // 记录开始拖拽时Actor的位置
+    private Vector3 _dragOffset;         // 记录鼠标点击位置与Actor位置的偏移
+    private Vector3 _dragStartInitialPosition; // 记录开始拖拽时的运动圆心
 
     private Vector3 GetRandomSpawnPosition()
     {
@@ -135,6 +137,9 @@ public class ReplicationDemo : MonoBehaviour
     {
         foreach (var actor in spawnedActors)
         {
+            // 如果正在拖拽该Actor，跳过自动移动更新
+            if (actor == _draggingActor) continue;
+
             actor.UpdateMovement(deltaTime);
             
             ReplicationGraphVisualizer.UpdateGlobalObservee(
@@ -142,6 +147,17 @@ public class ReplicationDemo : MonoBehaviour
                 actor.Position.x,
                 actor.Position.y,
                 actor.Position.z
+            );
+        }
+
+        // 如果有正在拖拽的Actor，单独更新它的位置
+        if (_draggingActor != null)
+        {
+            ReplicationGraphVisualizer.UpdateGlobalObservee(
+                _draggingActor.Id,
+                _draggingActor.Position.x,
+                _draggingActor.Position.y,
+                _draggingActor.Position.z
             );
         }
     }
@@ -202,15 +218,21 @@ public class ReplicationDemo : MonoBehaviour
             
             if (_draggingActor != null)
             {
+                // 记录开始拖拽时的位置、圆心和偏移
+                _dragStartPosition = _draggingActor.Position;
+                _dragStartInitialPosition = _draggingActor.InitialPosition;
                 _dragOffset = _draggingActor.Position - clickWorldPos;
             }
         }
         else if (Input.GetMouseButton(0) && _draggingActor != null)
         {
+            // 计算拖拽的位移
             Vector3 newPos = GetWorldPositionFromMouse() + _dragOffset;
-            Vector3 movement = newPos - _draggingActor.Position;
+            Vector3 movement = newPos - _dragStartPosition;
             
+            // 同时更新当前位置和运动圆心，保持相对关系
             _draggingActor.Position = newPos;
+            _draggingActor.InitialPosition = _dragStartInitialPosition + movement;
         }
         else if (Input.GetMouseButtonUp(0) && _draggingActor != null)
         {
