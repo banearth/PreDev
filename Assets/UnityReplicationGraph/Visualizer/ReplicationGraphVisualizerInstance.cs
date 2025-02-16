@@ -265,14 +265,14 @@ namespace ReplicationGraph
 			{
 				bool isServer = observerId == ReplicationGraphVisualizer.MODE_SERVER;
 
-				// 绘制观察者
+				// 绘制被观察者（不带十字标记）
+				DrawObservees(observerData);
+
+				// 只绘制客户端的
 				if (!isServer)
 				{
 					ReplicationGraphVisualizerUtils.DrawObserver(observerData.position, observerData.viewRadius, _viewColors[0], _borderColor);
 				}
-
-				// 绘制被观察者（不带十字标记）
-				DrawObservees(observerData);
 			}
 		}
 
@@ -367,6 +367,16 @@ namespace ReplicationGraph
 		private void OnDrawGizmos()
 		{
 			if (!Application.isPlaying) return;
+
+			if (_hasGridSetup)
+			{
+				ReplicationGraphVisualizerUtils.DrawGrid2D(
+					_spatialBias,
+					_cellSize,
+					_gridSize,
+					_gridBounds
+				);
+			}
 
 			switch (_currentMode)
 			{
@@ -733,6 +743,30 @@ namespace ReplicationGraph
 			// 如果是全局被观察者，不从_globalObservees中移除
 			// 因为其他观察者可能还需要看到它
 			// 只有在RemoveGlobalObservee时才真正移除全局被观察者
+		}
+
+		[Header("网格可视化")]
+		private float _cellSize;
+		private Vector2 _spatialBias;
+		private Vector2Int _gridSize;
+		private Rect? _gridBounds;
+		private bool _hasGridSetup;
+		internal void SetupGrid2D_Internal(float cellSize, float spatialBiasX, float spatialBiasY, int gridSizeX, int gridSizeY, Rect? gridBounds)
+		{
+			_cellSize = cellSize;
+			_spatialBias = new Vector2(spatialBiasX, spatialBiasY);
+			_gridSize = new Vector2Int(gridSizeX, gridSizeY);
+			_gridBounds = gridBounds;
+			_hasGridSetup = true;
+		}
+
+		public void ClearGrid2D_Internal()
+		{
+			_cellSize = 0;
+			_spatialBias = Vector2.zero;
+			_gridSize = Vector2Int.zero;
+			_gridBounds = null;
+			_hasGridSetup = false;
 		}
 
 	}

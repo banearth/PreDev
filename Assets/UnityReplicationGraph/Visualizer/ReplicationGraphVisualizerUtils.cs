@@ -218,6 +218,55 @@ namespace ReplicationGraph
 #endif
 		}
 
+		/// <summary>
+		/// 绘制空间化网格
+		/// </summary>
+		public static void DrawGrid2D(Vector2 spatialBias, float cellSize, Vector2Int gridSize, Rect? gridBounds = null)
+		{
+	#if UNITY_EDITOR
+			// 计算网格范围
+			float minX = gridBounds.HasValue ? gridBounds.Value.xMin : spatialBias.x;
+			float maxX = gridBounds.HasValue ? gridBounds.Value.xMax : (gridSize.x * cellSize + spatialBias.x);
+			float minZ = gridBounds.HasValue ? gridBounds.Value.yMin : spatialBias.y;
+			float maxZ = gridBounds.HasValue ? gridBounds.Value.yMax : (gridSize.y * cellSize + spatialBias.y);
+
+			// 保存当前颜色
+			Color originalColor = Gizmos.color;
+			
+			// 绘制网格线
+			Gizmos.color = new Color(0.5f, 0.5f, 0.5f, 0.3f);
+			
+			// 垂直线
+			for (float x = minX; x <= maxX; x += cellSize)
+			{
+				Gizmos.DrawLine(
+					new Vector3(x, 0, minZ),
+					new Vector3(x, 0, maxZ)
+				);
+			}
+			
+			// 水平线
+			for (float z = minZ; z <= maxZ; z += cellSize)
+			{
+				Gizmos.DrawLine(
+					new Vector3(minX, 0, z),
+					new Vector3(maxX, 0, z)
+				);
+			}
+
+			// 绘制边界
+			Gizmos.color = new Color(1f, 0f, 0f, 0.5f);
+			Vector3 boundMin = new Vector3(minX, 0, minZ);
+			Vector3 boundMax = new Vector3(maxX, 0, maxZ);
+			Vector3 size = boundMax - boundMin;
+			Vector3 center = boundMin + size * 0.5f;
+			Gizmos.DrawWireCube(center, new Vector3(size.x, 0, size.z));
+
+			// 恢复颜色
+			Gizmos.color = originalColor;
+	#endif
+		}
+
 
 	}
 }

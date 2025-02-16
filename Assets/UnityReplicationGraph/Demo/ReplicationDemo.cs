@@ -24,7 +24,8 @@ public class ReplicationDemo : MonoBehaviour
     [SerializeField] private bool showDebugGizmos = true;
 
     [Header("可视化配置")]
-    [SerializeField] private bool drawEnable = true;            // 是否启用绘制
+    [SerializeField] private bool drawGraphEnabnle = true;      // 是否绘制replicationgraph 
+    [SerializeField] private bool drawActorEnable = true;            // 是否启用绘制
     [SerializeField] private Color actorColor = Color.white;    // Actor颜色
     [SerializeField] private float smartLabelOffsetMultiple = 1;  // 智能Label整体偏移倍数
     [SerializeField] private float smartLabelBaseOffset = 0.5f;   // 智能Label基础偏移
@@ -120,7 +121,7 @@ public class ReplicationDemo : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Space))
         {
-            drawEnable = !drawEnable;
+            drawActorEnable = !drawActorEnable;
         }
 
 		// 处理拖拽逻辑
@@ -195,7 +196,7 @@ public class ReplicationDemo : MonoBehaviour
             return;
         }
 
-        if (drawEnable)
+        if (drawActorEnable)
         {
             foreach (var actor in _actors)
             {

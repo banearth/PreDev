@@ -106,5 +106,18 @@ namespace ReplicationGraph
 		{
 			Instance.RemoveObservee_Internal(observerId, observeeId);
 		}
+
+		// 设置网格
+		public static void SetupGrid2D(float cellSize, float spatialBiasX, float spatialBiasY, int gridSizeX, int gridSizeY, Rect? gridBounds)
+		{
+			Instance.SetupGrid2D_Internal(cellSize, spatialBiasX, spatialBiasY, gridSizeX, gridSizeY, gridBounds);
+		}
+
+		// 清空网格
+		public static void ClearGrid2D()
+		{
+			Instance.ClearGrid2D_Internal();
+		}
+
 	}
 }

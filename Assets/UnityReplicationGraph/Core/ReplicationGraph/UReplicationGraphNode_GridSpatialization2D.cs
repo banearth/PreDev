@@ -5,6 +5,7 @@ using System;
 using UnityEditor.PackageManager;
 using UnityEditor;
 using UnityEditor.Experimental.GraphView;
+using ReplicationGraph;
 
 public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
 {
@@ -41,6 +42,7 @@ public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
 	private HashSet<string> ClassRebuildDenyList = new HashSet<string>();
 
 	private bool bNeedsRebuild = false;
+	private bool bGridGizmosDirty = false;
 
 	public UReplicationGraphNode_GridSpatialization2D()
     {
@@ -52,8 +54,9 @@ public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
         while (Grid.Count <= x)
         {
             Grid.Add(new List<UReplicationGraphNode_GridCell>());
-        }
-        return Grid[x];
+			bGridGizmosDirty = true;
+		}
+		return Grid[x];
     }
 
     private UReplicationGraphNode_GridCell GetCell(List<UReplicationGraphNode_GridCell> GridX,int Y)
@@ -424,6 +427,7 @@ public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
 				}
 			}
 			Grid.Clear();
+			bGridGizmosDirty = true;
 
 			// 重新添加所有动态Actor
 			foreach (var kvp in DynamicSpatializedActors)
@@ -464,6 +468,9 @@ public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
 
 			bNeedsRebuild = false;
 		}
+		
+		// 绘制Gizmos
+		UpdateDrawGizmosGrid2D();
 	}
 
 
@@ -821,6 +828,7 @@ public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
 		while (Grid.Count <= endX)
 		{
 			Grid.Add(new List<UReplicationGraphNode_GridCell>());
+			bGridGizmosDirty = true;
 		}
 
 		// 遍历Actor覆盖的所有网格单元
@@ -894,6 +902,50 @@ public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
 			return 0;
 		var cell = row[y];
 		return cell?.GetActorCount() ?? 0; // 假设GridCell有GetActorCount方法
+	}
+
+	public void UpdateDrawGizmosGrid2D()
+	{
+		if (!bGridGizmosDirty)
+		{
+			return;
+		}
+		bGridGizmosDirty = false;
+
+		
+		if (Grid == null || Grid.Count == 0)
+		{
+			ReplicationGraphVisualizer.ClearGrid2D();
+			return;
+		}
+
+		// 计算网格的实际边界
+		float minX = GridBounds.HasValue ? GridBounds.Value.min.x : SpatialBias.x;
+		float maxX = GridBounds.HasValue ? GridBounds.Value.max.x : (Grid.Count * CellSize + SpatialBias.x);
+		
+		// 注意：Unity用Z轴，所以这里用z
+		float minZ = GridBounds.HasValue ? GridBounds.Value.min.z : SpatialBias.y;
+		float maxZ = GridBounds.HasValue ? GridBounds.Value.max.z : 
+			(Grid.Count > 0 ? Grid[0].Count * CellSize + SpatialBias.y : SpatialBias.y);
+
+		// 创建Unity的Rect（x, y, width, height）
+		// 注意：Rect的y对应UE的Y轴（Unity的Z轴）
+		Rect gridRect = new Rect(
+			minX,                    // x起点
+			minZ,                    // y起点（对应UE的Y轴/Unity的Z轴）
+			maxX - minX,            // 宽度
+			maxZ - minZ             // 高度
+		);
+
+		// 调用Visualizer的SetupGrid2D
+		ReplicationGraphVisualizer.SetupGrid2D(
+			CellSize,               // 单元格大小
+			SpatialBias.x,         // X轴偏移
+			SpatialBias.y,         // Y轴偏移（对应Unity的Z轴）
+			Grid.Count,            // X方向网格数量
+			Grid[0]?.Count ?? 0,   // Y方向网格数量（对应Unity的Z轴）
+			GridBounds.HasValue ? gridRect : null  // 如果有边界限制，传入计算好的Rect
+		);
 	}
 
 }
