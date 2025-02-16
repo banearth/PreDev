@@ -19,10 +19,10 @@ public class FClassReplicationInfo
 
 	public Func<FActorRepListType, bool> FastSharedReplicationFunc { get; private set; }
 
-	public FClassReplicationInfo SetCullDistance(float cullDistanceSquared)
+	public FClassReplicationInfo SetCullDistance(float cullDistance)
 	{
-		CullDistanceSquared = cullDistanceSquared * cullDistanceSquared;
-		CullDistance = CullDistanceSquared;
+		CullDistanceSquared = cullDistance * cullDistance;
+		CullDistance = cullDistance;
 		return this;
 	}
 

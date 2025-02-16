@@ -54,7 +54,7 @@ public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
         while (Grid.Count <= x)
         {
             Grid.Add(new List<UReplicationGraphNode_GridCell>());
-			Debug.Log("Grid.Add");
+			Debug.Log("Grid.Add X");
 			bGridGizmosDirty = true;
 		}
 		return Grid[x];
@@ -65,6 +65,8 @@ public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
 		while (GridX.Count <= Y)
 		{
 			GridX.Add(new UReplicationGraphNode_GridCell());
+			Debug.Log("Grid.Add Y");
+			bGridGizmosDirty = true;
 		}
         return GridX[Y];
 	}
