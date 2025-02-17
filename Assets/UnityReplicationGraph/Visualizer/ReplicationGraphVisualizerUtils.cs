@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace ReplicationGraph
 {
@@ -286,6 +287,9 @@ namespace ReplicationGraph
 			style.normal.textColor = Color.white;
 			style.alignment = TextAnchor.MiddleCenter;
 			
+			// 找出最大Actor数量，用于颜色插值
+			int maxActorCount = gridIndex2ActorCount.Count > 0 ? gridIndex2ActorCount.Values.Max() : 0;
+
 			for (int x = 0; x < grids.Length; x++)
 			{
 				for (int z = 0; z < maxRowCount; z++)
@@ -304,13 +308,16 @@ namespace ReplicationGraph
 						int index = x * maxRowCount + z;
 						if (gridIndex2ActorCount.TryGetValue(index, out int actorCount))
 						{
-							// 如果存在Actor，显示为绿色
-							Gizmos.color = new Color(0f, 1f, 0f, 0.2f);
+							// 根据Actor数量进行颜色插值
+							float t = maxActorCount > 0 ? (float)actorCount / maxActorCount : 0;
+							Color minActorColor = new Color(0f, 0.3f, 0f, 0.2f);  // 最少Actor数量为浅绿色
+							Color maxActorColor = new Color(0f, 1f, 0f, 0.2f);    // 最多Actor数量为深绿色
+							Gizmos.color = Color.Lerp(minActorColor, maxActorColor, t);
 							coordText += $"({actorCount})";
 						}
 						else
 						{
-							// 如果不存在Actor，显示为红色	
+							// 如果不存在Actor，显示为红色
 							Gizmos.color = new Color(1f, 0f, 0f, 0.2f);
 						}
 						Gizmos.DrawCube(cellCenter, new Vector3(cellSize * 0.9f, 0.1f, cellSize * 0.9f));
