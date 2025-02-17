@@ -53,7 +53,39 @@ public class ReplicationDemo : MonoBehaviour
 
         SpawnActors();
         CreateClients();
+
+        // 注册格子点击事件
+        ReplicationGraphVisualizer.OnGridClicked += OnGridClicked;
     }
+
+    private void OnDestroy()
+    {
+        // 取消注册事件
+        ReplicationGraphVisualizer.OnGridClicked -= OnGridClicked;
+    }
+
+    private void OnGridClicked(int gridX, int gridZ)
+    {
+		//// 在这里处理格子点击事件
+		//var gridNode = _basicRepGraph.GridNode;
+		//int maxRowCount = gridNode.GetMaxRowCount();
+		//int index = gridX * maxRowCount + gridZ;
+
+		//// 获取并处理该格子的 Actor 列表
+		//var actorsInGrid = gridNode.GetActorsInGrid(index);
+		//if (actorsInGrid != null && actorsInGrid.Count > 0)
+		//{
+		//    Debug.Log($"Grid ({gridX}, {gridZ}) contains {actorsInGrid.Count} actors:");
+		//    foreach (var actor in actorsInGrid)
+		//    {
+		//        Debug.Log($"- {actor}");
+		//    }
+		//}
+		//else
+		//{
+		//    Debug.Log($"No actors in grid ({gridX}, {gridZ})");
+		//}
+	}
 
     private void SpawnActors()
     {

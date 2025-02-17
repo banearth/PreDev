@@ -119,5 +119,16 @@ namespace ReplicationGraph
 			Instance.ClearGrid2D_Internal();
 		}
 
+		// 定义格子点击事件的委托
+		public delegate void GridClickedHandler(int gridX, int gridZ);
+		
+		// 格子点击事件
+		public static event GridClickedHandler OnGridClicked;
+		
+		// 触发格子点击事件的方法
+		internal static void TriggerGridClicked(int gridX, int gridZ)
+		{
+			OnGridClicked?.Invoke(gridX, gridZ);
+		}
 	}
 }

@@ -1,9 +1,7 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
+using System.Runtime.CompilerServices;
 using System;
-using UnityEngine.UIElements;
-using static ReplicationGraph.SmartLabel;
-
 
 
 #if UNITY_EDITOR
@@ -125,6 +123,33 @@ namespace ReplicationGraph
 		{
 			ReplicationGraphVisualizer.SetupInstance(this);
 			_smartLabel = new SmartLabel(_smartLabelOffsetMultiple, _smartLabelBaseOffset);
+		}
+
+		private void Update()
+		{
+			if (!Application.isPlaying || !_hasGridSetup) return;
+
+			// 检测 Ctrl + 左键点击
+			if (Input.GetMouseButtonDown(0) && Input.GetKey(KeyCode.LeftControl))
+			{
+				Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+				if (new Plane(Vector3.up, 0).Raycast(ray, out float enter))
+				{
+					Vector3 hitPoint = ray.GetPoint(enter);
+					int gridX = Mathf.FloorToInt((hitPoint.x - _spatialBias.x) / _cellSize);
+					int gridZ = Mathf.FloorToInt((hitPoint.z - _spatialBias.y) / _cellSize);
+
+					if (gridX >= 0 && gridX < _gridSize.Length && gridZ >= 0 && gridZ < _gridSize[gridX])
+					{
+						int index = gridX * _gridSize.Max() + gridZ;
+						if (_gridIndex2ActorCount.TryGetValue(index, out int actorCount))
+						{
+							Debug.Log($"Clicked grid ({gridX}, {gridZ}) with {actorCount} actors");
+							ReplicationGraphVisualizer.TriggerGridClicked(gridX, gridZ);
+						}
+					}
+				}
+			}
 		}
 
 		private void OnValidate()
