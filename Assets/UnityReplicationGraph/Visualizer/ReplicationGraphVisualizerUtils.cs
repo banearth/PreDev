@@ -238,6 +238,10 @@ namespace ReplicationGraph
 #endif
 		}
 
+		// 添加静态字符串缓存
+		private static Dictionary<(int, int), string> _coordTextCache = new Dictionary<(int, int), string>();
+		private static Dictionary<int, string> _actorCountCache = new Dictionary<int, string>();
+
 		/// <summary>
 		/// 绘制空间化网格
 		/// </summary>
@@ -283,9 +287,13 @@ namespace ReplicationGraph
 			}
 
 			// 绘制格子编号
-			GUIStyle style = new GUIStyle();
-			style.normal.textColor = Color.white;
-			style.alignment = TextAnchor.MiddleCenter;
+			GUIStyle coordStyle = new GUIStyle();
+			coordStyle.normal.textColor = Color.white;
+			coordStyle.alignment = TextAnchor.UpperCenter;
+			
+			GUIStyle countStyle = new GUIStyle();
+			countStyle.normal.textColor = Color.white;
+			countStyle.alignment = TextAnchor.LowerCenter;
 			
 			// 找出最大Actor数量，用于颜色插值
 			int maxActorCount = gridIndex2ActorCount.Count > 0 ? gridIndex2ActorCount.Values.Max() : 0;
@@ -300,9 +308,14 @@ namespace ReplicationGraph
 						spatialBias.y + (z + 0.5f) * cellSize
 					);
 
-					// 如果该格子在实际占用范围内
-					// 显示格子坐标
-					string coordText = $"({x},{z})";
+					// 获取或创建坐标文本
+					var coordKey = (x, z);
+					if (!_coordTextCache.TryGetValue(coordKey, out string coordText))
+					{
+						coordText = $"({x},{z})";
+						_coordTextCache[coordKey] = coordText;
+					}
+
 					if (z < grids[x])
 					{
 						int index = x * maxRowCount + z;
@@ -310,19 +323,34 @@ namespace ReplicationGraph
 						{
 							// 根据Actor数量进行颜色插值
 							float t = maxActorCount > 0 ? (float)actorCount / maxActorCount : 0;
-							Color minActorColor = new Color(0f, 0.3f, 0f, 0.2f);  // 最少Actor数量为浅绿色
-							Color maxActorColor = new Color(0f, 1f, 0f, 0.2f);    // 最多Actor数量为深绿色
+							Color minActorColor = new Color(0f, 0.3f, 0f, 0.2f);
+							Color maxActorColor = new Color(0f, 1f, 0f, 0.2f);
 							Gizmos.color = Color.Lerp(minActorColor, maxActorColor, t);
-							coordText += $"({actorCount})";
+
+							// 获取或创建Actor数量文本
+							if (!_actorCountCache.TryGetValue(actorCount, out string countText))
+							{
+								countText = $"({actorCount})";
+								_actorCountCache[actorCount] = countText;
+							}
+
+							// 分别绘制坐标和数量
+							UnityEditor.Handles.Label(cellCenter + Vector3.forward * cellSize * 0.2f, coordText, coordStyle);
+							UnityEditor.Handles.Label(cellCenter - Vector3.forward * cellSize * 0.2f, countText, countStyle);
 						}
 						else
 						{
-							// 如果不存在Actor，显示为红色
 							Gizmos.color = new Color(1f, 0f, 0f, 0.2f);
+							// 只绘制坐标
+							UnityEditor.Handles.Label(cellCenter, coordText, coordStyle);
 						}
 						Gizmos.DrawCube(cellCenter, new Vector3(cellSize * 0.9f, 0.1f, cellSize * 0.9f));
 					}
-					UnityEditor.Handles.Label(cellCenter, coordText, style);
+					else
+					{
+						// 网格范围外只绘制坐标
+						UnityEditor.Handles.Label(cellCenter, coordText, coordStyle);
+					}
 				}
 			}
 
@@ -339,6 +367,11 @@ namespace ReplicationGraph
 #endif
 		}
 
-
+		// 清理缓存的方法（在需要时调用，比如切换场景时）
+		public static void ClearTextCache()
+		{
+			_coordTextCache.Clear();
+			_actorCountCache.Clear();
+		}
 	}
 }
