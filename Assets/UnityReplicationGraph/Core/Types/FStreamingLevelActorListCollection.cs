@@ -231,4 +231,15 @@ public class FStreamingLevelActorListCollection
         }
         return totalCount;
     }
+
+    /// <summary>
+    /// 获取所有流关卡中的Actor（用于调试）
+    /// </summary>
+    public void GetAllActorsInNode_Debugging(List<FActorRepListType> outArray)
+    {
+        foreach (var streamingLevel in StreamingLevelLists)
+        {
+            streamingLevel.ReplicationActorList.AppendToTArray(outArray);
+        }
+    }
 }

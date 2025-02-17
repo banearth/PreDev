@@ -16,14 +16,14 @@ public class NetworkManager : MonoBehaviour
             Instance = this;
             DontDestroyOnLoad(gameObject);
             InitializeNetwork();
-        }
+		}
         else
         {
             Destroy(gameObject);
         }
     }
 
-    private void InitializeNetwork()
+	private void InitializeNetwork()
     {
         // 创建网络驱动
         Driver = new UNetworkDriver();

@@ -171,4 +171,19 @@ public class UReplicationGraphNode_ActorListFrequencyBuckets : UReplicationGraph
 		totalCount += StreamingLevelCollection.GetActorCount();
         return totalCount;
     }
+
+    public override void GetAllActorsInNode_Debugging(List<FActorRepListType> outActors)
+    {
+        // 收集非流关卡中的所有Actor
+        foreach (var list in NonStreamingCollection)
+        {
+            foreach (var actor in list)
+            {
+                outActors.Add(actor);
+            }
+        }
+
+        // 收集流关卡中的所有Actor
+        StreamingLevelCollection.GetAllActorsInNode_Debugging(outActors);
+    }
 }

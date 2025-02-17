@@ -43,9 +43,18 @@ public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
 	public UReplicationGraphNode_GridSpatialization2D()
     {
         bRequiresPrepareForReplicationCall = true;
-    }
+		ReplicationGraphVisualizer.OnGridClicked -= OnGridClicked;
+		ReplicationGraphVisualizer.OnGridClicked += OnGridClicked;
+	}
 
-    private List<UReplicationGraphNode_GridCell> GetGridX(int x)
+	private void OnGridClicked(int gridX, int gridZ)
+	{
+		// 在这里处理格子点击事件
+		var cellNode = GetCell(gridX,gridZ);
+		Debug.Log(cellNode.GetDebugString());
+	}
+
+	private List<UReplicationGraphNode_GridCell> GetGridX(int x)
     {
         while (Grid.Count <= x)
         {

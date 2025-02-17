@@ -185,4 +185,59 @@ public class UReplicationGraphNode_GridCell : UReplicationGraphNode_ActorList
         return dynamicCount + dormantCount;
     }
 
+	public override string GetDebugString()
+	{
+        System.Text.StringBuilder sb = new System.Text.StringBuilder();
+        
+        // 添加格子基本信息
+        sb.AppendLine($"Grid Cell ({coordX},{coordY})");
+        
+        //// 添加静态Actor信息
+        //var staticActors = GetActors();
+        //if (staticActors.Count > 0)
+        //{
+        //    sb.AppendLine("Static Actors:");
+        //    foreach (var actor in staticActors)
+        //    {
+        //        sb.AppendLine($"  - {actor.Name}");
+        //    }
+        //}
+
+        // 添加动态Actor信息
+        if (DynamicNode != null)
+        {
+            var dynamicActors = new List<FActorRepListType>();
+            DynamicNode.GetAllActorsInNode_Debugging(dynamicActors);
+            if (dynamicActors.Count > 0)
+            {
+                sb.AppendLine("Dynamic Actors:");
+                foreach (var actor in dynamicActors)
+                {
+                    sb.AppendLine($"  - {actor.Name}");
+                }
+            }
+        }
+
+        // 添加休眠Actor信息
+        if (DormancyNode != null)
+        {
+            var dormantActors = new List<FActorRepListType>();
+            DormancyNode.GetAllActorsInNode_Debugging(dormantActors);
+            if (dormantActors.Count > 0)
+            {
+                sb.AppendLine("Dormant Actors:");
+                foreach (var actor in dormantActors)
+                {
+                    sb.AppendLine($"  - {actor.Name}");
+                }
+            }
+        }
+
+        // 添加总计信息
+        int totalCount = GetActorCount();
+        sb.AppendLine($"Total Actors: {totalCount}");
+
+        return sb.ToString();
+	}
+
 }

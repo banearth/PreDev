@@ -344,4 +344,22 @@ public class UReplicationGraphNode_DynamicSpatialFrequency : UReplicationGraphNo
         return (ConnectionData.FastPath_NextReplicationFrameNum <= FrameNum || 
             GlobalData.ForceNetUpdateFrame > ConnectionData.FastPath_LastRepFrameNum);
     }
+
+	public override void GetAllActorsInNode_Debugging(List<FActorRepListType> outActors)
+	{
+		// 添加主复制列表中的Actor
+		foreach (var actor in ReplicationActorList)
+		{
+			outActors.Add(actor);
+		}
+
+		// 添加流关卡中的Actor
+		foreach (var streamingList in StreamingLevelCollection.StreamingLevelLists)
+		{
+			foreach (var actor in streamingList.ReplicationActorList)
+			{
+				outActors.Add(actor);
+			}
+		}
+	}
 }
