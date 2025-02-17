@@ -376,7 +376,7 @@ namespace ReplicationGraph
 		{
 			if (!Application.isPlaying) return;
 
-			if (_hasGridSetup)
+			if (_hasGridSetup && _showGridGizmos)
 			{
 				ReplicationGraphVisualizerUtils.DrawGrid2D(
 					_spatialBias,
@@ -447,45 +447,42 @@ namespace ReplicationGraph
 					break;
 			}
 
-			// 绘制网格控制面板
-			float panelWidth = 200;
-			float panelHeight = 150;
-			float padding = 10;
-			
-			// 左上角位置
-			Rect panelRect = new Rect(padding, padding, panelWidth, panelHeight);
-			
-			GUI.Box(panelRect, "网格可视化设置");
-			
-			// 内容区域
-			Rect contentRect = new Rect(
-				panelRect.x + 5, 
-				panelRect.y + 20, 
-				panelRect.width - 10, 
-				panelRect.height - 25
-			);
-			
-			GUILayout.BeginArea(contentRect);
+			// 在原有内容之后添加网格设置面板
+			if (_hasGridSetup)
 			{
-				// 使用滚动视图
-				_gridInfoScrollPos = GUILayout.BeginScrollView(_gridInfoScrollPos);
+				float panelWidth = 200;
+				float panelHeight = 150;
+				float padding = 10;
 				
-				// 网格显示开关
-				_showGridGizmos = GUILayout.Toggle(_showGridGizmos, "显示网格");
+				// 放在左边，但是避开其他面板
+				Rect panelRect = new Rect(padding, Screen.height - panelHeight - 170, panelWidth, panelHeight);
 				
-				// 网格基本信息
-				GUILayout.Space(5);
-				GUILayout.Label($"网格大小: {_cellSize}");
-				GUILayout.Label($"网格偏移: ({_spatialBias.x}, {_spatialBias.y})");
-				if (_gridSize != null)
+				GUI.Box(panelRect, "网格可视化设置");
+				
+				GUILayout.BeginArea(new Rect(
+					panelRect.x + 5, 
+					panelRect.y + 20, 
+					panelRect.width - 10, 
+					panelRect.height - 25
+				));
 				{
-					GUILayout.Label($"列数: {_gridSize.Length}");
-					GUILayout.Label($"最大行数: {(_gridSize.Length > 0 ? _gridSize.Max() : 0)}");
+					_gridInfoScrollPos = GUILayout.BeginScrollView(_gridInfoScrollPos);
+					
+					_showGridGizmos = GUILayout.Toggle(_showGridGizmos, "显示网格");
+					
+					GUILayout.Space(5);
+					GUILayout.Label($"网格大小: {_cellSize}");
+					GUILayout.Label($"网格偏移: ({_spatialBias.x:F1}, {_spatialBias.y:F1})");
+					if (_gridSize != null)
+					{
+						GUILayout.Label($"列数: {_gridSize.Length}");
+						GUILayout.Label($"最大行数: {(_gridSize.Length > 0 ? _gridSize.Max() : 0)}");
+					}
+					
+					GUILayout.EndScrollView();
 				}
-				
-				GUILayout.EndScrollView();
+				GUILayout.EndArea();
 			}
-			GUILayout.EndArea();
 		}
 
 		private void DrawGUI_AllObservers()
