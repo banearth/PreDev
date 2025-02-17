@@ -238,9 +238,11 @@ namespace ReplicationGraph
 #endif
 		}
 
-		// 添加静态字符串缓存
+		// 添加静态缓存
 		private static Dictionary<(int, int), string> _coordTextCache = new Dictionary<(int, int), string>();
 		private static Dictionary<int, string> _actorCountCache = new Dictionary<int, string>();
+		private static GUIStyle _coordStyle;
+		private static GUIStyle _countStyle;
 
 		/// <summary>
 		/// 绘制空间化网格
@@ -254,6 +256,21 @@ namespace ReplicationGraph
 		{
 #if UNITY_EDITOR
 			if (grids == null || grids.Length == 0) return;
+
+			// 延迟初始化 Styles
+			if (_coordStyle == null)
+			{
+				_coordStyle = new GUIStyle();
+				_coordStyle.normal.textColor = Color.white;
+				_coordStyle.alignment = TextAnchor.UpperCenter;
+			}
+			
+			if (_countStyle == null)
+			{
+				_countStyle = new GUIStyle();
+				_countStyle.normal.textColor = Color.white;
+				_countStyle.alignment = TextAnchor.LowerCenter;
+			}
 
 			// 计算网格范围
 			int maxRowCount = grids.Max();
@@ -334,22 +351,22 @@ namespace ReplicationGraph
 								_actorCountCache[actorCount] = countText;
 							}
 
-							// 分别绘制坐标和数量
-							UnityEditor.Handles.Label(cellCenter + Vector3.forward * cellSize * 0.2f, coordText, coordStyle);
-							UnityEditor.Handles.Label(cellCenter - Vector3.forward * cellSize * 0.2f, countText, countStyle);
+							// 使用缓存的 styles
+							UnityEditor.Handles.Label(cellCenter, coordText, _coordStyle);
+							UnityEditor.Handles.Label(cellCenter - Vector3.forward * cellSize * 0.2f, countText, _countStyle);
 						}
 						else
 						{
 							Gizmos.color = new Color(1f, 0f, 0f, 0.2f);
 							// 只绘制坐标
-							UnityEditor.Handles.Label(cellCenter, coordText, coordStyle);
+							UnityEditor.Handles.Label(cellCenter, coordText, _coordStyle);
 						}
 						Gizmos.DrawCube(cellCenter, new Vector3(cellSize * 0.9f, 0.1f, cellSize * 0.9f));
 					}
 					else
 					{
 						// 网格范围外只绘制坐标
-						UnityEditor.Handles.Label(cellCenter, coordText, coordStyle);
+						UnityEditor.Handles.Label(cellCenter, coordText, _coordStyle);
 					}
 				}
 			}
@@ -367,11 +384,13 @@ namespace ReplicationGraph
 #endif
 		}
 
-		// 清理缓存的方法（在需要时调用，比如切换场景时）
-		public static void ClearTextCache()
+		// 清理所有缓存
+		public static void ClearCache()
 		{
 			_coordTextCache.Clear();
 			_actorCountCache.Clear();
+			_coordStyle = null;
+			_countStyle = null;
 		}
 	}
 }
