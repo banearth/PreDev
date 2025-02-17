@@ -128,7 +128,7 @@ public class UReplicationGraphNode_ActorList : UReplicationGraphNode
     }
 
 	// 用于调试和统计的Actor计数
-	public int GetActorCount()
+	public override int GetActorCount()
 	{
 		// 返回基类ReplicationActorList中的Actor数量
 		return ReplicationActorList.Num() + StreamingLevelCollection.GetActorCount();

@@ -1,6 +1,5 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace ReplicationGraph
 {
@@ -106,6 +105,25 @@ namespace ReplicationGraph
 
 	public static class ReplicationGraphVisualizerUtils
 	{
+		private static int Max(this int[] array)
+		{
+			int max = array[0];
+			for (int i = 1; i < array.Length; i++)
+			{
+				if (array[i] > max) max = array[i];
+			}
+			return max;
+		}
+
+		private static bool Contains(this int[] array, int value)
+		{
+			for (int i = 0; i < array.Length; i++)
+			{
+				if (array[i] == value) return true;
+			}
+			return false;
+		}
+
 		// 静态物体用空心方块
 		public static void DrawStaticActor(Vector3 position, Color? color = null)
 		{
@@ -225,15 +243,17 @@ namespace ReplicationGraph
 		/// <param name="spatialBias">网格原点偏移</param>
 		/// <param name="cellSize">单元格大小</param>
 		/// <param name="grids">数组长度表示列数量，数组内容表示具体每列行数</param>
-		public static void DrawGrid2D(Vector2 spatialBias, float cellSize, int[] grids)
+		/// <param name="gridActorIndexes">网格上存在Actor的格子所对应的索引</param>
+		/// <param name="gridIndex2ActorCount">网格上存在Actor的格子所对应的Actor数量</param>
+		public static void DrawGrid2D(Vector2 spatialBias, float cellSize, int[] grids, Dictionary<int,int> gridIndex2ActorCount)
 		{
 #if UNITY_EDITOR
 			if (grids == null || grids.Length == 0) return;
 
 			// 计算网格范围
+			int maxRowCount = grids.Max();
 			float minX = spatialBias.x;
 			float maxX = grids.Length * cellSize + spatialBias.x;
-			float maxRowCount = grids.Max();
 			float minZ = spatialBias.y;
 			float maxZ = maxRowCount * cellSize + spatialBias.y;
 
@@ -276,18 +296,26 @@ namespace ReplicationGraph
 						spatialBias.y + (z + 0.5f) * cellSize
 					);
 
-					// 如果该格子在实际占用范围内，显示为红色
-					if (z < grids[x])
-					{
-						Gizmos.color = new Color(1f, 0f, 0f, 0.2f);
-						Gizmos.DrawCube(cellCenter, new Vector3(cellSize * 0.9f, 0.1f, cellSize * 0.9f));
-					}
-
+					// 如果该格子在实际占用范围内
 					// 显示格子坐标
 					string coordText = $"({x},{z})";
-#if UNITY_EDITOR
+					if (z < grids[x])
+					{
+						int index = x * maxRowCount + z;
+						if (gridIndex2ActorCount.TryGetValue(index, out int actorCount))
+						{
+							// 如果存在Actor，显示为绿色
+							Gizmos.color = new Color(0f, 1f, 0f, 0.2f);
+							coordText += $"({actorCount})";
+						}
+						else
+						{
+							// 如果不存在Actor，显示为红色	
+							Gizmos.color = new Color(1f, 0f, 0f, 0.2f);
+						}
+						Gizmos.DrawCube(cellCenter, new Vector3(cellSize * 0.9f, 0.1f, cellSize * 0.9f));
+					}
 					UnityEditor.Handles.Label(cellCenter, coordText, style);
-#endif
 				}
 			}
 

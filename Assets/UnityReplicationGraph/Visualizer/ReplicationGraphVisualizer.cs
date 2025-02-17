@@ -108,9 +108,9 @@ namespace ReplicationGraph
 		}
 
 		// 设置网格
-		public static void SetupGrid2D(float cellSize, float spatialBiasX, float spatialBiasY, int [] grids)
+		public static void SetupGrid2D(float cellSize, float spatialBiasX, float spatialBiasY, int[] grids, int[] gridActorIndexes, int[] gridActorCount)
 		{
-			Instance.SetupGrid2D_Internal(cellSize, spatialBiasX, spatialBiasY, grids);
+			Instance.SetupGrid2D_Internal(cellSize, spatialBiasX, spatialBiasY, grids, gridActorIndexes, gridActorCount);
 		}
 
 		// 清空网格

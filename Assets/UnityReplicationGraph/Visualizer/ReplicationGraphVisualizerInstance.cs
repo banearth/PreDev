@@ -113,12 +113,13 @@ namespace ReplicationGraph
 		private Vector2 _observerInfoScrollPos = Vector2.zero;   // 底部Observer信息的滚动位置
 
 		[Header("网格可视化")]
+		[SerializeField] private bool _showGridGizmos = true;  // 控制网格显示开关
+		private Vector2 _gridInfoScrollPos;   // 网格信息的滚动位置
 		private float _cellSize;
 		private Vector2 _spatialBias;
 		private int[] _gridSize;
 		private bool _hasGridSetup;
-		private bool _showGridGizmos = true;  // 控制网格显示开关
-		private Vector2 _gridInfoScrollPos;   // 网格信息的滚动位置
+		private Dictionary<int,int> _gridIndex2ActorCount = new Dictionary<int, int>(); // 网格上存在Actor的格子所对应Actor数量
 
 		private void Awake()
 		{
@@ -381,7 +382,8 @@ namespace ReplicationGraph
 				ReplicationGraphVisualizerUtils.DrawGrid2D(
 					_spatialBias,
 					_cellSize,
-					_gridSize
+					_gridSize,
+					_gridIndex2ActorCount
 				);
 			}
 
@@ -477,7 +479,7 @@ namespace ReplicationGraph
 					
 					GUILayout.Space(5);
 					GUILayout.Label($"网格大小: {_cellSize}");
-					GUILayout.Label($"网格偏移: ({_spatialBias.x:F1}, {_spatialBias.y:F1})");
+					GUILayout.Label($"偏移: ({_spatialBias.x:F1}, {_spatialBias.y:F1})");
 					if (_gridSize != null)
 					{
 						GUILayout.Label($"列数: {_gridSize.Length}");
@@ -794,20 +796,26 @@ namespace ReplicationGraph
 			// 只有在RemoveGlobalObservee时才真正移除全局被观察者
 		}
 
-		internal void SetupGrid2D_Internal(float cellSize, float spatialBiasX, float spatialBiasY, int[] grids)
+		internal void SetupGrid2D_Internal(float cellSize, float spatialBiasX, float spatialBiasY, int[] grids, int[] gridActorIndexes, int[] gridActorCounts)
 		{
+			_hasGridSetup = true;
 			_cellSize = cellSize;
 			_spatialBias = new Vector2(spatialBiasX, spatialBiasY);
 			_gridSize = grids;
-			_hasGridSetup = true;
+			_gridIndex2ActorCount.Clear();
+			for(int i = 0;i<gridActorIndexes.Length;i++)
+			{
+				_gridIndex2ActorCount[gridActorIndexes[i]] = gridActorCounts[i];
+			}
 		}
 
 		public void ClearGrid2D_Internal()
 		{
+			_hasGridSetup = false;
 			_cellSize = 0;
 			_spatialBias = Vector2.zero;
 			_gridSize = null;
-			_hasGridSetup = false;
+			_gridIndex2ActorCount.Clear();
 		}
 
 	}

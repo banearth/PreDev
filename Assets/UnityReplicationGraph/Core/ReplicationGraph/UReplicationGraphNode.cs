@@ -125,5 +125,10 @@ public abstract class UReplicationGraphNode
 		ReplicationGraphDebugger.EnsureMsg(bIsValid, string.Format("VerifyActorReference Invalid Actor in RepGraphNode: {0}", this.nodeName));
 		return bIsValid;
     }
+
+    public virtual int GetActorCount()
+    {
+        return 0;
+    }
     
 }

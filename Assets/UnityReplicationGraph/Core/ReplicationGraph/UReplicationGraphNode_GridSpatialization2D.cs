@@ -1,10 +1,5 @@
 using UnityEngine;
 using System.Collections.Generic;
-using System.Linq;
-using System;
-using UnityEditor.PackageManager;
-using UnityEditor;
-using UnityEditor.Experimental.GraphView;
 using ReplicationGraph;
 
 public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
@@ -923,9 +918,30 @@ public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
 		}
 
 		int [] grids = new int [Grid.Count];
-		for ( int i = 0; i < Grid.Count; i++ )
+		int maxRowCount = 0;
+		for (int x = 0; x < Grid.Count; x++)
 		{
-			grids[i] = Grid[i].Count;
+			grids[x] = Grid[x].Count;
+			if (Grid[x].Count > maxRowCount)
+			{
+				maxRowCount = Grid[x].Count;
+			}
+		}
+
+		List<int> gridActorIndexes = new List<int>();
+		List<int> gridActorCounts = new List<int>();
+		for (int x = 0;x<Grid.Count;x++)
+		{
+			for (int y = 0; y < Grid[x].Count; y++)
+			{
+				var actorCount = Grid[x][y].GetActorCount();
+				if (actorCount > 0)
+				{
+					var index = x * maxRowCount + y;
+					gridActorCounts.Add(actorCount);
+					gridActorIndexes.Add(index);
+				}
+			}
 		}
 
 		// 调用Visualizer的SetupGrid2D，使用最大Y值
@@ -933,7 +949,9 @@ public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
 			CellSize,
 			SpatialBias.x,
 			SpatialBias.y,
-			grids
+			grids,
+			gridActorIndexes.ToArray(),
+			gridActorCounts.ToArray()
 		);
 	}
 

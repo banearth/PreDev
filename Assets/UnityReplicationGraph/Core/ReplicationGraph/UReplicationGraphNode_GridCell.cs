@@ -165,26 +165,11 @@ public class UReplicationGraphNode_GridCell : UReplicationGraphNode_ActorList
         }
     }
 
-    public bool HasActor()
+    public override int GetActorCount()
     {
-		bool hasDynamicActor = DynamicNode != null && DynamicNode.GetActorCount() > 0;
-        bool hasDormantActor = DormancyNode != null && DormancyNode.GetActorCount() > 0;
-        return hasDynamicActor || hasDormantActor;
+        int dynamicCount = DynamicNode != null ? DynamicNode.GetActorCount() : 0;
+        int dormantCount = DormancyNode != null ? DormancyNode.GetActorCount() : 0;
+        return dynamicCount + dormantCount;
     }
-
-    //public int GetActorCount()
-    //{
-    //	int dynamicCount = DynamicNode != null ? ((UReplicationGraphNode_ActorList)DynamicNode).GetActorCount() : 0;
-    //	int dormantCount = DormancyNode != null ? DormancyNode.GetActorCount() : 0;
-    //	return dynamicCount + dormantCount;
-    //}
-
-    //// 可选：提供分开的计数方法
-    //public (int dynamicCount, int dormantCount) GetDetailedActorCount()
-    //{
-    //	int dynamicCount = DynamicNode != null ? ((UReplicationGraphNode_ActorList)DynamicNode).GetActorCount() : 0;
-    //	int dormantCount = DormancyNode != null ? DormancyNode.GetActorCount() : 0;
-    //	return (dynamicCount, dormantCount);
-    //}
 
 }
