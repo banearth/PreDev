@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace ReplicationGraph
 {
@@ -221,14 +222,20 @@ namespace ReplicationGraph
 		/// <summary>
 		/// 绘制空间化网格
 		/// </summary>
-		public static void DrawGrid2D(Vector2 spatialBias, float cellSize, Vector2Int gridSize, Rect? gridBounds = null)
+		/// <param name="spatialBias">网格原点偏移</param>
+		/// <param name="cellSize">单元格大小</param>
+		/// <param name="grids">数组长度表示列数量，数组内容表示具体每列行数</param>
+		public static void DrawGrid2D(Vector2 spatialBias, float cellSize, int[] grids)
 		{
-	#if UNITY_EDITOR
+#if UNITY_EDITOR
+			if (grids == null || grids.Length == 0) return;
+
 			// 计算网格范围
-			float minX = gridBounds.HasValue ? gridBounds.Value.xMin : spatialBias.x;
-			float maxX = gridBounds.HasValue ? gridBounds.Value.xMax : (gridSize.x * cellSize + spatialBias.x);
-			float minZ = gridBounds.HasValue ? gridBounds.Value.yMin : spatialBias.y;
-			float maxZ = gridBounds.HasValue ? gridBounds.Value.yMax : (gridSize.y * cellSize + spatialBias.y);
+			float minX = spatialBias.x;
+			float maxX = grids.Length * cellSize + spatialBias.x;
+			float maxRowCount = grids.Max();
+			float minZ = spatialBias.y;
+			float maxZ = maxRowCount * cellSize + spatialBias.y;
 
 			// 保存当前颜色
 			Color originalColor = Gizmos.color;
@@ -236,7 +243,7 @@ namespace ReplicationGraph
 			// 绘制网格线
 			Gizmos.color = new Color(0.5f, 0.5f, 0.5f, 0.3f);
 			
-			// 垂直线
+			// 垂直线（列）
 			for (float x = minX; x <= maxX; x += cellSize)
 			{
 				Gizmos.DrawLine(
@@ -245,13 +252,43 @@ namespace ReplicationGraph
 				);
 			}
 			
-			// 水平线
+			// 水平线（行）
 			for (float z = minZ; z <= maxZ; z += cellSize)
 			{
 				Gizmos.DrawLine(
 					new Vector3(minX, 0, z),
 					new Vector3(maxX, 0, z)
 				);
+			}
+
+			// 绘制格子编号
+			GUIStyle style = new GUIStyle();
+			style.normal.textColor = Color.white;
+			style.alignment = TextAnchor.MiddleCenter;
+			
+			for (int x = 0; x < grids.Length; x++)
+			{
+				for (int z = 0; z < maxRowCount; z++)
+				{
+					Vector3 cellCenter = new Vector3(
+						spatialBias.x + (x + 0.5f) * cellSize,
+						0,
+						spatialBias.y + (z + 0.5f) * cellSize
+					);
+
+					// 如果该格子在实际占用范围内，显示为红色
+					if (z < grids[x])
+					{
+						Gizmos.color = new Color(1f, 0f, 0f, 0.2f);
+						Gizmos.DrawCube(cellCenter, new Vector3(cellSize * 0.9f, 0.1f, cellSize * 0.9f));
+					}
+
+					// 显示格子坐标
+					string coordText = $"({x},{z})";
+#if UNITY_EDITOR
+					UnityEditor.Handles.Label(cellCenter, coordText, style);
+#endif
+				}
 			}
 
 			// 绘制边界
@@ -264,7 +301,7 @@ namespace ReplicationGraph
 
 			// 恢复颜色
 			Gizmos.color = originalColor;
-	#endif
+#endif
 		}
 
 

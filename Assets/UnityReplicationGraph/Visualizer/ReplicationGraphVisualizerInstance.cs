@@ -373,8 +373,7 @@ namespace ReplicationGraph
 				ReplicationGraphVisualizerUtils.DrawGrid2D(
 					_spatialBias,
 					_cellSize,
-					_gridSize,
-					_gridBounds
+					_gridSize
 				);
 			}
 
@@ -748,15 +747,13 @@ namespace ReplicationGraph
 		[Header("网格可视化")]
 		private float _cellSize;
 		private Vector2 _spatialBias;
-		private Vector2Int _gridSize;
-		private Rect? _gridBounds;
+		private int[] _gridSize;
 		private bool _hasGridSetup;
-		internal void SetupGrid2D_Internal(float cellSize, float spatialBiasX, float spatialBiasY, int gridSizeX, int gridSizeY, Rect? gridBounds)
+		internal void SetupGrid2D_Internal(float cellSize, float spatialBiasX, float spatialBiasY, int[] grids)
 		{
 			_cellSize = cellSize;
 			_spatialBias = new Vector2(spatialBiasX, spatialBiasY);
-			_gridSize = new Vector2Int(gridSizeX, gridSizeY);
-			_gridBounds = gridBounds;
+			_gridSize = grids;
 			_hasGridSetup = true;
 		}
 
@@ -764,8 +761,7 @@ namespace ReplicationGraph
 		{
 			_cellSize = 0;
 			_spatialBias = Vector2.zero;
-			_gridSize = Vector2Int.zero;
-			_gridBounds = null;
+			_gridSize = null;
 			_hasGridSetup = false;
 		}
 
