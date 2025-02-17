@@ -262,14 +262,14 @@ namespace ReplicationGraph
 			{
 				_coordStyle = new GUIStyle();
 				_coordStyle.normal.textColor = Color.white;
-				_coordStyle.alignment = TextAnchor.UpperCenter;
+				_coordStyle.alignment = TextAnchor.MiddleCenter;
 			}
 			
 			if (_countStyle == null)
 			{
 				_countStyle = new GUIStyle();
 				_countStyle.normal.textColor = Color.white;
-				_countStyle.alignment = TextAnchor.LowerCenter;
+				_countStyle.alignment = TextAnchor.MiddleCenter;
 			}
 
 			// 计算网格范围
@@ -302,15 +302,6 @@ namespace ReplicationGraph
 					new Vector3(maxX, 0, z)
 				);
 			}
-
-			// 绘制格子编号
-			GUIStyle coordStyle = new GUIStyle();
-			coordStyle.normal.textColor = Color.white;
-			coordStyle.alignment = TextAnchor.UpperCenter;
-			
-			GUIStyle countStyle = new GUIStyle();
-			countStyle.normal.textColor = Color.white;
-			countStyle.alignment = TextAnchor.LowerCenter;
 			
 			// 找出最大Actor数量，用于颜色插值
 			int maxActorCount = gridIndex2ActorCount.Count > 0 ? gridIndex2ActorCount.Values.Max() : 0;
