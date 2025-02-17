@@ -450,12 +450,17 @@ namespace ReplicationGraph
 			// 在原有内容之后添加网格设置面板
 			if (_hasGridSetup)
 			{
-				float panelWidth = 200;
+				float panelWidth = 170;  // 与视角切换面板相同宽度
 				float panelHeight = 150;
 				float padding = 10;
 				
-				// 放在左边，但是避开其他面板
-				Rect panelRect = new Rect(padding, Screen.height - panelHeight - 170, panelWidth, panelHeight);
+				// 放在视角切换面板正下方
+				Rect panelRect = new Rect(
+					padding, 
+					padding + 130,  // 视角切换面板的高度
+					panelWidth, 
+					panelHeight
+				);
 				
 				GUI.Box(panelRect, "网格可视化设置");
 				
