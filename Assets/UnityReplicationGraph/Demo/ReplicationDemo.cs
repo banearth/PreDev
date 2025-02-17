@@ -20,11 +20,7 @@ public class ReplicationDemo : MonoBehaviour
     [SerializeField] private int playerActorCount = 3;         // 玩家Actor数量
     [SerializeField] private Rect spawnAreaRect = new Rect(-50, -50, 100, 100);
 
-    [Header("Debug Visualization")]
-    [SerializeField] private bool showDebugGizmos = true;
-
     [Header("可视化配置")]
-    [SerializeField] private bool drawGraphEnabnle = true;      // 是否绘制replicationgraph 
     [SerializeField] private bool drawActorEnable = true;            // 是否启用绘制
     [SerializeField] private Color actorColor = Color.white;    // Actor颜色
     [SerializeField] private float smartLabelOffsetMultiple = 1;  // 智能Label整体偏移倍数
@@ -234,6 +230,7 @@ public class ReplicationDemo : MonoBehaviour
             
             if (_draggingActor != null)
             {
+                _draggingActor.InDrag = true;
                 // 记录开始拖拽时的位置、圆心和偏移
                 _dragStartPosition = _draggingActor.Position;
                 _dragStartInitialPosition = _draggingActor.InitialPosition;
@@ -252,7 +249,8 @@ public class ReplicationDemo : MonoBehaviour
         }
         else if (Input.GetMouseButtonUp(0) && _draggingActor != null)
         {
-            _draggingActor = null;
+			_draggingActor.InDrag = false;
+			_draggingActor = null;
         }
     }
 

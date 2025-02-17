@@ -2,6 +2,7 @@ using UnityEngine;
 
 public class TestActor : FActorRepListType
 {
+    public override string Name => Id;
     public string Id { get; private set; }
     public string Type { get; private set; }
     public bool IsDynamic { get; private set; }

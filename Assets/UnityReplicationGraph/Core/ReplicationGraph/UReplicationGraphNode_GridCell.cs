@@ -1,9 +1,21 @@
 using System.Collections.Generic;
+using UnityEngine;
 
 public class UReplicationGraphNode_GridCell : UReplicationGraphNode_ActorList
 {
-    // 动态Actor节点
-    private UReplicationGraphNode_ActorListFrequencyBuckets DynamicNode;
+    
+    private int coordX;
+    private int coordY;
+
+	public UReplicationGraphNode_GridCell(int x, int y)
+	{
+        coordX = x;
+        coordY = y;
+		nodeName = string.Format("GridCell({0},{1})", coordX.ToString(), coordY.ToString());
+	}
+
+	// 动态Actor节点
+	private UReplicationGraphNode_ActorListFrequencyBuckets DynamicNode;
 
     // 休眠Actor节点
     private UReplicationGraphNode_DormancyNode DormancyNode;
@@ -105,7 +117,8 @@ public class UReplicationGraphNode_GridCell : UReplicationGraphNode_ActorList
 
     public void AddDynamicActor(FNewReplicatedActorInfo actorInfo)
     {
-        GetDynamicNode().NotifyAddNetworkActor(actorInfo);
+		Debug.Log(string.Format("{0}::AddDynamicActor Name:{1}", nodeName, actorInfo.Actor.Name));
+		GetDynamicNode().NotifyAddNetworkActor(actorInfo);
     }
 
     public void RemoveStaticActor(FNewReplicatedActorInfo actorInfo, FGlobalActorReplicationInfo actorRepInfo, bool bWasAddedAsDormantActor)

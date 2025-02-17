@@ -159,7 +159,7 @@ public class UReplicationGraphNode_ActorListFrequencyBuckets : UReplicationGraph
         }
     }
 
-    public int GetActorCount()
+    public override int GetActorCount()
     {
         // 计算非流关卡Actor数量
         int totalCount = 0;

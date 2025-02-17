@@ -599,7 +599,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   updateInterval: 0.1
-  moveSpeed: 0.03
+  moveSpeed: 0
   moveRange: 10
   clientViewRadius: 5
   _spawnAreaColor: {r: 0.13412559, g: 1, b: 0, a: 0.5}
@@ -612,8 +612,6 @@ MonoBehaviour:
     y: -15
     width: 40
     height: 30
-  showDebugGizmos: 1
-  drawGraphEnabnle: 1
   drawActorEnable: 1
   actorColor: {r: 1, g: 1, b: 1, a: 0.101960786}
   smartLabelOffsetMultiple: 0.9

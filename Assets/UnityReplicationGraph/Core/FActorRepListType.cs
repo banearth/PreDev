@@ -19,6 +19,8 @@ public enum ENetDormancy
 /// </summary>
 public class FActorRepListType : UObject
 {
+	// 是否在拖动中
+	public bool InDrag { get; set; }
 	public Vector3 Position { get; set; }
 	// ue里面的owner其实是一个actor，我们这里简单一些，直接给connection
 	public UNetConnection Owner { get; set; }

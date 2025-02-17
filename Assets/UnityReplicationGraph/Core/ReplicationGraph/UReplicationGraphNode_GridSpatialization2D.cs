@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using ReplicationGraph;
+using CPL;
 
 public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
 {
@@ -49,18 +50,16 @@ public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
         while (Grid.Count <= x)
         {
             Grid.Add(new List<UReplicationGraphNode_GridCell>());
-			Debug.Log("Grid.Add X");
 			bGridGizmosDirty = true;
 		}
 		return Grid[x];
     }
 
-    private UReplicationGraphNode_GridCell GetCell(List<UReplicationGraphNode_GridCell> GridX,int Y)
-    {
+	private UReplicationGraphNode_GridCell GetCell(List<UReplicationGraphNode_GridCell> GridX, int Y, int debugX)
+	{
 		while (GridX.Count <= Y)
 		{
-			GridX.Add(new UReplicationGraphNode_GridCell());
-			Debug.Log("Grid.Add Y");
+			GridX.Add(new UReplicationGraphNode_GridCell(debugX, Y));
 			bGridGizmosDirty = true;
 		}
         return GridX[Y];
@@ -69,8 +68,8 @@ public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
 	private UReplicationGraphNode_GridCell GetCell(int x, int y)
     {
         var gridX = GetGridX(x);
-        var grid = GetCell(gridX, y);
-        return grid;
+		var grid = GetCell(gridX, y, x);
+		return grid;
     }
 
     public override void NotifyAddNetworkActor(FNewReplicatedActorInfo actorInfo)
@@ -86,7 +85,7 @@ public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
 
 	public void AddActor_Dormancy(FNewReplicatedActorInfo actorInfo, FGlobalActorReplicationInfo actorRepInfo)
 	{
-		ReplicationGraphDebugger.LogInfo($"UReplicationGraphNode_GridSpatialization2D::AddActor_Dormancy {actorInfo.Actor.Name}");
+		Debug.Log($"UReplicationGraphNode_GridSpatialization2D::AddActor_Dormancy: {actorInfo.Actor.Name}");
 		if (actorRepInfo.bWantsToBeDormant)
 		{
 			// 如果Actor想要休眠，作为静态Actor添加
@@ -230,6 +229,13 @@ public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
 			Vector3 location3D = dynamicActor.Position;
 			globalActorInfo.WorldLocation = location3D;
 
+			// 绘制区域
+			if (dynamicActor.InDrag)
+			{
+				DebugDraw.DrawSolidDisc(location3D, Vector3.up, globalActorInfo.Settings.GetCullDistance(), new Color(1, 1, 1, 0.1f), 0);
+				DebugDraw.DrawDisc(location3D, Vector3.up, globalActorInfo.Settings.GetCullDistance(), new Color(1, 1, 1, 0.5f), 0);
+			}
+
 			// 检查是否需要扩展空间边界
 			if (WillActorLocationGrowSpatialBounds(location3D))
 			{
@@ -280,7 +286,7 @@ public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
 								var gridX = GetGridX(x);
 								for (int y = previousCellInfo.StartY; y <= previousCellInfo.EndY; y++)
 								{
-									GetCell(gridX, y)?.RemoveDynamicActor(actorInfo);
+									GetCell(gridX, y, x)?.RemoveDynamicActor(actorInfo);
 								}
 							}
 						}
@@ -293,7 +299,7 @@ public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
 								var gridX = GetGridX(x);
 								for (int y = newCellInfo.StartY; y <= newCellInfo.EndY; y++)
 								{
-									GetCell(gridX, y).AddDynamicActor(actorInfo);
+									GetCell(gridX, y, x).AddDynamicActor(actorInfo);
 								}
 							}
 						}
@@ -308,7 +314,7 @@ public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
 								var gridX = GetGridX(x);
 								for (int y = newCellInfo.StartY; y <= newCellInfo.EndY; ++y)
 								{
-									GetCell(gridX, y).AddDynamicActor(actorInfo);
+									GetCell(gridX, y, x).AddDynamicActor(actorInfo);
 								}
 							}
 						}
@@ -321,7 +327,7 @@ public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
 								var GridX = GetGridX(x);
 								for (int y = previousCellInfo.StartY; y <= previousCellInfo.EndY; ++y)
 								{
-									GetCell(GridX, y)?.RemoveDynamicActor(actorInfo);
+									GetCell(GridX, y, x)?.RemoveDynamicActor(actorInfo);
 								}
 							}
 						}
@@ -342,7 +348,7 @@ public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
 								var gridX = GetGridX(x);
 								for (int y = previousCellInfo.StartY; y < newCellInfo.StartY; y++)
 								{
-									GetCell(gridX, y)?.RemoveDynamicActor(actorInfo);
+									GetCell(gridX, y, x)?.RemoveDynamicActor(actorInfo);
 								}
 							}
 						}
@@ -355,7 +361,7 @@ public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
 								var gridX = GetGridX(x);
 								for (int y = newCellInfo.StartY; y < previousCellInfo.StartY; y++)
 								{
-									GetCell(gridX, y).AddDynamicActor(actorInfo);
+									GetCell(gridX, y, x).AddDynamicActor(actorInfo);
 								}
 							}
 						}
@@ -370,7 +376,7 @@ public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
 								var gridX = GetGridX(x);
 								for (int y = previousCellInfo.EndY + 1; y <= newCellInfo.EndY; y++)
 								{
-									GetCell(gridX, y).AddDynamicActor(actorInfo);
+									GetCell(gridX, y, x).AddDynamicActor(actorInfo);
 								}
 							}
 						}
@@ -384,7 +390,7 @@ public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
 								var gridX = GetGridX(x);
 								for (int y = newCellInfo.EndY + 1; y <= previousCellInfo.EndY; y++)
 								{
-									GetCell(gridX, y)?.RemoveDynamicActor(actorInfo);
+									GetCell(gridX, y, x)?.RemoveDynamicActor(actorInfo);
 								}
 							}
 						}
@@ -505,8 +511,8 @@ public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
             // 如果这个单元格还未处理过
             if (!uniqueCurrentGridCells.Contains(curGridCell))
             {
-                var cellNode = GetCell(GetGridX(cellX), cellY);
-                if (cellNode != null)
+				var cellNode = GetCell(GetGridX(cellX), cellY, cellX);
+				if (cellNode != null)
                 {
                     cellNode.GatherActorListsForConnection(Params);
                 }
@@ -553,8 +559,8 @@ public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
 						visibleCells.RemoveAt(i--);
                         continue;
                     }
-                    var prevCell = GetCell(GetGridX(gridCell.x), gridCell.y);
-                    if (prevCell != null)
+					var prevCell = GetCell(GetGridX(gridCell.x), gridCell.y, gridCell.x);
+					if (prevCell != null)
                     {
                         dormancyNodesCache.Add(prevCell.GetDormancyNode(false));
                     }
@@ -832,18 +838,18 @@ public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
 		// 遍历Actor覆盖的所有网格单元
 		for (int x = startX; x <= endX; x++)
 		{
-			var gridY = GetGridX(x);
+			var gridX = GetGridX(x);
 
 			// 确保网格Y维度足够大
-			while (gridY.Count <= endY)
+			while (gridX.Count <= endY)
 			{
-				gridY.Add(new UReplicationGraphNode_GridCell());
+				gridX.Add(new UReplicationGraphNode_GridCell(x, gridX.Count));
 			}
 
 			// 收集每个覆盖单元格的节点
 			for (int y = startY; y <= endY; y++)
 			{
-				var node = GetCell(gridY, y);
+				var node = GetCell(gridX, y, x);
 				outNodes.Add(node);
 			}
 		}
