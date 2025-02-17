@@ -922,40 +922,18 @@ public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
 			return;
 		}
 
-		// 找到最长的列
-		int maxYCount = 0;
-		foreach (var column in Grid)
+		int [] grids = new int [Grid.Count];
+		for ( int i = 0; i < Grid.Count; i++ )
 		{
-			if (column != null && column.Count > maxYCount)
-			{
-				maxYCount = column.Count;
-			}
+			grids[i] = Grid[i].Count;
 		}
-
-		// 计算网格的实际边界
-		float minX = GridBounds.HasValue ? GridBounds.Value.min.x : SpatialBias.x;
-		float maxX = GridBounds.HasValue ? GridBounds.Value.max.x : (Grid.Count * CellSize + SpatialBias.x);
-		
-		// 注意：Unity用Z轴，所以这里用z
-		float minZ = GridBounds.HasValue ? GridBounds.Value.min.z : SpatialBias.y;
-		float maxZ = GridBounds.HasValue ? GridBounds.Value.max.z : 
-			(Grid.Count > 0 ? Grid[0].Count * CellSize + SpatialBias.y : SpatialBias.y);
-
-		Rect gridRect = new Rect(
-			minX,
-			minZ,
-			maxX - minX,
-			maxZ - minZ
-		);
 
 		// 调用Visualizer的SetupGrid2D，使用最大Y值
 		ReplicationGraphVisualizer.SetupGrid2D(
 			CellSize,
 			SpatialBias.x,
 			SpatialBias.y,
-			Grid.Count,
-			maxYCount,  // 使用找到的最大Y值
-			GridBounds.HasValue ? gridRect : null
+			grids
 		);
 	}
 

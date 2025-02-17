@@ -112,6 +112,14 @@ namespace ReplicationGraph
 		private Vector2 _clientButtonsScrollPos = Vector2.zero;  // 左上角客户端按钮的滚动位置
 		private Vector2 _observerInfoScrollPos = Vector2.zero;   // 底部Observer信息的滚动位置
 
+		[Header("网格可视化")]
+		private float _cellSize;
+		private Vector2 _spatialBias;
+		private int[] _gridSize;
+		private bool _hasGridSetup;
+		private bool _showGridGizmos = true;  // 控制网格显示开关
+		private Vector2 _gridInfoScrollPos;   // 网格信息的滚动位置
+
 		private void Awake()
 		{
 			ReplicationGraphVisualizer.SetupInstance(this);
@@ -438,6 +446,46 @@ namespace ReplicationGraph
 					Debug.LogError($"Invalid observer mode: {_currentMode}");
 					break;
 			}
+
+			// 绘制网格控制面板
+			float panelWidth = 200;
+			float panelHeight = 150;
+			float padding = 10;
+			
+			// 左上角位置
+			Rect panelRect = new Rect(padding, padding, panelWidth, panelHeight);
+			
+			GUI.Box(panelRect, "网格可视化设置");
+			
+			// 内容区域
+			Rect contentRect = new Rect(
+				panelRect.x + 5, 
+				panelRect.y + 20, 
+				panelRect.width - 10, 
+				panelRect.height - 25
+			);
+			
+			GUILayout.BeginArea(contentRect);
+			{
+				// 使用滚动视图
+				_gridInfoScrollPos = GUILayout.BeginScrollView(_gridInfoScrollPos);
+				
+				// 网格显示开关
+				_showGridGizmos = GUILayout.Toggle(_showGridGizmos, "显示网格");
+				
+				// 网格基本信息
+				GUILayout.Space(5);
+				GUILayout.Label($"网格大小: {_cellSize}");
+				GUILayout.Label($"网格偏移: ({_spatialBias.x}, {_spatialBias.y})");
+				if (_gridSize != null)
+				{
+					GUILayout.Label($"列数: {_gridSize.Length}");
+					GUILayout.Label($"最大行数: {(_gridSize.Length > 0 ? _gridSize.Max() : 0)}");
+				}
+				
+				GUILayout.EndScrollView();
+			}
+			GUILayout.EndArea();
 		}
 
 		private void DrawGUI_AllObservers()
@@ -744,11 +792,6 @@ namespace ReplicationGraph
 			// 只有在RemoveGlobalObservee时才真正移除全局被观察者
 		}
 
-		[Header("网格可视化")]
-		private float _cellSize;
-		private Vector2 _spatialBias;
-		private int[] _gridSize;
-		private bool _hasGridSetup;
 		internal void SetupGrid2D_Internal(float cellSize, float spatialBiasX, float spatialBiasY, int[] grids)
 		{
 			_cellSize = cellSize;
