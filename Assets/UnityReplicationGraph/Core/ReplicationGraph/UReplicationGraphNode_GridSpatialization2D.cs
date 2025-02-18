@@ -303,7 +303,7 @@ public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
 						{
 							bDirty = true;
 							// 添加新的左侧列
-							for (int x = newCellInfo.StartX; x <= previousCellInfo.StartX; x++)
+							for (int x = newCellInfo.StartX; x < previousCellInfo.StartX; x++)
 							{
 								var gridX = GetGridX(x);
 								for (int y = newCellInfo.StartY; y <= newCellInfo.EndY; y++)
