@@ -77,7 +77,48 @@ public class UReplicationGraphNode_ActorListFrequencyBuckets : UReplicationGraph
         }
     }
 
-    public override void GatherActorListsForConnection(FConnectionGatherActorListParameters parameters)
+    public override bool NotifyRemoveNetworkActor(FNewReplicatedActorInfo actorInfo)
+    {
+        bool bRemovedSomething = false;
+        if (ReplicationGraphUtils.IsLevelNameNone(actorInfo.StreamingLevelName))
+        {
+            bool bFound = false;
+            foreach (var list in NonStreamingCollection)
+            {
+                if (list.RemoveSlow(actorInfo.Actor))
+                {
+                    bRemovedSomething = true;
+                    TotalNumNonStreamingActors--;
+                    CheckRebalance();
+                    if (!ReplicationGraphDebugger.CVar_RepGraph_Verify)
+                    {
+                        // 如果不需要验证，提前返回
+                        return bRemovedSomething;
+                    }
+                    if (bFound)
+                    {
+                        // 已经移除过这个actor，说明有重复!
+                        ReplicationGraphDebugger.EnsureMsg(false, 
+                            $"Actor {actorInfo.Actor.Name} is still in list after removal");
+                    }
+                    bFound = true;
+                }
+            }
+            if (!bFound)
+            {
+                ReplicationGraphDebugger.LogWarning(
+                    $"Attempted to remove {actorInfo.Actor.Name} but it was not found. " +
+                    "(StreamingLevelName == None)");
+            }
+        }
+        else
+        {
+            bRemovedSomething = StreamingLevelCollection.RemoveActor(actorInfo);
+        }
+        return bRemovedSomething;
+    }
+
+	public override void GatherActorListsForConnection(FConnectionGatherActorListParameters parameters)
     {
         if (settings.EnableFastPath)
         {

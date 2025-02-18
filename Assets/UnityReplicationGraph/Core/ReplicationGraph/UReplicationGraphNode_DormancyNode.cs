@@ -72,7 +72,7 @@ public class UReplicationGraphNode_DormancyNode : UReplicationGraphNode_ActorLis
         // 通知所有连接节点
         foreach (var connectionNode in ConnectionNodes.Values)
         {
-            connectionNode.NotifyRemoveNetworkActor(actorInfo, false);
+            connectionNode.NotifyRemoveNetworkActor(actorInfo);
         }
     }
 

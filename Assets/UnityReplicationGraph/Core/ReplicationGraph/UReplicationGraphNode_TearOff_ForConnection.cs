@@ -17,7 +17,7 @@ public class UReplicationGraphNode_TearOff_ForConnection : UReplicationGraphNode
 
     public override void NotifyAddNetworkActor(FNewReplicatedActorInfo actorInfo) { }
 
-    public override bool NotifyRemoveNetworkActor(FNewReplicatedActorInfo actorInfo, bool bWarnIfNotFound = true) 
+    public override bool NotifyRemoveNetworkActor(FNewReplicatedActorInfo actorInfo) 
     { 
         return false; 
     }

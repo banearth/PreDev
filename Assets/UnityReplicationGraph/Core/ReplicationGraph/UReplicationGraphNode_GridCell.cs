@@ -25,7 +25,7 @@ public class UReplicationGraphNode_GridCell : UReplicationGraphNode_ActorList
         ReplicationGraphDebugger.LogError("UReplicationGraphNode_GridCell::NotifyAddNetworkActor should not be called directly");
     }
 
-    public override bool NotifyRemoveNetworkActor(FNewReplicatedActorInfo actorInfo, bool bWarnIfNotFound = true)
+    public override bool NotifyRemoveNetworkActor(FNewReplicatedActorInfo actorInfo)
     {
         ReplicationGraphDebugger.LogError("UReplicationGraphNode_GridCell::NotifyRemoveNetworkActor should not be called directly");
         return false;
@@ -136,7 +136,8 @@ public class UReplicationGraphNode_GridCell : UReplicationGraphNode_ActorList
 
     public void RemoveDynamicActor(FNewReplicatedActorInfo actorInfo)
     {
-        GetDynamicNode().NotifyRemoveNetworkActor(actorInfo);
+		Debug.Log(string.Format("{0}::RemoveDynamicActor Name:{1}", nodeName, actorInfo.Actor.Name));
+		GetDynamicNode().NotifyRemoveNetworkActor(actorInfo);
     }
 
     private UReplicationGraphNode_ActorListFrequencyBuckets GetDynamicNode()

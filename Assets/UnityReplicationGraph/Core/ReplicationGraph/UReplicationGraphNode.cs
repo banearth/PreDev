@@ -30,11 +30,11 @@ public abstract class UReplicationGraphNode
         }
     }
 
-    public virtual bool NotifyRemoveNetworkActor(FNewReplicatedActorInfo actorInfo, bool bWarnIfNotFound = true)
+    public virtual bool NotifyRemoveNetworkActor(FNewReplicatedActorInfo actorInfo)
     {
         foreach (var childNode in AllChildNodes)
         {
-            childNode.NotifyRemoveNetworkActor(actorInfo, bWarnIfNotFound);
+            childNode.NotifyRemoveNetworkActor(actorInfo);
         }
         return false;
     }

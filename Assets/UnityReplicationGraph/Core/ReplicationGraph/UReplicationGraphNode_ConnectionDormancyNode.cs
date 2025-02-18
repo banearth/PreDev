@@ -74,7 +74,7 @@ public class UReplicationGraphNode_ConnectionDormancyNode : UReplicationGraphNod
         }
     }
 
-    public override bool NotifyRemoveNetworkActor(FNewReplicatedActorInfo actorInfo, bool warnIfNotFound)
+    public override bool NotifyRemoveNetworkActor(FNewReplicatedActorInfo actorInfo)
     {
         return false;
     }

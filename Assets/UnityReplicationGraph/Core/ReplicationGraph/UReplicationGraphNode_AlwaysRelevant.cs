@@ -28,7 +28,7 @@ public class UReplicationGraphNode_AlwaysRelevant : UReplicationGraphNode
         // 空实现，因为我们不直接管理Actor
     }
 
-    public override bool NotifyRemoveNetworkActor(FNewReplicatedActorInfo ActorInfo, bool bWarnIfNotFound = true)
+    public override bool NotifyRemoveNetworkActor(FNewReplicatedActorInfo ActorInfo)
     {
         // 空实现
         return false;

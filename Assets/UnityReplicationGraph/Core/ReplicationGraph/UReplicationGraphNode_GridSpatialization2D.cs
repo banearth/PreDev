@@ -86,7 +86,7 @@ public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
         ReplicationGraphDebugger.EnsureAlwaysMsg(false, "UReplicationGraphNode_GridSpatialization2D::NotifyAddNetworkActor should not be called directly");
     }
 
-    public override bool NotifyRemoveNetworkActor(FNewReplicatedActorInfo actorInfo, bool bWarnIfNotFound = true)
+    public override bool NotifyRemoveNetworkActor(FNewReplicatedActorInfo actorInfo)
     {
 		ReplicationGraphDebugger.EnsureAlwaysMsg(false, "UReplicationGraphNode_GridSpatialization2D::NotifyRemoveNetworkActor should not be called directly");
 		return false;

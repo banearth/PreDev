@@ -20,13 +20,13 @@ public class UReplicationGraphNode_ActorList : UReplicationGraphNode
         }
     }
 
-    public override bool NotifyRemoveNetworkActor(FNewReplicatedActorInfo ActorInfo, bool bWarnIfNotFound = true)
+    public override bool NotifyRemoveNetworkActor(FNewReplicatedActorInfo ActorInfo)
     {
 		if (ReplicationGraphUtils.IsLevelNameNone(ActorInfo.StreamingLevelName))
         {
             return ReplicationActorList.RemoveSlow(ActorInfo.Actor);
         }
-        return StreamingLevelCollection.RemoveActor(ActorInfo, bWarnIfNotFound);
+        return StreamingLevelCollection.RemoveActor(ActorInfo);
     }
 
     public override void NotifyResetAllNetworkActors()
@@ -102,7 +102,7 @@ public class UReplicationGraphNode_ActorList : UReplicationGraphNode
 
     protected bool RemoveNetworkActorFast(FNewReplicatedActorInfo actorInfo)
     {
-        return NotifyRemoveNetworkActor(actorInfo, false);
+        return NotifyRemoveNetworkActor(actorInfo);
     }
 
 	public void DeepCopyActorListsFrom(UReplicationGraphNode_ActorList Source)
