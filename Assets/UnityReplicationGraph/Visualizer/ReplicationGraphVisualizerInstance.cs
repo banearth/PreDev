@@ -85,7 +85,6 @@ namespace ReplicationGraph
 		[SerializeField] private float _smartLabelOffsetMultiple = 1;// 智能Label整体偏移倍数
 		[SerializeField] private float _smartLabelBaseOffset = 0.5f; // 智能Label基础偏移
 		[SerializeField] private bool _showUpdateTime = true;    	// 是否显示更新时间
-		[SerializeField] private bool _showRadius = true;        	// 是否显示观察半径
 		[SerializeField] private bool _showLegend = true;        	// 是否显示图例
 
 		[SerializeField] private int _nameDisplayMask = -1;      	// 默认全部显示

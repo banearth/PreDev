@@ -306,6 +306,26 @@ namespace ReplicationGraph
 			// 找出最大Actor数量，用于颜色插值
 			int maxActorCount = gridIndex2ActorCount.Count > 0 ? gridIndex2ActorCount.Values.Max() : 0;
 
+			// 获取当前悬停的格子（仅在按住Ctrl时）
+			int? hoverX = null;
+			int? hoverZ = null;
+			if (Event.current != null && Event.current.control)
+			{
+				Ray ray = UnityEditor.HandleUtility.GUIPointToWorldRay(Event.current.mousePosition);
+				if (new Plane(Vector3.up, 0).Raycast(ray, out float enter))
+				{
+					Vector3 hitPoint = ray.GetPoint(enter);
+					int x = Mathf.FloorToInt((hitPoint.x - spatialBias.x) / cellSize);
+					int z = Mathf.FloorToInt((hitPoint.z - spatialBias.y) / cellSize);
+					
+					if (x >= 0 && x < grids.Length && z >= 0 && z < grids[x])
+					{
+						hoverX = x;
+						hoverZ = z;
+					}
+				}
+			}
+
 			for (int x = 0; x < grids.Length; x++)
 			{
 				for (int z = 0; z < maxRowCount; z++)
@@ -329,11 +349,20 @@ namespace ReplicationGraph
 						int index = x * maxRowCount + z;
 						if (gridIndex2ActorCount.TryGetValue(index, out int actorCount))
 						{
-							// 根据Actor数量进行颜色插值
+							// 正常的颜色渲染逻辑
 							float t = maxActorCount > 0 ? (float)actorCount / maxActorCount : 0;
 							Color minActorColor = new Color(0f, 0.3f, 0f, 0.2f);
 							Color maxActorColor = new Color(0f, 1f, 0f, 0.2f);
-							Gizmos.color = Color.Lerp(minActorColor, maxActorColor, t);
+							Color baseColor = Color.Lerp(minActorColor, maxActorColor, t);
+
+							// 如果是当前悬停的格子，增加高亮效果
+							if (hoverX == x && hoverZ == z)
+							{
+								baseColor = new Color(baseColor.r + 0.3f, baseColor.g + 0.3f, baseColor.b, 0.4f);
+							}
+
+							Gizmos.color = baseColor;
+							Gizmos.DrawCube(cellCenter, new Vector3(cellSize * 0.9f, 0.1f, cellSize * 0.9f));
 
 							// 获取或创建Actor数量文本
 							if (!_actorCountCache.TryGetValue(actorCount, out string countText))
@@ -348,11 +377,15 @@ namespace ReplicationGraph
 						}
 						else
 						{
-							Gizmos.color = new Color(1f, 0f, 0f, 0.2f);
-							// 只绘制坐标
+							Color baseColor = new Color(1f, 0f, 0f, 0.2f);
+							if (hoverX == x && hoverZ == z)
+							{
+								baseColor = new Color(1f, 0.3f, 0.3f, 0.4f);
+							}
+							Gizmos.color = baseColor;
+							Gizmos.DrawCube(cellCenter, new Vector3(cellSize * 0.9f, 0.1f, cellSize * 0.9f));
 							UnityEditor.Handles.Label(cellCenter, coordText, _coordStyle);
 						}
-						Gizmos.DrawCube(cellCenter, new Vector3(cellSize * 0.9f, 0.1f, cellSize * 0.9f));
 					}
 					else
 					{
