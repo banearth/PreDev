@@ -117,7 +117,10 @@ public class UReplicationGraphNode_GridCell : UReplicationGraphNode_ActorList
 
     public void AddDynamicActor(FNewReplicatedActorInfo actorInfo)
     {
-		Debug.Log(string.Format("{0}::AddDynamicActor Name:{1}", nodeName, actorInfo.Actor.Name));
+		if (ReplicationGraphDebugger.CVar_Track_AddOrRemoveNode)
+		{
+			Debug.Log(string.Format("{0}::AddDynamicActor Name:{1}", nodeName, actorInfo.Actor.Name));			
+		}
 		GetDynamicNode().NotifyAddNetworkActor(actorInfo);
     }
 
@@ -136,7 +139,10 @@ public class UReplicationGraphNode_GridCell : UReplicationGraphNode_ActorList
 
     public void RemoveDynamicActor(FNewReplicatedActorInfo actorInfo)
     {
-		Debug.Log(string.Format("{0}::RemoveDynamicActor Name:{1}", nodeName, actorInfo.Actor.Name));
+		if (ReplicationGraphDebugger.CVar_Track_AddOrRemoveNode)
+		{
+			Debug.Log(string.Format("{0}::RemoveDynamicActor Name:{1}", nodeName, actorInfo.Actor.Name));			
+		}
 		GetDynamicNode().NotifyRemoveNetworkActor(actorInfo);
     }
 

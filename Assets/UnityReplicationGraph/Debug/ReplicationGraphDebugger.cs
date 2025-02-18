@@ -15,6 +15,7 @@ public static class ReplicationGraphDebugger
     private static float viewerCrossSize = 2f;
 
     // 验证开关
+    public static bool CVar_Track_AddOrRemoveNode = false;
     public static bool CVar_RepGraph_Verify = true;
 	public static int CVar_RepGraph_LogNetDormancyDetails = 0;
 	public static int CVar_RepGraph_TrickleDistCullOnDormancyNodes = 1;

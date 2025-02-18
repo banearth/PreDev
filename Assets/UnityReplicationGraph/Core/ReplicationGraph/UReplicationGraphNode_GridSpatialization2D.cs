@@ -94,7 +94,10 @@ public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
 
 	public void AddActor_Dormancy(FNewReplicatedActorInfo actorInfo, FGlobalActorReplicationInfo actorRepInfo)
 	{
-		Debug.Log($"UReplicationGraphNode_GridSpatialization2D::AddActor_Dormancy: {actorInfo.Actor.Name}");
+		if (ReplicationGraphDebugger.CVar_Track_AddOrRemoveNode)
+		{
+			Debug.Log($"UReplicationGraphNode_GridSpatialization2D::AddActor_Dormancy: {actorInfo.Actor.Name}");
+		}
 		if (actorRepInfo.bWantsToBeDormant)
 		{
 			// 如果Actor想要休眠，作为静态Actor添加
@@ -408,6 +411,7 @@ public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
 					if (bDirty)
 					{
 						dynamicActorInfo.CellInfo = newCellInfo;
+						bGridGizmosDirty = true;
 					}
 				}
 				else
