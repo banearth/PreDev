@@ -111,6 +111,7 @@ namespace ReplicationGraph
 
 		[Header("网格可视化")]
 		[SerializeField] private bool _showGridGizmos = true;  // 控制网格显示开关
+		[SerializeField] private bool _showGridLabel = true;  // 控制网格显示开关
 		private Vector2 _gridInfoScrollPos;   // 网格信息的滚动位置
 		private float _cellSize;
 		private Vector2 _spatialBias;
@@ -408,7 +409,8 @@ namespace ReplicationGraph
 					_spatialBias,
 					_cellSize,
 					_gridSize,
-					_gridIndex2ActorCount
+					_gridIndex2ActorCount,
+					_showGridLabel
 				);
 			}
 
@@ -501,6 +503,13 @@ namespace ReplicationGraph
 					_gridInfoScrollPos = GUILayout.BeginScrollView(_gridInfoScrollPos);
 					
 					_showGridGizmos = GUILayout.Toggle(_showGridGizmos, "显示网格");
+					if (_showGridGizmos)
+					{
+						GUILayout.BeginHorizontal();
+						GUILayout.Space(20); // 手动添加缩进空间
+						_showGridLabel = GUILayout.Toggle(_showGridLabel, "显示网格标签");
+						GUILayout.EndHorizontal();
+					}
 					
 					GUILayout.Space(5);
 					GUILayout.Label($"网格大小: {_cellSize}");

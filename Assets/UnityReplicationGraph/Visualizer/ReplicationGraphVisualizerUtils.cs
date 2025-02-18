@@ -253,7 +253,7 @@ namespace ReplicationGraph
 		/// <param name="grids">数组长度表示列数量，数组内容表示具体每列行数</param>
 		/// <param name="gridActorIndexes">网格上存在Actor的格子所对应的索引</param>
 		/// <param name="gridIndex2ActorCount">网格上存在Actor的格子所对应的Actor数量</param>
-		public static void DrawGrid2D(Vector2 spatialBias, float cellSize, int[] grids, Dictionary<int,int> gridIndex2ActorCount)
+		public static void DrawGrid2D(Vector2 spatialBias, float cellSize, int[] grids, Dictionary<int, int> gridIndex2ActorCount, bool showGridLabel)
 		{
 #if UNITY_EDITOR
 			if (grids == null || grids.Length == 0) return;
@@ -373,8 +373,11 @@ namespace ReplicationGraph
 							}
 
 							// 使用缓存的 styles
-							UnityEditor.Handles.Label(cellCenter, coordText, _coordStyle);
-							UnityEditor.Handles.Label(cellCenter - Vector3.forward * cellSize * 0.2f, countText, _countStyle);
+							if (showGridLabel)
+							{
+								UnityEditor.Handles.Label(cellCenter, coordText, _coordStyle);
+								UnityEditor.Handles.Label(cellCenter - Vector3.forward * cellSize * 0.2f, countText, _countStyle);
+							}
 						}
 						else
 						{
@@ -385,13 +388,19 @@ namespace ReplicationGraph
 							}
 							Gizmos.color = baseColor;
 							Gizmos.DrawCube(cellCenter, new Vector3(cellSize * 0.9f, 0.1f, cellSize * 0.9f));
-							UnityEditor.Handles.Label(cellCenter, coordText, _coordStyle);
+							if (showGridLabel)
+							{
+								UnityEditor.Handles.Label(cellCenter, coordText, _coordStyle);
+							}
 						}
 					}
 					else
 					{
 						// 网格范围外只绘制坐标
-						UnityEditor.Handles.Label(cellCenter, coordText, _coordStyle);
+						if (showGridLabel)
+						{
+							UnityEditor.Handles.Label(cellCenter, coordText, _coordStyle);
+						}
 					}
 				}
 			}
