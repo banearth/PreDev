@@ -175,6 +175,7 @@ namespace ReplicationGraph
 				if (!_cachedLabelStyle.TryGetValue(color.Value, out style))
 				{
 					style = new GUIStyle();
+					style.alignment = TextAnchor.MiddleCenter;
 					style.normal.textColor = color.Value;
 					_cachedLabelStyle[color.Value] = style;
 				}
