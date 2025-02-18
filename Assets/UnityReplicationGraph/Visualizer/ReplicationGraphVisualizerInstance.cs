@@ -138,14 +138,15 @@ namespace ReplicationGraph
 					int gridX = Mathf.FloorToInt((hitPoint.x - _spatialBias.x) / _cellSize);
 					int gridZ = Mathf.FloorToInt((hitPoint.z - _spatialBias.y) / _cellSize);
 
+					// 只要在有效的网格范围内就可以点击
 					if (gridX >= 0 && gridX < _gridSize.Length && gridZ >= 0 && gridZ < _gridSize[gridX])
 					{
 						int index = gridX * _gridSize.Max() + gridZ;
-						if (_gridIndex2ActorCount.TryGetValue(index, out int actorCount))
-						{
-							Debug.Log($"Clicked grid ({gridX}, {gridZ}) with {actorCount} actors");
-							ReplicationGraphVisualizer.TriggerGridClicked(gridX, gridZ);
-						}
+						int actorCount = 0;
+						_gridIndex2ActorCount.TryGetValue(index, out actorCount); // 即使没有actor也允许点击
+						
+						Debug.Log($"Clicked grid ({gridX}, {gridZ}) with {actorCount} actors");
+						ReplicationGraphVisualizer.TriggerGridClicked(gridX, gridZ);
 					}
 				}
 			}

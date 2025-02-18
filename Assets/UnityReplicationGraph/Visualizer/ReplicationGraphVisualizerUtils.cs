@@ -312,7 +312,7 @@ namespace ReplicationGraph
 			int? hoverZ = null;
 			if (Event.current != null && Event.current.control)
 			{
-				Ray ray = UnityEditor.HandleUtility.GUIPointToWorldRay(Event.current.mousePosition);
+				Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
 				if (new Plane(Vector3.up, 0).Raycast(ray, out float enter))
 				{
 					Vector3 hitPoint = ray.GetPoint(enter);
