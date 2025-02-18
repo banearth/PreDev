@@ -52,7 +52,21 @@ public class UReplicationGraphNode_ActorListFrequencyBuckets : UReplicationGraph
 
     public override void NotifyAddNetworkActor(FNewReplicatedActorInfo actorInfo)
     {
-		if (ReplicationGraphUtils.IsLevelNameNone(actorInfo.StreamingLevelName))
+        // 添加前检查是否已存在
+        if (ReplicationGraphDebugger.CVar_RepGraph_Verify)
+        {
+            foreach (var list in NonStreamingCollection)
+            {
+                if (list.Contains(actorInfo.Actor))
+                {
+                    ReplicationGraphDebugger.EnsureMsg(false, 
+                        $"Actor {actorInfo.Actor.Name} already exists in frequency buckets");
+                    return;
+                }
+            }
+        }
+        // 保持原有的添加逻辑不变
+        if (ReplicationGraphUtils.IsLevelNameNone(actorInfo.StreamingLevelName))
         {
             // 添加到最小的桶中
             FActorRepListRefView bestList = null;
@@ -90,18 +104,8 @@ public class UReplicationGraphNode_ActorListFrequencyBuckets : UReplicationGraph
                     bRemovedSomething = true;
                     TotalNumNonStreamingActors--;
                     CheckRebalance();
-                    if (!ReplicationGraphDebugger.CVar_RepGraph_Verify)
-                    {
-                        // 如果不需要验证，提前返回
-                        return bRemovedSomething;
-                    }
-                    if (bFound)
-                    {
-                        // 已经移除过这个actor，说明有重复!
-                        ReplicationGraphDebugger.EnsureMsg(false, 
-                            $"Actor {actorInfo.Actor.Name} is still in list after removal");
-                    }
-                    bFound = true;
+                    bFound = true;  // 设置找到标志
+                    break;  // 找到并移除后立即退出
                 }
             }
             if (!bFound)
