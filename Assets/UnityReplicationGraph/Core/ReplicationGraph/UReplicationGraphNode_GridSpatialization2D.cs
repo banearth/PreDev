@@ -1,6 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
-using ReplicationGraph;
+using ReplicationGraphVisualizer;
 using CPL;
 
 public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
@@ -43,8 +43,8 @@ public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
 	public UReplicationGraphNode_GridSpatialization2D()
     {
         bRequiresPrepareForReplicationCall = true;
-		ReplicationGraphVisualizer.OnGridClicked -= OnGridClicked;
-		ReplicationGraphVisualizer.OnGridClicked += OnGridClicked;
+		Visualizer.OnGridClicked -= OnGridClicked;
+		Visualizer.OnGridClicked += OnGridClicked;
 	}
 
 	private void OnGridClicked(int gridX, int gridZ)
@@ -932,7 +932,7 @@ public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
 		
 		if (Grid == null || Grid.Count == 0)
 		{
-			ReplicationGraphVisualizer.ClearGrid2D();
+			Visualizer.ClearGrid2D();
 			return;
 		}
 
@@ -964,7 +964,7 @@ public class UReplicationGraphNode_GridSpatialization2D : UReplicationGraphNode
 		}
 
 		// 调用Visualizer的SetupGrid2D，使用最大Y值
-		ReplicationGraphVisualizer.SetupGrid2D(
+		Visualizer.SetupGrid2D(
 			CellSize,
 			SpatialBias.x,
 			SpatialBias.y,

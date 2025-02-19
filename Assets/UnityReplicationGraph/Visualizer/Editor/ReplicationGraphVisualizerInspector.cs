@@ -2,9 +2,9 @@ using UnityEngine;
 using UnityEditor;
 using System.Linq;
 
-namespace ReplicationGraph
+namespace ReplicationGraphVisualizer
 {
-	[CustomEditor(typeof(ReplicationGraphVisualizerInstance))]
+	[CustomEditor(typeof(VisualizerInstance))]
 	public class ReplicationGraphVisualizerInspector : Editor
 	{
 		private static readonly string[] _nameDisplayOptions = new[]
@@ -16,7 +16,7 @@ namespace ReplicationGraph
 
 		public override void OnInspectorGUI()
 		{
-			var instance = (ReplicationGraphVisualizerInstance)target;
+			var instance = (VisualizerInstance)target;
 			
 			// 开始隐藏指定属性
 			serializedObject.Update();
@@ -60,20 +60,20 @@ namespace ReplicationGraph
 			// 服务器和全局视角按钮
 			EditorGUILayout.BeginHorizontal();
 
-			GUI.backgroundColor = (int)currentMode == (int)ReplicationGraphVisualizerInstance.ObserverMode.Server ?
+			GUI.backgroundColor = (int)currentMode == (int)VisualizerInstance.ObserverMode.Server ?
 				new Color(0.7f, 0.3f, 0.3f) : new Color(0.3f, 0.3f, 0.3f);
 
 			if (GUILayout.Button("服务器视角", GUILayout.Height(30)))
 			{
-				ReplicationGraphVisualizer.SwitchObserver(ReplicationGraphVisualizer.MODE_SERVER);
+				Visualizer.SwitchObserver(Visualizer.MODE_SERVER);
 			}
 
-			GUI.backgroundColor = (int)currentMode == (int)ReplicationGraphVisualizerInstance.ObserverMode.AllClients ?
+			GUI.backgroundColor = (int)currentMode == (int)VisualizerInstance.ObserverMode.AllClients ?
 				new Color(0.3f, 0.7f, 0.7f) : new Color(0.3f, 0.3f, 0.3f);
 
 			if (GUILayout.Button("所有客户端", GUILayout.Height(30)))
 			{
-				ReplicationGraphVisualizer.SwitchObserver(ReplicationGraphVisualizer.MODE_ALL_CLIENTS);
+				Visualizer.SwitchObserver(Visualizer.MODE_ALL_CLIENTS);
 			}
 			EditorGUILayout.EndHorizontal();
 
@@ -88,23 +88,23 @@ namespace ReplicationGraph
 					EditorGUILayout.BeginHorizontal();
 
 					// 第一个按钮
-					GUI.backgroundColor = ((int)currentMode == (int)ReplicationGraphVisualizerInstance.ObserverMode.SingleClient
+					GUI.backgroundColor = ((int)currentMode == (int)VisualizerInstance.ObserverMode.SingleClient
 						&& targetId == observers[i]) ? new Color(0.3f, 0.7f, 0.3f) : new Color(0.3f, 0.3f, 0.3f);
 
 					if (GUILayout.Button(observers[i], GUILayout.Height(30)))
 					{
-						ReplicationGraphVisualizer.SwitchObserver(observers[i]);
+						Visualizer.SwitchObserver(observers[i]);
 					}
 
 					// 第二个按钮（如果存在）
 					if (i + 1 < observers.Count)
 					{
-						GUI.backgroundColor = ((int)currentMode == (int)ReplicationGraphVisualizerInstance.ObserverMode.SingleClient
+						GUI.backgroundColor = ((int)currentMode == (int)VisualizerInstance.ObserverMode.SingleClient
 							&& targetId == observers[i + 1]) ? new Color(0.3f, 0.7f, 0.3f) : new Color(0.3f, 0.3f, 0.3f);
 
 						if (GUILayout.Button(observers[i + 1], GUILayout.Height(30)))
 						{
-							ReplicationGraphVisualizer.SwitchObserver(observers[i + 1]);
+							Visualizer.SwitchObserver(observers[i + 1]);
 						}
 					}
 

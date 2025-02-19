@@ -9,9 +9,9 @@ using UnityEditor;
 #endif
 using System.Linq;
 
-namespace ReplicationGraph
+namespace ReplicationGraphVisualizer
 {
-	public class ReplicationGraphVisualizerInstance : MonoBehaviour
+	public class VisualizerInstance : MonoBehaviour
 	{
 		public enum ObserverMode
 		{
@@ -124,7 +124,7 @@ namespace ReplicationGraph
 
 		private void Awake()
 		{
-			ReplicationGraphVisualizer.SetupInstance(this);
+			Visualizer.SetupInstance(this);
 			_smartLabel = new SmartLabel(_smartLabelOffsetMultiple, _smartLabelBaseOffset);
 		}
 
@@ -150,7 +150,7 @@ namespace ReplicationGraph
 						_gridIndex2ActorCount.TryGetValue(index, out actorCount); // 即使没有actor也允许点击
 						
 						Debug.Log($"Clicked grid ({gridX}, {gridZ}) with {actorCount} actors");
-						ReplicationGraphVisualizer.TriggerGridClicked(gridX, gridZ);
+						Visualizer.TriggerGridClicked(gridX, gridZ);
 					}
 				}
 			}
@@ -177,8 +177,8 @@ namespace ReplicationGraph
 		{
 			return type.ToLower() switch
 			{
-				ReplicationGraphVisualizer.TYPE_PLAYER => ObserveeType.PlayerCharacter,
-				ReplicationGraphVisualizer.TYPE_DYNAMIC => ObserveeType.DynamicActor,
+				Visualizer.TYPE_PLAYER => ObserveeType.PlayerCharacter,
+				Visualizer.TYPE_DYNAMIC => ObserveeType.DynamicActor,
 				_ => ObserveeType.StaticActor
 			};
 		}
@@ -187,8 +187,8 @@ namespace ReplicationGraph
 		{
 			return mode.ToLower() switch
 			{
-				ReplicationGraphVisualizer.MODE_SINGLE_CLIENT => ObserverMode.SingleClient,
-				ReplicationGraphVisualizer.MODE_ALL_CLIENTS => ObserverMode.AllClients,
+				Visualizer.MODE_SINGLE_CLIENT => ObserverMode.SingleClient,
+				Visualizer.MODE_ALL_CLIENTS => ObserverMode.AllClients,
 				_ => ObserverMode.Server
 			};
 		}
@@ -308,7 +308,7 @@ namespace ReplicationGraph
 		{
 			if (_observerRegistry.TryGetValue(observerId, out var observerData))
 			{
-				bool isServer = observerId == ReplicationGraphVisualizer.MODE_SERVER;
+				bool isServer = observerId == Visualizer.MODE_SERVER;
 
 				// 绘制被观察者（不带十字标记）
 				DrawObservees(observerData);
@@ -329,7 +329,7 @@ namespace ReplicationGraph
 			{
 				var observerData = pair.Value;
 				var observerId = pair.Key;
-				if (observerId == ReplicationGraphVisualizer.MODE_SERVER)
+				if (observerId == Visualizer.MODE_SERVER)
 					continue;
 				// 为每个客户端使用不同的半透明颜色
 				Color observerColor = _viewColors[observerData.uuid % _viewColors.Length] * 0.5f;
@@ -427,7 +427,7 @@ namespace ReplicationGraph
 			switch (_currentMode)
 			{
 				case ObserverMode.Server:
-					DrawGizmos_SingleObserver(ReplicationGraphVisualizer.MODE_SERVER);
+					DrawGizmos_SingleObserver(Visualizer.MODE_SERVER);
 					break;
 				case ObserverMode.SingleClient:
 					DrawGizmos_SingleObserver(_targetObserverId);
@@ -454,7 +454,7 @@ namespace ReplicationGraph
 			{
 				_cachedObservers = _observerRegistry?
 				.Keys
-				.Where(id => id != ReplicationGraphVisualizer.MODE_SERVER)
+				.Where(id => id != Visualizer.MODE_SERVER)
 				.OrderBy(id => id)
 				.ToList();
 			}
@@ -880,7 +880,7 @@ namespace ReplicationGraph
 			
 			if (GUILayout.Button("服务器视角", GUILayout.Height(30)))
 			{
-				ReplicationGraphVisualizer.SwitchObserver(ReplicationGraphVisualizer.MODE_SERVER);
+				Visualizer.SwitchObserver(Visualizer.MODE_SERVER);
 			}
 		}
 
@@ -892,7 +892,7 @@ namespace ReplicationGraph
 			
 			if (GUILayout.Button("所有客户端", GUILayout.Height(30)))
 			{
-				ReplicationGraphVisualizer.SwitchObserver(ReplicationGraphVisualizer.MODE_ALL_CLIENTS);
+				Visualizer.SwitchObserver(Visualizer.MODE_ALL_CLIENTS);
 			}
 		}
 
@@ -904,7 +904,7 @@ namespace ReplicationGraph
 			
 			if (GUILayout.Button(observer, GUILayout.Height(25)))
 			{
-				ReplicationGraphVisualizer.SwitchObserver(observer);
+				Visualizer.SwitchObserver(observer);
 			}
 		}
 
@@ -914,9 +914,9 @@ namespace ReplicationGraph
 			switch (_currentMode)
 			{
 				case ObserverMode.Server:
-					return ReplicationGraphVisualizer.MODE_SERVER;
+					return Visualizer.MODE_SERVER;
 				case ObserverMode.AllClients:
-					return ReplicationGraphVisualizer.MODE_ALL_CLIENTS;
+					return Visualizer.MODE_ALL_CLIENTS;
 				case ObserverMode.SingleClient:
 					return _targetObserverId;
 				default:

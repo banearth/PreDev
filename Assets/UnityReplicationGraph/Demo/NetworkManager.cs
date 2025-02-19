@@ -1,4 +1,4 @@
-using ReplicationGraph;
+using ReplicationGraphVisualizer;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -47,7 +47,7 @@ public class NetworkManager : MonoBehaviour
         ReplicationGraph.AddNetworkActor(actor);
         // 可视化
         var position = actor.Position;
-		ReplicationGraphVisualizer.AddGlobalObservee(
+		Visualizer.AddGlobalObservee(
 			id,
 	        position.x,
 	        position.y,

@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace ReplicationGraph
+namespace ReplicationGraphVisualizer
 {
     public class ReplicationGraphCameraController : MonoBehaviour
     {

@@ -1,8 +1,8 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
-using ReplicationGraph;
-using static ReplicationGraph.ReplicationGraphVisualizerDemo;
+using ReplicationGraphVisualizer;
+using static ReplicationGraphVisualizer.ReplicationGraphVisualizerDemo;
 using UnityEditor.PackageManager;
 
 public class ReplicationDemo : MonoBehaviour
@@ -61,21 +61,21 @@ public class ReplicationDemo : MonoBehaviour
         // 先创建玩家角色
         for (int i = 0; i < playerActorCount; i++)
         {
-            var actor = CreateActor($"player{i}", GetRandomSpawnPosition(), ReplicationGraphVisualizer.TYPE_PLAYER, true);
+            var actor = CreateActor($"player{i}", GetRandomSpawnPosition(), Visualizer.TYPE_PLAYER, true);
             _actors.Add(actor);
         }
 
         // 创建静态物体
         for (int i = 0; i < staticActorCount; i++)
         {
-            var actor = CreateActor($"static{i}", GetRandomSpawnPosition(), ReplicationGraphVisualizer.TYPE_STATIC, false);
+            var actor = CreateActor($"static{i}", GetRandomSpawnPosition(), Visualizer.TYPE_STATIC, false);
             _actors.Add(actor);
         }
 
         // 创建动态物体
         for (int i = 0; i < dynamicActorCount; i++)
         {
-            var actor = CreateActor($"dynamic{i}", GetRandomSpawnPosition(), ReplicationGraphVisualizer.TYPE_DYNAMIC, true);
+            var actor = CreateActor($"dynamic{i}", GetRandomSpawnPosition(), Visualizer.TYPE_DYNAMIC, true);
             _actors.Add(actor);
         }
     }
@@ -92,7 +92,7 @@ public class ReplicationDemo : MonoBehaviour
 
     private void CreateClients()
     {
-        var playerActors = _actors.Where(a => a.Type == ReplicationGraphVisualizer.TYPE_PLAYER).ToList();
+        var playerActors = _actors.Where(a => a.Type == Visualizer.TYPE_PLAYER).ToList();
         
         for (int i = 0; i < playerActors.Count; i++)
         {
@@ -104,7 +104,7 @@ public class ReplicationDemo : MonoBehaviour
 			connection.ViewTarget = playerActor;
 			connection.OwningActor = playerActor;
 
-			ReplicationGraphVisualizer.AddObserver(
+			Visualizer.AddObserver(
                 clientId,
                 playerActor.Position.x,
                 playerActor.Position.y,
@@ -135,7 +135,7 @@ public class ReplicationDemo : MonoBehaviour
 		// 同步位置
 		foreach (var actor in _actors)
 		{
-			ReplicationGraphVisualizer.UpdateGlobalObservee(
+			Visualizer.UpdateGlobalObservee(
 					actor.Id,
 					actor.Position.x,
 					actor.Position.y,
@@ -143,7 +143,7 @@ public class ReplicationDemo : MonoBehaviour
 				);
 			if (actor.IsOwnedByClient)
 			{
-			    ReplicationGraphVisualizer.UpdateObserver(
+			    Visualizer.UpdateObserver(
 				    actor.OwnedClientId,
 				    actor.Position.x,
 				    actor.Position.y,
@@ -155,8 +155,8 @@ public class ReplicationDemo : MonoBehaviour
 		// 服务器始终知道所有Actor的位置
 		foreach (var actor in _actors)
 		{
-			ReplicationGraphVisualizer.UpdateObservee(
-				ReplicationGraphVisualizer.MODE_SERVER,
+			Visualizer.UpdateObservee(
+				Visualizer.MODE_SERVER,
 				actor.Id
 			);
 		}

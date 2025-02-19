@@ -1,9 +1,9 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-namespace ReplicationGraph
+namespace ReplicationGraphVisualizer
 {
-	public static class ReplicationGraphVisualizer
+	public static class Visualizer
 	{
 		// Lua可访问的常量定义
 		public const string MODE_SERVER = "server";
@@ -14,21 +14,21 @@ namespace ReplicationGraph
 		public const string TYPE_DYNAMIC = "dynamic";
 		public const string TYPE_PLAYER = "player";
 
-		private static ReplicationGraphVisualizerInstance _instance;
-		public static ReplicationGraphVisualizerInstance Instance
+		private static VisualizerInstance _instance;
+		public static VisualizerInstance Instance
 		{
 			get
 			{
 				if (_instance == null)
 				{
 					var go = new GameObject("ReplicationGraphVisualizer");
-					_instance = go.AddComponent<ReplicationGraphVisualizerInstance>();
+					_instance = go.AddComponent<VisualizerInstance>();
 				}
 				return _instance;
 			}
 		}
 
-		public static void SetupInstance(ReplicationGraphVisualizerInstance instance)
+		public static void SetupInstance(VisualizerInstance instance)
 		{
 			_instance = instance;
 		}

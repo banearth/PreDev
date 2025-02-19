@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace ReplicationGraph
+namespace ReplicationGraphVisualizer
 {
 	public class ReplicationGraphVisualizerDemo : MonoBehaviour
 	{
@@ -141,28 +141,28 @@ namespace ReplicationGraph
 			// 初始化ActorLabel，使用序列化的参数
 			_actorLabel = new SmartLabel(_smartLabelOffsetMultiple, _smartLabelBaseOffset);
 			// 创建服务器观察者（全图视野）
-			ReplicationGraphVisualizer.AddObserver(ReplicationGraphVisualizer.MODE_SERVER, 0, 0, 0, -1);
+			Visualizer.AddObserver(Visualizer.MODE_SERVER, 0, 0, 0, -1);
 
 			// 先创建玩家角色
 			for(int i = 0; i < _playerActorCount; i++)
 			{
-				CreateActor("player" + i, GetRandomSpawnPosition(), ReplicationGraphVisualizer.TYPE_PLAYER, true);
+				CreateActor("player" + i, GetRandomSpawnPosition(), Visualizer.TYPE_PLAYER, true);
 			}
 
 			// 创建静态物体
 			for(int i = 0; i < _staticActorCount; i++)
 			{
-				CreateActor("static" + i, GetRandomSpawnPosition(), ReplicationGraphVisualizer.TYPE_STATIC, false);
+				CreateActor("static" + i, GetRandomSpawnPosition(), Visualizer.TYPE_STATIC, false);
 			}
 
 			// 创建动态物体
 			for(int i = 0; i < _dynamicActorCount; i++)
 			{
-				CreateActor("dynamic" + i, GetRandomSpawnPosition(), ReplicationGraphVisualizer.TYPE_DYNAMIC, true);
+				CreateActor("dynamic" + i, GetRandomSpawnPosition(), Visualizer.TYPE_DYNAMIC, true);
 			}
 
 			// 创建客户端，使用对应玩家的位置
-			foreach (var actor in _actors.Where(a => a.Type == ReplicationGraphVisualizer.TYPE_PLAYER))
+			foreach (var actor in _actors.Where(a => a.Type == Visualizer.TYPE_PLAYER))
 			{
 				string clientId = "client" + actor.Id.Substring(6); // 从"player1"提取数字作为"client1"
 				CreateClient(clientId, actor.Id);
@@ -170,7 +170,7 @@ namespace ReplicationGraph
 			}
 
 			// 默认显示服务器视角
-			ReplicationGraphVisualizer.SwitchObserver(ReplicationGraphVisualizer.MODE_SERVER);
+			Visualizer.SwitchObserver(Visualizer.MODE_SERVER);
 		}
 
 		private void Update()
@@ -210,7 +210,7 @@ namespace ReplicationGraph
 						// 同步客户端位置到玩家位置
 						client.Position = actor.Position;
 						
-						ReplicationGraphVisualizer.UpdateObserver(
+						Visualizer.UpdateObserver(
 							actor.OwnedClientId,
 							actor.Position.x, 
 							actor.Position.y,
@@ -223,7 +223,7 @@ namespace ReplicationGraph
 			// 更新全局被观察者的位置
 			foreach (var actor in _actors)
 			{
-				ReplicationGraphVisualizer.UpdateGlobalObservee(
+				Visualizer.UpdateGlobalObservee(
 					actor.Id, 
 					actor.Position.x,
 					actor.Position.y,
@@ -233,8 +233,8 @@ namespace ReplicationGraph
 			// 服务器始终知道所有Actor的位置
 			foreach (var actor in _actors)
 			{
-				ReplicationGraphVisualizer.UpdateObservee(
-					ReplicationGraphVisualizer.MODE_SERVER,
+				Visualizer.UpdateObservee(
+					Visualizer.MODE_SERVER,
 					actor.Id
 				);
 			}
@@ -268,7 +268,7 @@ namespace ReplicationGraph
 						// Actor在视野内，更新或添加
 						currentVisibleActors.Add(actor.Id);
 						client.LastUpdateTimes[actor.Id] = Time.time;
-						ReplicationGraphVisualizer.UpdateObservee(client.Id, actor.Id);
+						Visualizer.UpdateObservee(client.Id, actor.Id);
 					}
 					else if (wasVisible && _autoDestroyOutOfSightActor)
 					{
@@ -293,7 +293,7 @@ namespace ReplicationGraph
 			}
 			
 			// 通知可视化系统移除Actor
-			ReplicationGraphVisualizer.RemoveObservee(clientId, actorId);
+			Visualizer.RemoveObservee(clientId, actorId);
 		}
 
 		private void OnDrawGizmos()
@@ -403,7 +403,7 @@ namespace ReplicationGraph
 			_clients.Add(clientId, client);
 
 			// 使用玩家位置创建观察者
-			ReplicationGraphVisualizer.AddObserver(clientId,
+			Visualizer.AddObserver(clientId,
 				playerActor.Position.x,
 				playerActor.Position.y,
 				playerActor.Position.z,
@@ -420,7 +420,7 @@ namespace ReplicationGraph
 			_actors.Add(actor);
 
 			// 添加到全局被观察者
-			ReplicationGraphVisualizer.AddGlobalObservee(
+			Visualizer.AddGlobalObservee(
 				id,
 				position.x,
 				position.y,

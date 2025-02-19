@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System;
-using ReplicationGraph;
+using ReplicationGraphVisualizer;
 
 public abstract class UReplicationGraph : UReplicationDriver
 {
@@ -228,7 +228,7 @@ public abstract class UReplicationGraph : UReplicationDriver
                     foreach (var actor in actors)
                     {
                         // 更新当前连接可见的Actor
-                        ReplicationGraphVisualizer.UpdateObservee(
+                        Visualizer.UpdateObservee(
                             ConnectionManager.NetConnection.ClientId,  // 观察者ID
                             actor.GetUUID()  // 被观察者ID
                         );
@@ -251,8 +251,8 @@ public abstract class UReplicationGraph : UReplicationDriver
         // 服务器可以看到所有Actor
         foreach (var actor in GlobalActorReplicationInfoMap.ViewAllActors())
         {
-            ReplicationGraphVisualizer.UpdateObservee(
-                ReplicationGraphVisualizer.MODE_SERVER,
+            Visualizer.UpdateObservee(
+                Visualizer.MODE_SERVER,
                 actor.GetUUID()
             );
         }
