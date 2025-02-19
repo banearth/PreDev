@@ -119,6 +119,9 @@ namespace ReplicationGraph
 		private bool _hasGridSetup;
 		private Dictionary<int,int> _gridIndex2ActorCount = new Dictionary<int, int>(); // 网格上存在Actor的格子所对应Actor数量
 
+		// 添加字段来存储每个观察者的滚动位置
+		private Dictionary<string, Vector2> _observerScrollPositions = new Dictionary<string, Vector2>();
+
 		private void Awake()
 		{
 			ReplicationGraphVisualizer.SetupInstance(this);
@@ -280,6 +283,7 @@ namespace ReplicationGraph
 			if (_observerRegistry.ContainsKey(observerId))
 			{
 				_observerRegistry.Remove(observerId);
+				_observerScrollPositions.Remove(observerId);  // 清理滚动位置
 				RefreshCachedObservers();
 			}
 		}
@@ -533,25 +537,81 @@ namespace ReplicationGraph
 			int padding = 10;
 			int width = 200;
 			int height = 150;
-			int totalWidth = Screen.width - (padding * 2);
+			int spacing = 10;
+			int totalWidth = observers.Count * (width + spacing) - spacing;
 
-			// 使用滚动视图
+			// 外层水平滚动视图
+			Rect viewRect = new Rect(padding, Screen.height - height - padding, Screen.width - padding * 2, height);
 			_observerInfoScrollPos = GUI.BeginScrollView(
-				new Rect(padding, Screen.height - height - padding, totalWidth, height),
+				new Rect(viewRect.x + 5, viewRect.y + 5, viewRect.width - 10, viewRect.height),
 				_observerInfoScrollPos,
-				new Rect(0, 0, observers.Count * (width + 20), height - 20)
+				new Rect(0, 0, totalWidth, height - 20)
 			);
-			
-			int index = 0;
+
+			int xPos = 0;
 			foreach (var observerId in observers)
 			{
 				if (_observerRegistry.TryGetValue(observerId, out var observer))
 				{
-					DrawGUI_ObserverInfo(observerId, observer, index);
-					index++;
+					// 确保每个观察者都有滚动位置
+					if (!_observerScrollPositions.ContainsKey(observerId))
+					{
+						_observerScrollPositions[observerId] = Vector2.zero;
+					}
+
+					// 绘制观察者框
+					GUI.Box(new Rect(xPos, 0, width, height - 20), $"Observer {observerId}");
+
+					// 计算距离
+					ClearDistanceReferObjectList();
+					foreach (var observee in observer.observees.Values)
+					{
+						AddDistanceReferObject(Vector3.Distance(observer.position, observee.position), observee);
+					}
+					SortDistanceReferObjectList();
+
+					// 计算内容高度
+					float contentHeight = GetObserverContentHeight(observerId);
+
+					// 每个观察者的独立垂直滚动视图
+					_observerScrollPositions[observerId] = GUI.BeginScrollView(
+						new Rect(xPos, 25, width, height - 45),  // 减去标题和底部边距
+						_observerScrollPositions[observerId],
+						new Rect(0, 0, width - 20, contentHeight),  // 减去滚动条宽度
+						false,  // 禁用水平滚动
+						true    // 启用垂直滚动
+					);
+
+					float yPos = 0;
+					float lineHeight = 20f;
+
+					for(int i = 0; i < _sortedDistanceReferObjectCount; i++)
+					{
+						var distanceReferObject = _sortedDistanceReferObjectList[i];
+						var observee = distanceReferObject.GetObjectAsType<ObserveeData>();
+						float timeSinceUpdate = Time.time - observee.lastUpdateTime;
+						Color timeBasedColor = GetTimeBasedColor(timeSinceUpdate);
+						string colorHex = ColorToHex(timeBasedColor);
+						string typeText = GetTypeDisplayText(observee.type);
+
+						string text = $"{observee.name} ({typeText}) - {distanceReferObject.distance:F1}m";
+						GUI.Label(new Rect(5, yPos, width - 25, lineHeight),
+							$"<color={colorHex}>{text}</color>");
+						yPos += lineHeight;
+
+						if (_showUpdateTime)
+						{
+							GUI.Label(new Rect(5, yPos, width - 25, lineHeight),
+								$"<color={colorHex}>  {timeSinceUpdate:F1}s</color>");
+							yPos += lineHeight;
+						}
+					}
+
+					GUI.EndScrollView();
+					xPos += width + spacing;
 				}
 			}
-			
+
 			GUI.EndScrollView();
 		}
 
