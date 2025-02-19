@@ -660,22 +660,69 @@ namespace ReplicationGraph
 
 		private void DrawGUI_SingleObserver(string observerId)
 		{
-			// 使用相同的滚动视图
 			int padding = 10;
 			int width = 200;
 			int height = 150;
-			int totalWidth = Screen.width - (padding * 2);
-			int observerCount = 1;
-			_observerInfoScrollPos = GUI.BeginScrollView(
-				new Rect(padding, Screen.height - height - padding, totalWidth, height),
-				_observerInfoScrollPos,
-				new Rect(0, 0, observerCount * (width + 20), height - 20)
-			);
+			
+			// 创建背景框
+			Rect windowRect = new Rect(padding, Screen.height - height - padding, width, height);
+			GUI.Box(windowRect, $"Observer {observerId}");
+
 			if (_observerRegistry.TryGetValue(observerId, out var observer))
 			{
-				DrawGUI_ObserverInfo(observerId, observer, 0);
+				// 计算所有被观察者到观察者的距离
+				ClearDistanceReferObjectList();
+				foreach (var observee in observer.observees.Values)
+				{
+					AddDistanceReferObject(Vector3.Distance(observer.position, observee.position), observee);
+				}
+				SortDistanceReferObjectList();
+
+				// 使用GUI.BeginScrollView，它会自动处理裁切
+				_observerInfoScrollPos = GUI.BeginScrollView(
+					new Rect(windowRect.x, windowRect.y + 20, width, height - 20),
+					_observerInfoScrollPos,
+					new Rect(0, 0, width - 25, GetObserverContentHeight(observerId))
+				);
+
+				float yPos = 0;
+				float lineHeight = 20f;
+
+				// 直接绘制所有内容，ScrollView会自动处理裁切
+				for(int i = 0; i < _sortedDistanceReferObjectCount; i++)
+				{
+					var distanceReferObject = _sortedDistanceReferObjectList[i];
+					var observee = distanceReferObject.GetObjectAsType<ObserveeData>();
+					float timeSinceUpdate = Time.time - observee.lastUpdateTime;
+					Color timeBasedColor = GetTimeBasedColor(timeSinceUpdate);
+					string colorHex = ColorToHex(timeBasedColor);
+					string typeText = GetTypeDisplayText(observee.type);
+
+					string text = $"{observee.name} ({typeText}) - {distanceReferObject.distance:F1}m";
+					GUI.Label(new Rect(5, yPos, width - 30, lineHeight),
+						$"<color={colorHex}>{text}</color>");
+					yPos += lineHeight;
+
+					if (_showUpdateTime)
+					{
+						GUI.Label(new Rect(5, yPos, width - 30, lineHeight),
+							$"<color={colorHex}>  {timeSinceUpdate:F1}s</color>");
+						yPos += lineHeight;
+					}
+				}
+
+				GUI.EndScrollView();
 			}
-			GUI.EndScrollView();
+		}
+
+		private float GetObserverContentHeight(string observerId)
+		{
+			if (!_observerRegistry.TryGetValue(observerId, out var observer))
+				return 0;
+
+			float lineHeight = 20f;
+			float updateTimeHeight = _showUpdateTime ? lineHeight : 0;
+			return _sortedDistanceReferObjectCount * (lineHeight + updateTimeHeight);
 		}
 
 		private void DrawLegend()
