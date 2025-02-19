@@ -32,7 +32,12 @@ public class TestActor : FActorRepListType
         bOnlyRelevantToOwner = false;
     }
 
-    public void UpdateMovement(float deltaTime)
+	public override string GetUUID()
+	{
+		return Id;
+	}
+
+	public void UpdateMovement(float deltaTime)
     {
         if (!IsDynamic) return;
 

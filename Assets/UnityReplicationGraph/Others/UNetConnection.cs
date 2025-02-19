@@ -17,6 +17,7 @@ public class UNetConnection
     public string Address { get; protected set; }
     public UNetworkDriver Driver { get; protected set; }
     public uint ConnectionId { get; private set; }
+	public string ClientId { get; private set; }
 	// 可见关卡名称集合
 	public HashSet<string> ClientVisibleLevelNames = new HashSet<string>();
 
@@ -28,9 +29,13 @@ public class UNetConnection
 
 	public UNetReplicationGraphConnection ReplicationConnectionDriver { get; private set; }
 
-	public UNetConnection(uint connectionId)
-    {
+	/// <summary>
+	/// clientId是我自己加的概念，本质上应该和connectionId统一，正式开发应该删掉
+	/// </summary>
+	public UNetConnection(uint connectionId, string clientId)
+	{
         ConnectionId = connectionId;
+        ClientId = clientId;
         State = EConnectionState.Invalid;
     }
 

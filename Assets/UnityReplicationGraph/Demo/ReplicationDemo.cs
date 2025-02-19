@@ -100,7 +100,7 @@ public class ReplicationDemo : MonoBehaviour
             string clientId = $"client{i}";
 			playerActor.OwnedClientId = clientId;
 
-			var connection = NetworkManager.Instance.Driver.CreateClientConnection();
+			var connection = NetworkManager.Instance.Driver.CreateClientConnection(clientId);
 			connection.ViewTarget = playerActor;
 			connection.OwningActor = playerActor;
 

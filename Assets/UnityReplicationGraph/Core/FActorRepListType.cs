@@ -51,6 +51,11 @@ public class FActorRepListType : UObject
 		Position = Vector3.zero;
 	}
 
+	public virtual string GetUUID()
+	{
+		return NetId.ToString();
+	}
+
 	public virtual bool IsNetRelevantFor(UNetConnection connection)
 	{
 		if (bAlwaysRelevant) return true;

@@ -5,6 +5,11 @@ public class FGlobalActorReplicationInfoMap
 {
     private Dictionary<FActorRepListType, FGlobalActorReplicationInfo> ActorMap = new Dictionary<FActorRepListType, FGlobalActorReplicationInfo>();
     private Dictionary<string, FClassReplicationInfo> ClassMap = new Dictionary<string, FClassReplicationInfo>();
+    
+    public IEnumerable<FActorRepListType> ViewAllActors()
+    {
+        return ActorMap.Keys;
+    }
 
     /// <summary>
     /// 获取Actor的全局复制信息,如果不存在则创建

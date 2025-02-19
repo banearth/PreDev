@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System;
+using ReplicationGraph;
 
 public abstract class UReplicationGraph : UReplicationDriver
 {
@@ -218,6 +219,21 @@ public abstract class UReplicationGraph : UReplicationDriver
                     connectionActorInfoMap,
                     ConnectionManager, 
                     frameNum);
+                
+                // 在这里添加Visualizer更新
+                // 遍历所有类型的列表
+                for (int i = (int)EActorRepListTypeFlags.Default; i < (int)EActorRepListTypeFlags.Max; ++i)
+                {
+                    var actors = Parameters.OutGatheredReplicationLists.ViewActors((EActorRepListTypeFlags)i);
+                    foreach (var actor in actors)
+                    {
+                        // 更新当前连接可见的Actor
+                        ReplicationGraphVisualizer.UpdateObservee(
+                            ConnectionManager.NetConnection.ClientId,  // 观察者ID
+                            actor.GetUUID()  // 被观察者ID
+                        );
+                    }
+                }
             }
 
 			// 检查连接状态
@@ -231,6 +247,16 @@ public abstract class UReplicationGraph : UReplicationDriver
         {
 			conn.Close();
         }
+
+        // 服务器可以看到所有Actor
+        foreach (var actor in GlobalActorReplicationInfoMap.ViewAllActors())
+        {
+            ReplicationGraphVisualizer.UpdateObservee(
+                ReplicationGraphVisualizer.MODE_SERVER,
+                actor.GetUUID()
+            );
+        }
+
         return numChildrenConnectionsProcessed;
     }
 
@@ -708,6 +734,7 @@ public abstract class UReplicationGraph : UReplicationDriver
 		{
 			return 0;
 		}
+
 		// 更新复制统计
 		ActorInfo.LastRepFrameNum = FrameNum;
 		ActorInfo.NextReplicationFrameNum = FrameNum + ActorInfo.ReplicationPeriodFrame;

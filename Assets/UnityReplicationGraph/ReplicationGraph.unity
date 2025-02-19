@@ -603,15 +603,15 @@ MonoBehaviour:
   moveRange: 10
   clientViewRadius: 5
   _spawnAreaColor: {r: 0.13412559, g: 1, b: 0, a: 0.5}
-  staticActorCount: 5
-  dynamicActorCount: 4
-  playerActorCount: 3
+  staticActorCount: 10
+  dynamicActorCount: 8
+  playerActorCount: 6
   spawnAreaRect:
     serializedVersion: 2
-    x: -20
-    y: -15
-    width: 40
-    height: 30
+    x: -25
+    y: -20
+    width: 50
+    height: 49
   drawActorEnable: 1
   actorColor: {r: 1, g: 1, b: 1, a: 0.101960786}
   smartLabelOffsetMultiple: 0.9

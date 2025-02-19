@@ -27,10 +27,10 @@ public class UNetworkDriver
         }
     }
 
-    public UNetConnection CreateClientConnection()
+    public UNetConnection CreateClientConnection(string clientId)
     {
-        var connection = new UNetConnection(_nextConnectionId++);
-        ClientConnections.Add(connection);
+		var connection = new UNetConnection(_nextConnectionId++, clientId);
+		ClientConnections.Add(connection);
         if (_replicationDriver != null)
         {
             _replicationDriver.AddClientConnection(connection);
