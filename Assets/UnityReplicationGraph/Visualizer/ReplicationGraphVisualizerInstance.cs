@@ -154,6 +154,12 @@ namespace ReplicationGraph
 					}
 				}
 			}
+
+			// 添加 M 键切换网格标签显示
+			if (Input.GetKeyDown(KeyCode.M) && _showGridGizmos)
+			{
+				_showGridLabel = !_showGridLabel;
+			}
 		}
 
 		private void OnValidate()
@@ -511,7 +517,7 @@ namespace ReplicationGraph
 					{
 						GUILayout.BeginHorizontal();
 						GUILayout.Space(20); // 手动添加缩进空间
-						_showGridLabel = GUILayout.Toggle(_showGridLabel, "显示网格标签");
+						_showGridLabel = GUILayout.Toggle(_showGridLabel, "显示网格标签(M)");
 						GUILayout.EndHorizontal();
 					}
 					
