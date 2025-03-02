@@ -22,7 +22,7 @@ public static class ReplicationGraphDebugger
     public static float CVar_RepGraph_OutOfRangeDistanceCheckRatio = 0.5f;
     public static int CVar_ForceConnectionViewerPriority = 1;
 	public static bool CVar_RepGraph_EnableFastSharedPath = true;
-	public static int CVar_RepGraph_DormantDynamicActorsDestruction = 0;//If true, irrelevant dormant actors will be destroyed on the client
+	public static int CVar_RepGraph_DormantDynamicActorsDestruction = 1;//If true, irrelevant dormant actors will be destroyed on the client
 
 	#endregion
 

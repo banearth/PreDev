@@ -175,12 +175,6 @@ public class ReplicationDemo : MonoBehaviour
         }
     }
 
-    private bool IsActorVisibleToViewer(TestActor actor, FNetViewer viewer)
-    {
-        float distanceSq = (actor.Position - viewer.ViewLocation).sqrMagnitude;
-        return distanceSq <= (clientViewRadius * clientViewRadius);
-    }
-
     private void OnDrawGizmos()
     {
         if (!Application.isPlaying)

@@ -176,7 +176,7 @@ public abstract class UReplicationGraph : UReplicationDriver
 				ConnectionManager.GetCachedClientVisibleLevelNames(),
 				frameNum,
 				GatheredReplicationListsForConnection,
-				false
+				true
 				);
 
 			List<FRepGraphDestructionViewerInfo> DestructionViewersInfo = new List<FRepGraphDestructionViewerInfo>();
@@ -219,21 +219,6 @@ public abstract class UReplicationGraph : UReplicationDriver
                     connectionActorInfoMap,
                     ConnectionManager, 
                     frameNum);
-                
-                // 在这里添加Visualizer更新
-                // 遍历所有类型的列表
-                for (int i = (int)EActorRepListTypeFlags.Default; i < (int)EActorRepListTypeFlags.Max; ++i)
-                {
-                    var actors = Parameters.OutGatheredReplicationLists.ViewActors((EActorRepListTypeFlags)i);
-                    foreach (var actor in actors)
-                    {
-                        // 更新当前连接可见的Actor
-                        Visualizer.UpdateObservee(
-                            ConnectionManager.NetConnection.ClientId,  // 观察者ID
-                            actor.GetUUID()  // 被观察者ID
-                        );
-                    }
-                }
             }
 
 			// 检查连接状态
@@ -734,6 +719,9 @@ public abstract class UReplicationGraph : UReplicationDriver
 		{
 			return 0;
 		}
+		
+		Visualizer.UpdateObservee(NetConnection.ClientId, Actor.GetUUID());
+
 
 		// 更新复制统计
 		ActorInfo.LastRepFrameNum = FrameNum;
@@ -829,9 +817,11 @@ public abstract class UReplicationGraph : UReplicationDriver
 
         // 创建或获取Actor的全局复制信息
         var globalInfo = GlobalActorReplicationInfoMap.Get(actor);
-        
-        // 创建新的复制Actor信息
-        var actorInfo = new FNewReplicatedActorInfo(actor);
+		//globalInfo.bWantsToBeDormant = Actor->NetDormancy > DORM_Awake;
+		globalInfo.bWantsToBeDormant = actor.NetDormancy > ENetDormancy.DORM_Awake;
+
+		// 创建新的复制Actor信息
+		var actorInfo = new FNewReplicatedActorInfo(actor);
         
         // 将Actor添加到活动网络Actor列表
         ActiveNetworkActors.Add(actor);

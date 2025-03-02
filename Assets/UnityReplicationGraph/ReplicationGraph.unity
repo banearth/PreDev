@@ -138,7 +138,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &38439277
 Transform:
   m_ObjectHideFlags: 0
@@ -569,7 +569,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1865825974
 Transform:
   m_ObjectHideFlags: 0
@@ -601,16 +601,16 @@ MonoBehaviour:
   updateInterval: 0.1
   moveSpeed: 0
   moveRange: 10
-  clientViewRadius: 5
+  clientViewRadius: 10
   _spawnAreaColor: {r: 0.13412559, g: 1, b: 0, a: 0.5}
-  staticActorCount: 10
-  dynamicActorCount: 8
-  playerActorCount: 6
+  staticActorCount: 4
+  dynamicActorCount: 3
+  playerActorCount: 2
   spawnAreaRect:
     serializedVersion: 2
-    x: -25
+    x: -20
     y: -20
-    width: 50
+    width: 40
     height: 49
   drawActorEnable: 1
   actorColor: {r: 1, g: 1, b: 1, a: 0.101960786}
